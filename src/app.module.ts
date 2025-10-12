@@ -10,8 +10,8 @@ import { SupabaseAuthModule } from './auth/auth.module';
 import { SupabaseAuthGuard } from './auth/guards/supabase-auth.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
-import { ComplianceModule } from './compliance/compliance.module';
 import { StorageModule } from './storage/storage.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -25,8 +25,8 @@ import { StorageModule } from './storage/storage.module';
     SupabaseAuthModule,
     PrismaModule,
     HealthModule,
-    ComplianceModule,
     StorageModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [
