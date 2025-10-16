@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
+import { PdfGeneratorService } from './pdf-generator.service';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdfGenerator: PdfGeneratorService,
+  ) {}
 
   async create(createAttendanceRecordDto: CreateAttendanceRecordDto) {
     return this.prisma.attendanceRecord.create({
@@ -18,7 +22,8 @@ export class AttendanceService {
         location: createAttendanceRecordDto.location,
         reportId: createAttendanceRecordDto.reportId,
         createdById: createAttendanceRecordDto.createdById,
-        attendees: createAttendanceRecordDto.attendees as unknown as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        attendees: createAttendanceRecordDto.attendees as any,
       },
     });
   }
@@ -63,7 +68,8 @@ export class AttendanceService {
         location: updateAttendanceRecordDto.location,
         reportId: updateAttendanceRecordDto.reportId,
         createdById: updateAttendanceRecordDto.createdById,
-        attendees: updateAttendanceRecordDto.attendees as unknown as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        attendees: updateAttendanceRecordDto.attendees as any,
       },
     });
   }
@@ -83,5 +89,10 @@ export class AttendanceService {
         createdAt: 'desc',
       },
     });
+  }
+
+  async generatePdf(id: string): Promise<Buffer> {
+    const attendanceRecord = await this.findOne(id);
+    return this.pdfGenerator.generateAttendancePdf(attendanceRecord);
   }
 }

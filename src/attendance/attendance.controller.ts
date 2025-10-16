@@ -9,8 +9,11 @@ import {
   Query,
   ParseUUIDPipe,
   HttpStatus,
+  Res,
+  Header,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
 
@@ -111,5 +114,33 @@ export class AttendanceController {
       .then((records) =>
         records.filter((record) => record.createdById === createdById),
       );
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({ summary: 'Generate PDF for an attendance record' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return the attendance record as a PDF.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Attendance record not found.',
+  })
+  @Header('Content-Type', 'application/pdf')
+  async generatePdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const pdfBuffer = await this.attendanceService.generatePdf(id);
+    const attendanceRecord = await this.attendanceService.findOne(id);
+
+    const filename = `attendance_${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    res.set({
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer);
   }
 }
