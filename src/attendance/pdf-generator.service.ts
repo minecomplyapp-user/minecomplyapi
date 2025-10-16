@@ -289,66 +289,74 @@ export class PdfGeneratorService {
     currentX = x; // Reset currentX for content drawing
     doc.fillColor('#000000');
 
-    // Calculate vertical centering offset
-    const verticalPadding = 5;
-
     for (let index = 0; index < columns.length; index++) {
       const column = columns[index];
+      let text = '';
+      let font = 'Helvetica';
+      const fontSize = 9;
+      let contentHeight = 0;
 
       if (index === 0) {
-        // First column: Combine row number and name (e.g., "1. ANGELICA D. DE VERA")
+        // Name column
         const name = attendee.name ?? '';
-
-        // Check if name has parenthesis content
         const parenthesisMatch = name.match(/^(.+?)(\s*\(.+?\)\s*)$/);
-
         if (parenthesisMatch) {
-          // Name has parenthesis - make main part bold and caps, keep parenthesis normal
           const mainName = parenthesisMatch[1].trim();
           const parenthesisPart = parenthesisMatch[2].trim();
-
+          // Calculate content height for vertical centering
+          doc.font('Helvetica-Bold').fontSize(fontSize);
+          const mainNameHeight = doc.heightOfString(
+            `${rowNumber}.  ${mainName.toUpperCase()} `,
+            {
+              width: column.width - 10,
+              align: 'left',
+              continued: true,
+            },
+          );
+          doc.font('Helvetica').fontSize(fontSize);
+          const parenthesisHeight = doc.heightOfString(parenthesisPart, {
+            width: column.width - 10,
+            align: 'left',
+          });
+          const totalHeight = mainNameHeight + parenthesisHeight;
+          const verticalOffset = y + (rowHeight - totalHeight) / 2;
+          // Draw main name bold/caps, parenthesis normal
           doc
             .font('Helvetica-Bold')
+            .fontSize(fontSize)
             .text(
               `${rowNumber}.  ${mainName.toUpperCase()} `,
               currentX + 5,
-              y + verticalPadding,
+              verticalOffset,
               {
-                continued: true,
                 width: column.width - 10,
+                align: 'left',
+                continued: true,
               },
-            )
+            );
+          doc
             .font('Helvetica')
+            .fontSize(fontSize)
             .text(parenthesisPart, {
               width: column.width - 10,
               align: 'left',
             });
+          doc.font('Helvetica').fontSize(9);
+          currentX += column.width;
+          continue;
         } else {
-          // No parenthesis - make entire name bold and caps
-          const numberedName = `${rowNumber}.  ${name.toUpperCase()}`;
-          doc
-            .font('Helvetica-Bold')
-            .text(numberedName, currentX + 5, y + verticalPadding, {
-              width: column.width - 10,
-              align: 'left',
-            })
-            .font('Helvetica'); // Reset font
+          text = `${rowNumber}.  ${name.toUpperCase()}`;
+          font = 'Helvetica-Bold';
         }
       } else if (column.key === 'signatureUrl') {
-        // Display signature image
+        // Signature image
         const signatureUrl = attendee.signatureUrl;
-
         if (signatureUrl && signatureUrl.trim() !== '') {
           try {
-            // Fetch and embed the actual signature image
             const imageBuffer = await this.fetchImageBuffer(signatureUrl);
-
             if (imageBuffer) {
-              // Center image vertically in the row
               const imageHeight = 19;
               const imageY = y + (rowHeight - imageHeight) / 2;
-
-              // Embed the image in the PDF
               doc.image(imageBuffer, currentX + 5, imageY, {
                 width: column.width - 10,
                 height: imageHeight,
@@ -356,7 +364,6 @@ export class PdfGeneratorService {
                 align: 'center',
               });
             } else {
-              // Fallback if image fetch fails
               const textY = y + (rowHeight - 7) / 2;
               doc.fontSize(7).text('ERROR URL', currentX + 5, textY, {
                 width: column.width - 10,
@@ -365,27 +372,17 @@ export class PdfGeneratorService {
               doc.fontSize(9);
             }
           } catch {
-            doc.text('', currentX + 5, y + verticalPadding, {
-              width: column.width - 10,
-              align: 'left',
-            });
+            // If image fetch fails, leave cell blank
           }
-        } else {
-          doc.text('', currentX + 5, y + verticalPadding, {
-            width: column.width - 10,
-            align: 'left',
-          });
         }
+        currentX += column.width;
+        continue;
       } else {
-        // Other columns (text content)
-        let text = '';
+        // Other columns
         const value = attendee[column.key];
-
         if (column.key === 'agency') {
-          // Merge agency and office into "Agency/Office" format
           const agency = attendee.agency ?? '';
           const office = attendee.office ?? '';
-
           if (agency && office) {
             text = `${agency}/${office}`;
           } else if (agency) {
@@ -396,32 +393,34 @@ export class PdfGeneratorService {
             text = '-';
           }
         } else if (column.key === 'attendanceStatus') {
-          // Format attendance status (make it all caps)
           text = this.formatAttendanceStatus(value || '').toUpperCase();
+          font = 'Helvetica-Bold';
         } else if (column.key === 'position') {
-          // Make position all caps
           text = (value || '-').toUpperCase();
         } else {
           text = value || '-';
         }
-
-        // Make STATUS text bold within its cell
-        const isStatus = column.key === 'attendanceStatus';
-        if (isStatus) {
-          doc.font('Helvetica-Bold');
-        }
-
-        doc.text(text, currentX + 5, y + verticalPadding, {
-          width: column.width - 10,
-          align: 'center',
-        });
-
-        // Reset font after status cell
-        if (isStatus) {
-          doc.font('Helvetica');
-        }
       }
 
+      // Calculate content height for vertical centering
+      doc.font(font).fontSize(fontSize);
+      contentHeight = doc.heightOfString(text, {
+        width: column.width - 10,
+        align: 'center',
+      });
+      const verticalOffset = y + (rowHeight - contentHeight) / 2;
+
+      // Draw text centered vertically, but name column left-aligned
+      doc
+        .font(font)
+        .fontSize(fontSize)
+        .text(text, currentX + 5, verticalOffset, {
+          width: column.width - 10,
+          align: index === 0 ? 'left' : 'center',
+        });
+
+      // Reset font for next cell
+      doc.font('Helvetica').fontSize(9);
       currentX += column.width;
     }
   }
@@ -484,8 +483,8 @@ export class PdfGeneratorService {
     attendee: AttendeeDto,
     rowNumber: number,
   ): number {
-    const minHeight = 25; // Minimum row height
-    const padding = 10; // Top + bottom padding (5px each)
+    const minHeight = 25; // Minimum row height (fits image + padding)
+    const padding = 6; // Top + bottom padding (3px each)
     let maxContentHeight = 0;
 
     for (let index = 0; index < columns.length; index++) {
@@ -556,7 +555,13 @@ export class PdfGeneratorService {
     }
 
     // Return the max content height + padding, with a minimum
-    return Math.max(minHeight, Math.ceil(maxContentHeight + padding));
+    const rowHeight = Math.max(
+      minHeight,
+      Math.ceil(maxContentHeight + padding),
+    );
+    // Debug log for diagnosis
+    console.log(`Row ${rowNumber} height:`, rowHeight);
+    return rowHeight;
   }
 
   /**
