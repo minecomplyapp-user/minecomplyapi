@@ -12,6 +12,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { StorageModule } from './storage/storage.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { CmvrModule } from './cmvr/cmvr.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     HealthModule,
     StorageModule,
     AttendanceModule,
+    CmvrModule,
   ],
   controllers: [AppController],
   providers: [

@@ -73,7 +73,7 @@ The merged column has been widened to **150px** (previously 100px + 80px = 180px
 
 ## Backend Changes
 
-Only the `PdfGeneratorService` was modified:
+Only the `AttendancePdfGeneratorService` was modified:
 
 1. Updated column definitions to merge Agency and Office
 2. Added logic to format the merged field with "/" separator

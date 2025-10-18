@@ -17,25 +17,37 @@ model User {
   role               UserRole            @default(PROPONENT)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  createdSubmissions Submission[]        @relation("UserCreatedSubmissions")
+  createdECCReports  ECCReport[]         @relation("UserCreatedECCReports")
+  createdCMVRReports CMVRReport[]        @relation("UserCreatedCMVRReports")
   validations        ValidationSession[] @relation("ValidationReviewer")
   attendanceRecords  AttendanceRecord[]  @relation("UserAttendanceRecords")
 }
 
-model Submission {
-  id                 String              @id @default(uuid())
-  type               SubmissionType
-  generalInfo        Json?
-  mmtInfo            Json?
-  monitoringData     Json?
-  createdById        String?
-  createdBy          User?               @relation("UserCreatedSubmissions", fields: [createdById], references: [id])
+model ECCReport {
+  id             String    @id @default(uuid())
+  generalInfo    Json?
+  mmtInfo        Json?
+  monitoringData Json?
+  createdById    String?
+  createdBy      User?     @relation("UserCreatedECCReports", fields: [createdById], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([createdById], map: "idx_ecc_report_creator")
 }
 
-enum SubmissionType {
-  ECC_MONITORING
-  CMVR
-  EPEP_AEPEP
+model CMVRReport {
+  id                              String    @id @default(uuid())
+  generalInfo                     Json?     // Company Name, Location, Quarter, Year, Date of Compliance, Monitoring Period, Date of Submission
+  executiveSummaryOfCompliance    Json?     // Executive summary section
+  complianceMonitoringReport      Json?     // ECC, ISAG/MPP, EPEP/FMRDP, RCF/MTF/FMRDF data
+  discussions                     Json?     // Discussions and findings
+  createdById                     String?
+  createdBy                       User?     @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
+  createdAt                       DateTime  @default(now())
+  updatedAt                       DateTime  @updatedAt
+
+  @@index([createdById], map: "idx_cmvr_report_creator")
 }
 
 

@@ -11,7 +11,7 @@ interface TableColumn {
 }
 
 @Injectable()
-export class PdfGeneratorService {
+export class AttendancePdfGeneratorService {
   /**
    * Generate a PDF buffer from attendance record data
    */

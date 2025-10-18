@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
-import { PdfGeneratorService } from './pdf-generator.service';
+import { AttendancePdfGeneratorService } from './pdf-generator.service';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly pdfGenerator: PdfGeneratorService,
+    private readonly pdfGenerator: AttendancePdfGeneratorService,
   ) {}
 
   async create(createAttendanceRecordDto: CreateAttendanceRecordDto) {

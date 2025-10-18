@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { PrismaModule } from '../prisma/prisma.module';
-import { PdfGeneratorService } from './pdf-generator.service';
+import { AttendancePdfGeneratorService } from './pdf-generator.service';
 
 @Module({
   imports: [PrismaModule],
   controllers: [AttendanceController],
-  providers: [AttendanceService, PdfGeneratorService],
+  providers: [AttendanceService, AttendancePdfGeneratorService],
   exports: [AttendanceService],
 })
 export class AttendanceModule {}

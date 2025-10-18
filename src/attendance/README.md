@@ -146,7 +146,7 @@ const downloadAttendancePdf = async (attendanceId: string) => {
 
 ## PDF Customization
 
-You can customize the PDF appearance by modifying the `PdfGeneratorService`:
+You can customize the PDF appearance by modifying the `AttendancePdfGeneratorService`:
 
 ### Change Table Columns
 
