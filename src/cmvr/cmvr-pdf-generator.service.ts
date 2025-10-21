@@ -4,10 +4,12 @@ import PDFDocument from 'pdfkit';
 // Shape for the normalized generalInfo JSON we agreed on
 export interface CMVRGeneralInfo {
   companyName?: string;
-  location?: {
-    latitude?: number;
-    longitude?: number;
-  };
+  location?:
+    | string
+    | {
+        latitude?: number;
+        longitude?: number;
+      };
   quarter?: string;
   year?: number | string;
   dateOfComplianceMonitoringAndValidation?: string; // ISO or human readable
@@ -65,9 +67,9 @@ export class CMVRPdfGeneratorService {
     });
 
     try {
-      this.addHeader(doc, generalInfo);
-
       this.addGeneralInfoKeyValues(doc, generalInfo);
+
+      doc.moveDown(1);
 
       const leftMargin = doc.page.margins.left || 50;
       doc
@@ -132,46 +134,13 @@ export class CMVRPdfGeneratorService {
     }
   }
 
-  private addHeader(doc: PDFKit.PDFDocument, generalInfo: CMVRGeneralInfo) {
-    doc
-      .fontSize(11)
-      .font('Helvetica-Bold')
-      .text('COMPLIANCE MONITORING VERIFICATION REPORT', { align: 'center' })
-      .moveDown(0.3);
-    doc
-      .fontSize(11)
-      .font('Helvetica-Bold')
-      .text('GENERAL INFORMATION', { align: 'center' })
-      .moveDown(1);
-
-    if (generalInfo.companyName) {
-      doc
-        .fontSize(11)
-        .font('Helvetica')
-        .text(`Company: ${generalInfo.companyName}`, { align: 'center' })
-        .moveDown(0.5);
-    }
-  }
-
   private addGeneralInfoKeyValues(
     doc: PDFKit.PDFDocument,
     gi: CMVRGeneralInfo,
   ) {
-    // We'll render two tables:
-    // 1) A headered key/value table for general fields
-    // 2) A no-header key/value table for the three compliance date fields
+    // Render summary as formatted text (not a table) and compliance dates as a no-header table
 
-    const summaryRows: Array<[string, string]> = [];
     const complianceRows: Array<[string, string]> = [];
-
-    summaryRows.push(['Quarter', gi.quarter ? String(gi.quarter) : '-']);
-    summaryRows.push(['Year', gi.year ? String(gi.year) : '-']);
-
-    if (gi.location) {
-      const lat = gi.location.latitude ?? '-';
-      const lng = gi.location.longitude ?? '-';
-      summaryRows.push(['Location (Latitude, Longitude)', `${lat}, ${lng}`]);
-    }
 
     if (gi.dateOfComplianceMonitoringAndValidation) {
       complianceRows.push([
@@ -192,59 +161,122 @@ export class CMVRPdfGeneratorService {
       ]);
     }
 
-    if (gi.projectCurrentName) {
-      summaryRows.push(['Project Current Name', gi.projectCurrentName]);
-    }
-    if (gi.projectNameInEcc) {
-      summaryRows.push(['Project Name in the ECC', gi.projectNameInEcc]);
-    }
-    if (gi.projectStatus) {
-      summaryRows.push(['Project Status', gi.projectStatus]);
-    }
-    if (gi.projectGeographicalCoordinates) {
-      const x = gi.projectGeographicalCoordinates.x ?? '-';
-      const y = gi.projectGeographicalCoordinates.y ?? '-';
-      summaryRows.push([
-        'Project Geographical Coordinates (x, y)',
-        `${x}, ${y}`,
-      ]);
-    }
+    // Render summary section as formatted text (no "SUMMARY" title)
+    this.drawSummaryText(doc, gi);
 
-    if (gi.proponent) {
-      if (gi.proponent.contactPersonAndPosition) {
-        summaryRows.push([
-          'Proponent Contact Person & Position',
-          gi.proponent.contactPersonAndPosition,
-        ]);
-      }
-      if (gi.proponent.mailingAddress) {
-        summaryRows.push([
-          'Proponent Mailing Address',
-          gi.proponent.mailingAddress,
-        ]);
-      }
-      if (gi.proponent.telephoneFax) {
-        summaryRows.push([
-          'Proponent Telephone No./ Fax No.',
-          gi.proponent.telephoneFax,
-        ]);
-      }
-      if (gi.proponent.emailAddress) {
-        summaryRows.push([
-          'Proponent Email Address',
-          gi.proponent.emailAddress,
-        ]);
-      }
-    }
-
-    this.addSectionTitle(doc, 'SUMMARY');
-    if (summaryRows.length > 0) {
-      this.drawKeyValueTable(doc, summaryRows);
-    }
     if (complianceRows.length > 0) {
       // Render the three compliance-related rows as a separate table without a header
       this.drawKeyValueTableNoHeader(doc, complianceRows);
     }
+  }
+
+  private drawSummaryText(doc: PDFKit.PDFDocument, gi: CMVRGeneralInfo) {
+    const left = doc.page.margins.left || 50;
+    const right = doc.page.width - (doc.page.margins.right || 50);
+    const width = right - left;
+    const boxPct = 0.8;
+    const boxPctLocation = 0.9;
+    const y = width * boxPctLocation;
+    const w = width * boxPct;
+    const x = left + (width - w) / 2;
+    const z = left + (width - y) / 2;
+
+    doc.moveDown(0.8);
+
+    // Title: "3rd QUARTER CY 2025 MMT COMPLIANCE MONITORING AND VALIDATION REPORT"
+    doc.font('Helvetica-Bold').fontSize(11);
+
+    const titleParts: string[] = [];
+    if (gi.quarter) {
+      // Format quarter with superscript ordinal (e.g., "3RD" becomes "3" with superscript "RD")
+      const quarterFormatted = this.formatQuarterWithSuperscript(gi.quarter);
+      titleParts.push(quarterFormatted);
+    }
+    if (gi.year) {
+      titleParts.push(`CY ${gi.year}`);
+    }
+    titleParts.push('MMT COMPLIANCE MONITORING');
+
+    // First line of title
+    const titleLine1 = titleParts.join(' ');
+
+    // If quarter has superscript, we need to manually draw it
+    if (gi.quarter) {
+      const yPos = doc.y;
+      const quarterNum = gi.quarter.replace(/\D/g, ''); // Extract number
+      const ordinal = this.getOrdinalSuffix(parseInt(quarterNum, 10)); // Get suffix
+
+      // Build the text parts
+      const afterQuarter = ' QUARTER';
+      const restOfTitle = titleParts.slice(1).join(' ');
+
+      // Measure to center the whole line (approximate with regular font for ordinal)
+      const fullTextApprox = `${quarterNum}${ordinal}${afterQuarter} ${restOfTitle}`;
+      const textWidth = doc.widthOfString(fullTextApprox);
+      let xPos = left + (width - textWidth) / 2;
+
+      // Draw quarter number
+      doc.fontSize(11);
+      doc.text(quarterNum, xPos, yPos, { continued: false });
+      xPos += doc.widthOfString(quarterNum);
+
+      // Draw ordinal as superscript (smaller font, raised) - no space before it
+      doc.fontSize(7);
+      const ordinalWidth = doc.widthOfString(ordinal);
+      doc.text(ordinal, xPos, yPos - 1.5, { continued: false });
+      xPos += ordinalWidth;
+
+      // Draw rest of line
+      doc.fontSize(11);
+      doc.text(`${afterQuarter} ${restOfTitle}`, xPos, yPos, {
+        continued: false,
+      });
+      doc.moveDown(0.5);
+    } else {
+      doc.text(titleLine1, left, doc.y, {
+        width: width,
+        align: 'center',
+      });
+    }
+
+    // Second line
+    doc.text('AND VALIDATION REPORT', left, doc.y, {
+      width: width,
+      align: 'center',
+    });
+    doc.moveDown(2);
+
+    // Company name centered
+    if (gi.projectCurrentName) {
+      doc.text(gi.projectCurrentName.toUpperCase(), left, doc.y, {
+        width: width,
+        align: 'center',
+      });
+    }
+
+    doc.font('Helvetica');
+
+    doc.text(
+      `(This CMVR covers the ISAG Permit of ONRI and Fourteen (14) ISAG Permits under Supply Agreement with ONRI)`,
+      x,
+      doc.y,
+      {
+        width: w,
+        align: 'center',
+      },
+    );
+
+    doc.moveDown(1).font('Helvetica-Bold');
+
+    // Display location field if it's a string, otherwise use mailing address
+    if (typeof gi.location === 'string') {
+      doc.text(gi.location.toUpperCase(), z, doc.y, {
+        width: y,
+        align: 'center',
+      });
+    }
+
+    doc.moveDown(1);
   }
 
   private addSectionTitle(doc: PDFKit.PDFDocument, title: string) {
@@ -989,5 +1021,26 @@ export class CMVRPdfGeneratorService {
       dec: 11,
     };
     return map[name.toLowerCase()] ?? 0;
+  }
+
+  private getOrdinalSuffix(num: number): string {
+    const j = num % 10;
+    const k = num % 100;
+    if (j === 1 && k !== 11) {
+      return 'st';
+    }
+    if (j === 2 && k !== 12) {
+      return 'nd';
+    }
+    if (j === 3 && k !== 13) {
+      return 'rd';
+    }
+    return 'th';
+  }
+
+  private formatQuarterWithSuperscript(quarter: string): string {
+    const num = quarter.replace(/\D/g, '');
+    const ordinal = this.getOrdinalSuffix(parseInt(num, 10));
+    return `${num}${ordinal}`;
   }
 }

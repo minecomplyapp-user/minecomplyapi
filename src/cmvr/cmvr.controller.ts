@@ -51,7 +51,8 @@ export class CmvrController {
       // Mock data for quick preview
       const mockGeneralInfo = {
         companyName: 'Acme Mining Corporation',
-        location: { latitude: 14.6123, longitude: 121.0567 },
+        location:
+          'PORT OPERATIONS, BRGY. 20-A – GABUT NORTE, MUNICIPALITY OF BADOC, ILOCOS NORTE',
         quarter: '3rd',
         year: 2025,
         dateOfComplianceMonitoringAndValidation: '2025-09-30',
@@ -211,8 +212,8 @@ export class CmvrController {
             dateOfIssuance: 'Jun. 29, 2023',
           },
         ],
-        projectCurrentName: 'Acme Nickel Project',
-        projectNameInEcc: 'Acme Nickel Mining Project',
+        projectCurrentName: 'OMNICO NATURAL RESOURCES, INC. (ONRI)',
+        projectNameInEcc: 'OMNICO NATURAL RESOURCES, INC. ',
         projectStatus: 'Operating',
         projectGeographicalCoordinates: { x: 121.0567, y: 14.6123 },
         proponent: {
