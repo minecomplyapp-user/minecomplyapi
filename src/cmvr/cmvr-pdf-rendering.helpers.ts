@@ -733,3 +733,600 @@ export function addGeneralInfoKeyValues(
     drawKeyValueTableNoHeader(doc, complianceRows);
   }
 }
+
+/**
+ * Draw "Executive Summary of Compliance" section with a multi-row header.
+ * Header structure:
+ *   Row 1: "Requirements" (merged 2 rows) | "Complied?" (spans Y+N) | "Remarks/ ECC or EPEP Condition #" (merged 2 rows)
+ *   Row 2:                                 | "Y" | "N"                |
+ *
+ * For each requirement, mark Y or N based on boolean values.
+ */
+export function drawExecutiveSummaryOfCompliance(
+  doc: PDFKit.PDFDocument,
+  exec: NonNullable<CMVRGeneralInfo['executiveSummaryOfCompliance']>,
+): void {
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+
+  const reqWidth = tableWidth * 0.57;
+  const yWidth = tableWidth * 0.1;
+  const nWidth = tableWidth * 0.1;
+  const remarksWidth = tableWidth * 0.23;
+  const compliedWidth = yWidth + nWidth; // "Complied?" spans Y + N
+
+  const rowMinHeight = 14;
+  const headerRow1Height = 20; // First header row
+  const headerRow2Height = 18; // Second header row (Y/N)
+  const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+  // Helper to get column X positions
+  const reqX = left;
+  const yX = left + reqWidth;
+  const nX = yX + yWidth;
+  const remarksX = nX + nWidth;
+
+  // Helper to draw the two-row header
+  const drawHeader = (y: number) => {
+    doc
+      .strokeColor('#000000')
+      .lineWidth(0.5)
+      .font('Helvetica-Bold')
+      .fontSize(11);
+
+    // --- Header Row 1 ---
+    // Top border
+    doc
+      .moveTo(left, y)
+      .lineTo(left + tableWidth, y)
+      .stroke();
+
+    // Left edge
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + headerRow1Height + headerRow2Height)
+      .stroke();
+    // Right edge
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + headerRow1Height + headerRow2Height)
+      .stroke();
+
+    // Vertical dividers for row 1
+    doc
+      .moveTo(yX, y)
+      .lineTo(yX, y + headerRow1Height + headerRow2Height)
+      .stroke(); // After Requirements
+    doc
+      .moveTo(remarksX, y)
+      .lineTo(remarksX, y + headerRow1Height + headerRow2Height)
+      .stroke(); // After Complied?
+
+    // Horizontal line after row 1
+    doc
+      .moveTo(yX, y + headerRow1Height)
+      .lineTo(remarksX, y + headerRow1Height)
+      .stroke();
+
+    // Bottom border of header row 2
+    doc
+      .moveTo(left, y + headerRow1Height + headerRow2Height)
+      .lineTo(left + tableWidth, y + headerRow1Height + headerRow2Height)
+      .stroke();
+
+    // --- Header Row 2 (Y/N sub-columns) ---
+    doc
+      .moveTo(nX, y + headerRow1Height)
+      .lineTo(nX, y + headerRow1Height + headerRow2Height)
+      .stroke();
+
+    // Draw header texts
+    // "Requirements" - vertically centered across both rows
+    const reqText = 'Requirements';
+    const reqTextHeight = doc.heightOfString(reqText, { width: reqWidth - 10 });
+    const reqTextY =
+      y + (headerRow1Height + headerRow2Height - reqTextHeight) / 2;
+    doc.text(reqText, reqX + 5, reqTextY, {
+      width: reqWidth - 10,
+      align: 'center',
+    });
+
+    // "Complied?" - centered in row 1 only
+    const compliedText = 'Complied?';
+    const compliedTextHeight = doc.heightOfString(compliedText, {
+      width: compliedWidth - 10,
+    });
+    const compliedTextY = y + (headerRow1Height - compliedTextHeight) / 2;
+    doc.text(compliedText, yX + 5, compliedTextY, {
+      width: compliedWidth - 10,
+      align: 'center',
+    });
+
+    // "Remarks/ ECC or EPEP Condition #" - vertically centered across both rows
+    const remarksText = 'Remarks/ ECC or EPEP Condition #';
+    const remarksTextHeight = doc.heightOfString(remarksText, {
+      width: remarksWidth - 10,
+    });
+    const remarksTextY =
+      y + (headerRow1Height + headerRow2Height - remarksTextHeight) / 2;
+    doc.text(remarksText, remarksX + 5, remarksTextY, {
+      width: remarksWidth - 10,
+      align: 'center',
+    });
+
+    // "Y" and "N" in row 2
+    const yText = 'Y';
+    const nText = 'N';
+    const yTextY =
+      y +
+      headerRow1Height +
+      (headerRow2Height - doc.heightOfString(yText, { width: yWidth - 10 })) /
+        2;
+    const nTextY =
+      y +
+      headerRow1Height +
+      (headerRow2Height - doc.heightOfString(nText, { width: nWidth - 10 })) /
+        2;
+    doc.text(yText, yX + 5, yTextY, { width: yWidth - 10, align: 'center' });
+    doc.text(nText, nX + 5, nTextY, { width: nWidth - 10, align: 'center' });
+
+    return y + headerRow1Height + headerRow2Height;
+  };
+
+  // Helper to draw a data row
+  const drawRow = (
+    y: number,
+    requirement: string,
+    complied: boolean | undefined,
+    remarks: string,
+    options?: {
+      isSubRow?: boolean;
+      subRowParentHeight?: number;
+      isFirstSubRow?: boolean;
+      isLastSubRow?: boolean;
+      isOthersMerged?: boolean; // Flag for "Others" section to always merge Y+N
+      showNA?: boolean; // Flag to show "N/A" text in merged cell
+    },
+  ) => {
+    const {
+      isSubRow,
+      subRowParentHeight,
+      isFirstSubRow,
+      isLastSubRow,
+      isOthersMerged,
+      showNA,
+    } = options || {};
+
+    doc.font('Helvetica').fontSize(11);
+    const reqTextHeight = doc.heightOfString(requirement, {
+      width: reqWidth - 10,
+    });
+    const remarksTextHeight = doc.heightOfString(remarks, {
+      width: remarksWidth - 10,
+    });
+    const rowHeight =
+      Math.max(rowMinHeight, reqTextHeight, remarksTextHeight) + 4;
+
+    // Check page break
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+      y = drawHeader(y);
+      doc.font('Helvetica').fontSize(11);
+    }
+
+    // Draw row borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke(); // Left
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke(); // Right
+    doc
+      .moveTo(yX, y)
+      .lineTo(yX, y + rowHeight)
+      .stroke(); // After Requirements
+
+    // Only draw Y/N divider if not "Others" (which always has merged Y+N)
+    if (!isOthersMerged) {
+      doc
+        .moveTo(nX, y)
+        .lineTo(nX, y + rowHeight)
+        .stroke(); // Between Y and N
+    }
+
+    doc
+      .moveTo(remarksX, y)
+      .lineTo(remarksX, y + rowHeight)
+      .stroke(); // After N (or after merged Y+N)
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke(); // Bottom
+
+    // Draw texts
+    const reqTextY = y + (rowHeight - reqTextHeight) / 2;
+    doc.text(requirement, reqX + 5, reqTextY, {
+      width: reqWidth - 10,
+      align: 'left',
+    });
+
+    // If "Others" section (merged Y+N), conditionally show "N/A" or leave empty
+    if (isOthersMerged) {
+      const compliedMergedWidth = yWidth + nWidth;
+      if (showNA) {
+        const naText = 'N/A';
+        const naTextHeight = doc.heightOfString(naText, {
+          width: compliedMergedWidth - 10,
+        });
+        const naTextY = y + (rowHeight - naTextHeight) / 2;
+        doc.font('Helvetica').text(naText, yX + 5, naTextY, {
+          width: compliedMergedWidth - 10,
+          align: 'center',
+        });
+      }
+      // If showNA is false, the merged cell remains empty (no text drawn)
+    } else {
+      // Draw a checkmark manually if complied is true
+      if (complied === true) {
+        const checkmarkSize = 4;
+        const centerX = yX + yWidth / 2;
+        const centerY = y + rowHeight / 2;
+
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      }
+
+      // Draw a checkmark in N column if complied is false
+      if (complied === false) {
+        const checkmarkSize = 4;
+        const centerX = nX + nWidth / 2;
+        const centerY = y + rowHeight / 2;
+
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      }
+    }
+
+    const remarksTextY = y + (rowHeight - remarksTextHeight) / 2;
+    doc.text(remarks, remarksX + 5, remarksTextY, {
+      width: remarksWidth - 10,
+      align: 'center',
+    });
+
+    return y + rowHeight;
+  };
+
+  // Build all rows from the data
+  const allRows: Array<{
+    requirement: string;
+    complied: boolean | undefined;
+    remarks: string;
+    isOthersMerged?: boolean; // Flag for "Others" section to always merge Y+N
+    showNA?: boolean; // Flag to show "N/A" text in merged cell
+    subRows?: Array<{
+      requirement: string;
+      complied: boolean | undefined;
+      remarks: string;
+    }>;
+  }> = [];
+
+  // 1) Compliance with EPEP Commitments
+  if (exec.complianceWithEpepCommitments) {
+    const epep = exec.complianceWithEpepCommitments;
+    allRows.push({
+      requirement: 'Compliance with EPEP Commitments',
+      complied: undefined, // This is a group label, no checkmark
+      remarks: epep.remarks || '',
+      subRows: [
+        {
+          requirement: 'Safety',
+          complied: epep.safety,
+          remarks: '', // Remarks are handled by the parent
+        },
+        {
+          requirement: 'Social',
+          complied: epep.social,
+          remarks: '', // Remarks are handled by the parent
+        },
+        {
+          requirement: 'Rehabilitation',
+          complied: epep.rehabilitation,
+          remarks: '', // Remarks are handled by the parent
+        },
+      ],
+    });
+  }
+
+  // 2) Compliance with SDMP Commitments
+  if (exec.complianceWithSdmpCommitments) {
+    const sdmp = exec.complianceWithSdmpCommitments;
+    allRows.push({
+      requirement: 'Compliance with SDMP Commitments',
+      complied: sdmp.complied,
+      remarks: sdmp.remarks || '',
+    });
+  }
+
+  // 3) Complaints Management
+  if (exec.complaintsManagement) {
+    const cm = exec.complaintsManagement;
+    allRows.push({
+      requirement: 'Complaints Management',
+      complied: cm.naForAll, // Parent compliance check
+      remarks: cm.remarks || '',
+      subRows: [
+        {
+          requirement: 'Complaint Receiving Setup',
+          complied: cm.complaintReceivingSetup,
+          remarks: '',
+        },
+        {
+          requirement: 'Case Investigation',
+          complied: cm.caseInvestigation,
+          remarks: '',
+        },
+        {
+          requirement: 'Implementation of Control',
+          complied: cm.implementationOfControl,
+          remarks: '',
+        },
+        {
+          requirement: 'Communication with Complainant/Public',
+          complied: cm.communicationWithComplainantOrPublic,
+          remarks: '',
+        },
+        {
+          requirement: 'Complaint Documentation',
+          complied: cm.complaintDocumentation,
+          remarks: '',
+        },
+      ],
+    });
+  }
+
+  // 4) Accountability
+  if (exec.accountability) {
+    const acc = exec.accountability;
+    allRows.push({
+      requirement:
+        'Accountability - qualified personnel are charged with the routine monitoring of the project activities in terms of education, training, knowledge and experience of the environmental team.',
+      complied: acc.complied,
+      remarks: acc.remarks || '',
+    });
+  }
+
+  // 5) Others
+  if (exec.others) {
+    const oth = exec.others;
+    allRows.push({
+      requirement: 'Others, please specify',
+      complied: oth.na,
+      remarks: oth.specify || '',
+      isOthersMerged: true, // Always merge Y+N for "Others"
+      showNA: oth.na === true, // Show "N/A" text when na is true
+    });
+  }
+
+  // Render the table
+  let y = doc.y;
+  y = drawHeader(y);
+
+  for (const row of allRows) {
+    if (row.subRows && row.subRows.length > 0) {
+      const parentReqWidth = reqWidth * 0.3;
+      const subReqWidth = reqWidth * 0.7;
+
+      const subRows = row.subRows;
+      const subRowMinHeight = 15; // Smaller min height for sub-rows
+      const subRowHeights = subRows.map((subRow) => {
+        const reqTextHeight = doc.heightOfString(subRow.requirement, {
+          width: subReqWidth - 10,
+        });
+        // Remarks are not in subrows, so we don't need to calculate their height here
+        return Math.max(subRowMinHeight, reqTextHeight) + 2; // Reduced padding
+      });
+      const totalSubRowHeight = subRowHeights.reduce((a, b) => a + b, 0);
+
+      // --- Draw Merged Parent Cells ---
+      doc.strokeColor('#000000').lineWidth(0.5);
+
+      // Merged "Requirement" cell (parent label)
+      doc
+        .moveTo(left, y)
+        .lineTo(left, y + totalSubRowHeight)
+        .stroke(); // Left border
+      doc
+        .moveTo(left + parentReqWidth, y)
+        .lineTo(left + parentReqWidth, y + totalSubRowHeight)
+        .stroke(); // Right border
+
+      const parentTextHeight = doc.heightOfString(row.requirement, {
+        width: parentReqWidth - 10,
+      });
+      const parentTextY = y + (totalSubRowHeight - parentTextHeight) / 2;
+      doc.font('Helvetica').text(row.requirement, left + 5, parentTextY, {
+        width: parentReqWidth - 10,
+        align: 'center',
+      });
+      doc.font('Helvetica');
+
+      // Merged "Remarks" cell
+      doc
+        .moveTo(remarksX, y)
+        .lineTo(remarksX, y + totalSubRowHeight)
+        .stroke(); // Left border
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + totalSubRowHeight)
+        .stroke(); // Right border
+
+      const remarksTextHeight = doc.heightOfString(row.remarks, {
+        width: remarksWidth - 10,
+      });
+      const remarksTextY = y + (totalSubRowHeight - remarksTextHeight) / 2;
+      doc.text(row.remarks, remarksX + 5, remarksTextY, {
+        width: remarksWidth - 10,
+        align: 'center',
+      });
+
+      // --- Draw the sub-rows ---
+      let currentY = y;
+
+      // Check if this is "Complaints Management" with naForAll = true
+      const isComplaintsNA =
+        row.requirement === 'Complaints Management' && row.complied === true;
+
+      // If naForAll is true, draw merged Y+N columns with "N/A" text
+      if (isComplaintsNA) {
+        // Draw merged complied columns (Y+N) for the entire group
+        const compliedMergedWidth = yWidth + nWidth;
+
+        // Draw vertical borders for merged complied area
+        doc
+          .moveTo(yX, y)
+          .lineTo(yX, y + totalSubRowHeight)
+          .stroke(); // Left border of merged Y+N
+        doc
+          .moveTo(remarksX, y)
+          .lineTo(remarksX, y + totalSubRowHeight)
+          .stroke(); // Right border of merged Y+N
+
+        // Draw "N/A" text centered in merged Y+N area
+        const naText = 'N/A';
+        const naTextHeight = doc.heightOfString(naText, {
+          width: compliedMergedWidth - 10,
+        });
+        const naTextY = y + (totalSubRowHeight - naTextHeight) / 2;
+        doc.font('Helvetica').text(naText, yX + 5, naTextY, {
+          width: compliedMergedWidth - 10,
+          align: 'center',
+        });
+      }
+
+      for (let i = 0; i < subRows.length; i++) {
+        const subRow = subRows[i];
+        const subRowHeight = subRowHeights[i];
+
+        // Draw sub-row content
+        const subReqX = left + parentReqWidth;
+
+        // Borders
+        doc.moveTo(subReqX, currentY).lineTo(yX, currentY).stroke(); // Top border of sub-row's requirement cell
+        doc
+          .moveTo(subReqX, currentY)
+          .lineTo(subReqX, currentY + subRowHeight)
+          .stroke(); // Left border of sub-row's requirement cell (same as parent's right)
+
+        // Only draw vertical borders in Y+N area if NOT naForAll
+        if (!isComplaintsNA) {
+          doc
+            .moveTo(yX, currentY)
+            .lineTo(yX, currentY + subRowHeight)
+            .stroke(); // Right border of sub-row's requirement cell
+          doc
+            .moveTo(nX, currentY)
+            .lineTo(nX, currentY + subRowHeight)
+            .stroke(); // Right border of Y cell
+          doc
+            .moveTo(remarksX, currentY)
+            .lineTo(remarksX, currentY + subRowHeight)
+            .stroke(); // Right border of N cell
+        } else {
+          // For naForAll, only draw the right border of the remarks column
+          doc
+            .moveTo(remarksX, currentY)
+            .lineTo(remarksX, currentY + subRowHeight)
+            .stroke(); // Right border of merged Y+N cell
+        }
+
+        // Bottom border for the sub-row (only under requirement area, not Y+N area when naForAll)
+        if (!isComplaintsNA) {
+          doc
+            .moveTo(subReqX, currentY + subRowHeight)
+            .lineTo(remarksX, currentY + subRowHeight)
+            .stroke();
+        } else {
+          // Only draw bottom border under requirement column when naForAll
+          doc
+            .moveTo(subReqX, currentY + subRowHeight)
+            .lineTo(yX, currentY + subRowHeight)
+            .stroke();
+        }
+
+        // Text for sub-row requirement
+        const reqTextHeight = doc.heightOfString(subRow.requirement, {
+          width: subReqWidth - 10,
+        });
+        const reqTextY = currentY + (subRowHeight - reqTextHeight) / 2;
+        doc.text(subRow.requirement, subReqX + 5, reqTextY, {
+          width: subReqWidth - 10,
+          align: 'left',
+        });
+
+        // Checkmark for sub-row (only if not naForAll)
+        if (!isComplaintsNA && subRow.complied === true) {
+          const checkmarkSize = 4;
+          const centerX = yX + yWidth / 2;
+          const centerY = currentY + subRowHeight / 2;
+          doc
+            .save()
+            .lineWidth(1.2)
+            .moveTo(centerX - checkmarkSize, centerY)
+            .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+            .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+            .stroke()
+            .restore();
+        }
+
+        // Checkmark in N column for sub-row if false (only if not naForAll)
+        if (!isComplaintsNA && subRow.complied === false) {
+          const checkmarkSize = 4;
+          const centerX = nX + nWidth / 2;
+          const centerY = currentY + subRowHeight / 2;
+          doc
+            .save()
+            .lineWidth(1.2)
+            .moveTo(centerX - checkmarkSize, centerY)
+            .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+            .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+            .stroke()
+            .restore();
+        }
+
+        currentY += subRowHeight;
+      }
+      // Final bottom border for the entire group
+      doc
+        .moveTo(left, y + totalSubRowHeight)
+        .lineTo(left + tableWidth, y + totalSubRowHeight)
+        .stroke();
+
+      y = currentY;
+    } else {
+      y = drawRow(y, row.requirement, row.complied, row.remarks, {
+        isOthersMerged: row.isOthersMerged,
+        showNA: row.showNA,
+      });
+    }
+  }
+
+  doc.y = y;
+  doc.moveDown(1);
+}

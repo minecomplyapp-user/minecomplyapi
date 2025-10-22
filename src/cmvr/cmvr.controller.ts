@@ -26,7 +26,6 @@ export class CmvrController {
     description: 'List of all CMVR reports',
   })
   async findAll() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.cmvrService.findAll();
   }
 
@@ -95,7 +94,7 @@ export class CmvrController {
             dateOfIssuance: 'Apr. 30, 2012',
           },
           {
-            permitHolderName: 'Maechellenie C. Cabanilla',
+            permitHolderName: 'Maechellenie C.\nCabanilla',
             eccNumber: 'ECC No. 010609190137-1103 (1st amendment)',
             dateOfIssuance: 'Aug. 26, 2022',
           },
@@ -399,6 +398,38 @@ export class CmvrController {
             dateUpdated: '-',
           },
         ],
+        executiveSummaryOfCompliance: {
+          complianceWithEpepCommitments: {
+            safety: false,
+            social: true,
+            rehabilitation: true,
+            remarks: 'Conducted by MGB RO1',
+          },
+          complianceWithSdmpCommitments: {
+            complied: true,
+            notComplied: false,
+            remarks: 'Conducted by MGB RO1 (SDS)',
+          },
+          complaintsManagement: {
+            naForAll: true,
+            complaintReceivingSetup: false,
+            caseInvestigation: false,
+            implementationOfControl: false,
+            communicationWithComplainantOrPublic: false,
+            complaintDocumentation: false,
+            remarks: 'No complaints against the proponent ',
+          },
+          accountability: {
+            complied: false,
+            notComplied: false,
+            remarks:
+              'Engr. Roque B. Palmes is registered as part-time MEPEO Head on Sep. 18, 2023 ',
+          },
+          others: {
+            specify: '',
+            na: true,
+          },
+        },
       };
 
       const pdfBuffer =
@@ -432,7 +463,6 @@ export class CmvrController {
     description: 'CMVR Report not found',
   })
   async findOne(@Param('id') id: string) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.cmvrService.findOne(id);
   }
 

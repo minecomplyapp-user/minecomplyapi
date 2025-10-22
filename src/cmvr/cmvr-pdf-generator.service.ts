@@ -11,6 +11,7 @@ import {
   drawTable,
   drawKeyValueTableWithColon,
   addGeneralInfoKeyValues,
+  drawExecutiveSummaryOfCompliance,
 } from './cmvr-pdf-rendering.helpers';
 
 // Shape for the normalized generalInfo JSON we agreed on
@@ -81,6 +82,39 @@ export interface CMVRGeneralInfo {
     amountDeposited?: string;
     dateUpdated?: string;
   }>;
+
+  // Section II: Executive Summary of Compliance
+  executiveSummaryOfCompliance?: {
+    complianceWithEpepCommitments?: {
+      safety?: boolean;
+      social?: boolean;
+      rehabilitation?: boolean;
+      remarks?: string;
+    };
+    complianceWithSdmpCommitments?: {
+      complied?: boolean;
+      notComplied?: boolean;
+      remarks?: string;
+    };
+    complaintsManagement?: {
+      naForAll?: boolean;
+      complaintReceivingSetup?: boolean;
+      caseInvestigation?: boolean;
+      implementationOfControl?: boolean;
+      communicationWithComplainantOrPublic?: boolean;
+      complaintDocumentation?: boolean;
+      remarks?: string;
+    };
+    accountability?: {
+      complied?: boolean;
+      notComplied?: boolean;
+      remarks?: string;
+    };
+    others?: {
+      specify?: string;
+      na?: boolean;
+    };
+  };
 }
 
 @Injectable()
@@ -331,10 +365,22 @@ export class CMVRPdfGeneratorService {
         );
       }
 
+      doc.moveDown(1);
+
       doc
         .fontSize(12)
         .font('Helvetica-Bold')
-        .text(`II. EXECUTIVE SUMMARY OF COMPLIANCE`, leftMargin, doc.y, { align: 'left' });
+        .text(`II. EXECUTIVE SUMMARY OF COMPLIANCE`, leftMargin, doc.y, {
+          align: 'left',
+        });
+
+      if (generalInfo.executiveSummaryOfCompliance) {
+        doc.moveDown(0.5);
+        drawExecutiveSummaryOfCompliance(
+          doc,
+          generalInfo.executiveSummaryOfCompliance,
+        );
+      }
 
       addFooter(doc);
       doc.end();
