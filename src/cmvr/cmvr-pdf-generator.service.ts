@@ -12,6 +12,8 @@ import {
   drawKeyValueTableWithColon,
   addGeneralInfoKeyValues,
   drawExecutiveSummaryOfCompliance,
+  drawProcessDocumentationOfActivitiesUndertaken,
+  drawComplianceToProjectLocationTable,
 } from './cmvr-pdf-rendering.helpers';
 
 // Shape for the normalized generalInfo JSON we agreed on
@@ -115,6 +117,52 @@ export interface CMVRGeneralInfo {
       na?: boolean;
     };
   };
+
+  // Section III: Process Documentation of Activities Undertaken
+  processDocumentationOfActivitiesUndertaken?: {
+    dateConducted?: string;
+    sameDateForAllActivities?: boolean;
+    mergedMethodologyOrOtherRemarks?: string;
+    activities?: {
+      complianceWithEccConditionsCommitments?: {
+        mmtMembersInvolved?: string[];
+        dateConducted?: string;
+        remarks?: string;
+      };
+      complianceWithEpepAepepConditions?: {
+        mmtMembersInvolved?: string[];
+        dateConducted?: string;
+        remarks?: string;
+      };
+      siteOcularValidation?: {
+        mmtMembersInvolved?: string[];
+        dateConducted?: string;
+        remarks?: string;
+      };
+      siteValidationConfirmatorySampling?: {
+        applicable?: boolean;
+        none?: boolean;
+        mmtMembersInvolved?: string[];
+        dateConducted?: string;
+        remarks?: string;
+      };
+    };
+  };
+
+  // Section I: Compliance Monitoring Report and Discussions
+  complianceToProjectLocationAndCoverageLimits?: {
+    parameters?: Array<{
+      name?: string;
+      specification?: string | Record<string, string | undefined>;
+      withinSpecs?: boolean;
+      remarks?: string | Record<string, string | undefined>;
+    }>;
+    otherComponents?: Array<{
+      specification?: string;
+      withinSpecs?: boolean;
+      remarks?: string;
+    }>;
+  };
 }
 
 @Injectable()
@@ -144,7 +192,7 @@ export class CMVRPdfGeneratorService {
 
       const leftMargin = doc.page.margins.left || 50;
       doc
-        .fontSize(12)
+        .fontSize(11)
         .font('Helvetica-Bold')
         .text(`I. BASIC INFORMATION`, leftMargin, doc.y, { align: 'left' });
 
@@ -368,7 +416,7 @@ export class CMVRPdfGeneratorService {
       doc.moveDown(1);
 
       doc
-        .fontSize(12)
+        .fontSize(11)
         .font('Helvetica-Bold')
         .text(`II. EXECUTIVE SUMMARY OF COMPLIANCE`, leftMargin, doc.y, {
           align: 'left',
@@ -379,6 +427,63 @@ export class CMVRPdfGeneratorService {
         drawExecutiveSummaryOfCompliance(
           doc,
           generalInfo.executiveSummaryOfCompliance,
+        );
+      }
+
+      doc.moveDown(1);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          `III. PROCESS DOCUMENTATION OF ACTIVITIES UNDERTAKEN`,
+          leftMargin,
+          doc.y,
+          {
+            align: 'left',
+          },
+        );
+
+      if (generalInfo.processDocumentationOfActivitiesUndertaken) {
+        doc.moveDown(0.5);
+        drawProcessDocumentationOfActivitiesUndertaken(
+          doc,
+          generalInfo.processDocumentationOfActivitiesUndertaken,
+        );
+      }
+
+      doc.moveDown(1);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          `I. COMPLIANCE MONITORING REPORT AND DISCUSSIONS`,
+          leftMargin,
+          doc.y,
+          {
+            align: 'center',
+          },
+        )
+        .moveDown(0.3);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          `1. Compliance to Project Location and Coverage Limits (As specified in ECC and/ or EPEP) `,
+          leftMargin,
+          doc.y,
+          {
+            align: 'left',
+          },
+        );
+
+      if (generalInfo.complianceToProjectLocationAndCoverageLimits) {
+        doc.moveDown(0.5);
+        drawComplianceToProjectLocationTable(
+          doc,
+          generalInfo.complianceToProjectLocationAndCoverageLimits,
         );
       }
 
@@ -483,7 +588,7 @@ export class CMVRPdfGeneratorService {
       const labelY = startY + height / 2 - 5;
       doc
         .font('Helvetica-Bold')
-        .fontSize(12)
+        .fontSize(11)
         .text('RCF/ MTF and FMRDF Status'.toUpperCase(), left + 5, labelY, {
           width: labelColWidth - 10,
           align: 'center',
@@ -491,7 +596,7 @@ export class CMVRPdfGeneratorService {
 
       // Colon centered
       const colonY = startY + height / 2 - 5;
-      doc.font('Helvetica-Bold').fontSize(12).text(':', colonLeft, colonY, {
+      doc.font('Helvetica-Bold').fontSize(11).text(':', colonLeft, colonY, {
         width: colonColWidth,
         align: 'center',
       });

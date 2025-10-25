@@ -1330,3 +1330,1085 @@ export function drawExecutiveSummaryOfCompliance(
   doc.y = y;
   doc.moveDown(1);
 }
+
+/**
+ * Draw "Process Documentation of Activities Undertaken" section with a table.
+ * Table structure:
+ *   Header: Activities | Date Conducted | MMT Members Involved | Methodology/ Other Remarks
+ *   First row after header: "Document Review of:" (merged across all columns)
+ *   Then activity rows with members displayed vertically within cells
+ */
+export function drawProcessDocumentationOfActivitiesUndertaken(
+  doc: PDFKit.PDFDocument,
+  process: NonNullable<
+    CMVRGeneralInfo['processDocumentationOfActivitiesUndertaken']
+  >,
+): void {
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+
+  // Column widths
+  const activitiesWidth = tableWidth * 0.22;
+  const dateWidth = tableWidth * 0.15;
+  const membersWidth = tableWidth * 0.3;
+  const remarksWidth = tableWidth * 0.27;
+
+  const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+  // Helper to get column X positions
+  const activitiesX = left;
+  const dateX = left + activitiesWidth;
+  const membersX = dateX + dateWidth;
+  const remarksX = membersX + membersWidth;
+
+  // Calculate dynamic header height based on text wrapping
+  const calculateHeaderHeight = (): number => {
+    doc.font('Helvetica-Bold').fontSize(11);
+    const headers = [
+      { text: 'Activities', width: activitiesWidth },
+      { text: 'Date Conducted', width: dateWidth },
+      { text: 'MMT Members Involved', width: membersWidth },
+      { text: 'Methodology/ Other Remarks', width: remarksWidth },
+    ];
+
+    const headerTextHeights = headers.map((h) =>
+      doc.heightOfString(h.text, {
+        width: h.width - 10,
+        align: 'center',
+      }),
+    );
+
+    return Math.max(20, ...headerTextHeights) + 8; // Minimum 20px + 8px padding
+  };
+
+  const headerHeight = calculateHeaderHeight();
+
+  // Helper to draw the header
+  const drawHeader = (y: number) => {
+    doc
+      .strokeColor('#000000')
+      .lineWidth(0.5)
+      .font('Helvetica-Bold')
+      .fontSize(11);
+
+    // Top border
+    doc
+      .moveTo(left, y)
+      .lineTo(left + tableWidth, y)
+      .stroke();
+
+    // Left edge
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + headerHeight)
+      .stroke();
+    // Right edge
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + headerHeight)
+      .stroke();
+
+    // Vertical dividers
+    doc
+      .moveTo(dateX, y)
+      .lineTo(dateX, y + headerHeight)
+      .stroke();
+    doc
+      .moveTo(membersX, y)
+      .lineTo(membersX, y + headerHeight)
+      .stroke();
+    doc
+      .moveTo(remarksX, y)
+      .lineTo(remarksX, y + headerHeight)
+      .stroke();
+
+    // Bottom border
+    doc
+      .moveTo(left, y + headerHeight)
+      .lineTo(left + tableWidth, y + headerHeight)
+      .stroke();
+
+    // Draw header texts
+    const headers = [
+      { text: 'Activities', x: activitiesX, width: activitiesWidth },
+      { text: 'Date Conducted', x: dateX, width: dateWidth },
+      { text: 'MMT Members Involved', x: membersX, width: membersWidth },
+      {
+        text: 'Methodology/ Other Remarks',
+        x: remarksX,
+        width: remarksWidth,
+      },
+    ];
+
+    headers.forEach((header) => {
+      const textHeight = doc.heightOfString(header.text, {
+        width: header.width - 10,
+      });
+      const textY = y + (headerHeight - textHeight) / 2;
+      doc.text(header.text, header.x + 5, textY, {
+        width: header.width - 10,
+        align: 'center',
+      });
+    });
+
+    return y + headerHeight;
+  };
+
+  // Helper to draw the "Document Review of:" merged row
+  const drawDocumentReviewRow = (y: number) => {
+    doc.font('Helvetica-Bold').fontSize(11);
+    const rowHeight = 18;
+
+    // Check page break
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+      y = drawHeader(y);
+      doc.font('Helvetica-Bold').fontSize(11);
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke(); // Left
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke(); // Right
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke(); // Bottom
+
+    // Draw text
+    const text = 'Document Review of:';
+    const textHeight = doc.heightOfString(text, { width: tableWidth - 10 });
+    const textY = y + (rowHeight - textHeight) / 2;
+    doc.font('Helvetica');
+    doc.text(text, left + 5, textY, {
+      width: tableWidth - 10,
+      align: 'left',
+    });
+
+    return y + rowHeight;
+  };
+
+  // Helper to draw an activity row with sub-rows for each member
+  const drawActivityRowWithSubRows = (
+    y: number,
+    activityName: string,
+    date: string,
+    members: string[],
+    remarks: string,
+    options?: {
+      remarksMode?: 'activity' | 'perMember' | 'none';
+    },
+  ) => {
+    const remarksMode = options?.remarksMode ?? 'activity';
+    doc.font('Helvetica').fontSize(11);
+
+    const minSubRowHeight = 16; // Minimum height for each member sub-row
+
+    // Calculate individual heights for each member
+    const memberHeights = members.map((member) => {
+      // Split member string by " - " to separate name and role
+      const parts = member.split(' - ');
+      const name = parts[0];
+      const role = parts.length > 1 ? parts.slice(1).join(' - ') : '';
+
+      // Calculate height for bold name
+      doc.font('Helvetica-Bold').fontSize(11);
+      const nameHeight = doc.heightOfString(name, {
+        width: membersWidth - 10,
+      });
+
+      // Calculate height for regular role (if exists)
+      let roleHeight = 0;
+      if (role) {
+        doc.font('Helvetica').fontSize(11);
+        roleHeight = doc.heightOfString(role, {
+          width: membersWidth - 10,
+        });
+      }
+
+      const totalTextHeight = nameHeight + roleHeight;
+      return Math.max(minSubRowHeight, totalTextHeight + 6); // Add padding
+    });
+
+    // Calculate total height needed from members
+    const totalMemberRowsHeight = memberHeights.reduce((sum, h) => sum + h, 0);
+
+    // Also consider the height of the activity name itself, as it might wrap
+    const activityNameHeight = doc.heightOfString(activityName, {
+      width: activitiesWidth - 10,
+    });
+
+    // The total height is the max of the height required by members and the height required by the activity name
+    const totalSubRowsHeight = Math.max(
+      totalMemberRowsHeight,
+      activityNameHeight + 6, // Add padding to match member rows
+    );
+
+    // Check page break
+    if (y + totalSubRowsHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+      y = drawHeader(y);
+      doc.font('Helvetica').fontSize(11);
+    }
+
+    // Draw merged cells for Activity Name, Date, and Remarks
+    doc.strokeColor('#000000').lineWidth(0.5);
+
+    // Left border (Activity column)
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + totalSubRowsHeight)
+      .stroke();
+
+    // Right border of Activity column
+    doc
+      .moveTo(dateX, y)
+      .lineTo(dateX, y + totalSubRowsHeight)
+      .stroke();
+
+    // Right border of Date column
+    doc
+      .moveTo(membersX, y)
+      .lineTo(membersX, y + totalSubRowsHeight)
+      .stroke();
+
+    // Right border of Members column
+    doc
+      .moveTo(remarksX, y)
+      .lineTo(remarksX, y + totalSubRowsHeight)
+      .stroke();
+
+    // Right edge (end of Remarks column)
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + totalSubRowsHeight)
+      .stroke();
+
+    // Bottom border - avoid drawing across merged remarks column when not rendering per member
+    doc
+      .moveTo(left, y + totalSubRowsHeight)
+      .lineTo(remarksX, y + totalSubRowsHeight)
+      .stroke();
+
+    if (remarksMode !== 'none') {
+      doc
+        .moveTo(remarksX, y + totalSubRowsHeight)
+        .lineTo(left + tableWidth, y + totalSubRowsHeight)
+        .stroke();
+    }
+
+    // Draw Activity Name (vertically centered in merged cell)
+    const activityTextHeight = doc.heightOfString(activityName, {
+      width: activitiesWidth - 10,
+    });
+    const activityTextY = y + (totalSubRowsHeight - activityTextHeight) / 2;
+    doc.text(activityName, activitiesX + 5, activityTextY, {
+      width: activitiesWidth - 10,
+      align: 'left',
+    });
+
+    // Always draw merged Date cell (one date per activity)
+    const dateTextHeight = doc.heightOfString(date, {
+      width: dateWidth - 10,
+    });
+    const dateTextY = y + (totalSubRowsHeight - dateTextHeight) / 2;
+    doc.text(date, dateX + 5, dateTextY, {
+      width: dateWidth - 10,
+      align: 'center',
+    });
+
+    // Draw merged Remarks cell for entire activity
+    if (remarksMode === 'activity') {
+      const remarksTextHeight = doc.heightOfString(remarks, {
+        width: remarksWidth - 10,
+      });
+      const remarksTextY = y + (totalSubRowsHeight - remarksTextHeight) / 2;
+      doc.text(remarks, remarksX + 5, remarksTextY, {
+        width: remarksWidth - 10,
+        align: 'center',
+      });
+    }
+
+    // Draw sub-rows for each member
+    let currentY = y;
+    for (let i = 0; i < members.length; i++) {
+      const member = members[i];
+      const currentSubRowHeight = memberHeights[i];
+
+      // Draw horizontal line between sub-rows (except for the first one)
+      // Only draw between members column and remarks column (not through date column)
+      if (i > 0) {
+        if (remarksMode === 'activity' || remarksMode === 'none') {
+          // When remarks are merged, only draw line in members column
+          doc.moveTo(membersX, currentY).lineTo(remarksX, currentY).stroke();
+        } else {
+          // When remarks are not merged, draw line through members and remarks
+          doc
+            .moveTo(membersX, currentY)
+            .lineTo(left + tableWidth, currentY)
+            .stroke();
+        }
+      }
+
+      // Split member string by " - " to separate name and role
+      const parts = member.split(' - ');
+      const name = parts[0];
+      const role = parts.length > 1 ? parts.slice(1).join(' - ') : '';
+
+      // Calculate heights for vertical centering
+      doc.font('Helvetica-Bold').fontSize(11);
+      const nameHeight = doc.heightOfString(name, {
+        width: membersWidth - 10,
+      });
+
+      let roleHeight = 0;
+      if (role) {
+        doc.font('Helvetica').fontSize(11);
+        roleHeight = doc.heightOfString(role, {
+          width: membersWidth - 10,
+        });
+      }
+
+      const totalTextHeight = nameHeight + roleHeight;
+      const startY = currentY + (currentSubRowHeight - totalTextHeight) / 2;
+
+      // Draw member name in bold
+      doc.font('Helvetica-Bold').fontSize(11);
+      doc.text(name, membersX + 5, startY, {
+        width: membersWidth - 10,
+        align: 'center',
+        continued: false,
+      });
+
+      // Draw role in regular font on next line (if exists)
+      if (role) {
+        doc.font('Helvetica').fontSize(11);
+        doc.text(role, membersX + 5, startY + nameHeight, {
+          width: membersWidth - 10,
+          align: 'center',
+          continued: false,
+        });
+      }
+
+      // Draw remarks per member when requested
+      if (remarksMode === 'perMember') {
+        // Remarks cell (use activity remarks)
+        const remarksTextHeight = doc.heightOfString(remarks, {
+          width: remarksWidth - 10,
+        });
+        const remarksTextY =
+          currentY + (currentSubRowHeight - remarksTextHeight) / 2;
+        doc.text(remarks, remarksX + 5, remarksTextY, {
+          width: remarksWidth - 10,
+          align: 'center',
+        });
+      }
+
+      currentY += currentSubRowHeight;
+    }
+
+    return y + totalSubRowsHeight;
+  };
+
+  // Build activity rows
+  const activities = process.activities;
+  const globalDate = process.dateConducted || '';
+  const globalRemarksText =
+    (process.mergedMethodologyOrOtherRemarks ?? '').trim() || 'N/A';
+  const useSameDate = process.sameDateForAllActivities;
+
+  const activityRows: Array<{
+    name: string;
+    date: string;
+    members: string[];
+    remarks: string;
+    remarksMode?: 'activity' | 'perMember' | 'none';
+  }> = [];
+
+  if (activities?.complianceWithEccConditionsCommitments) {
+    const activity = activities.complianceWithEccConditionsCommitments;
+    activityRows.push({
+      name: 'Compliance with ECC Conditions/ Commitments',
+      date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+      members: activity.mmtMembersInvolved || [],
+      remarks: activity.remarks || '',
+      remarksMode: 'none',
+    });
+  }
+
+  if (activities?.complianceWithEpepAepepConditions) {
+    const activity = activities.complianceWithEpepAepepConditions;
+    activityRows.push({
+      name: 'Compliance with EPEP/ AEPEP Conditions',
+      date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+      members: activity.mmtMembersInvolved || [],
+      remarks: activity.remarks || '',
+      remarksMode: 'none',
+    });
+  }
+
+  if (activities?.siteOcularValidation) {
+    const activity = activities.siteOcularValidation;
+    activityRows.push({
+      name: 'Site Ocular/ Validation',
+      date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+      members: activity.mmtMembersInvolved || [],
+      remarks: activity.remarks || '',
+      remarksMode: 'none',
+    });
+  }
+
+  if (activities?.siteValidationConfirmatorySampling) {
+    const activity = activities.siteValidationConfirmatorySampling;
+    if (activity.applicable === false || activity.none === true) {
+      activityRows.push({
+        name: 'Site Validation/ Confirmatory Sampling',
+        date: 'N/A',
+        members: ['None'],
+        remarks: activity.remarks || '',
+        remarksMode: 'none',
+      });
+    } else {
+      activityRows.push({
+        name: 'Site Validation/ Confirmatory Sampling',
+        date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+        members: activity.mmtMembersInvolved || [],
+        remarks: activity.remarks || '',
+        remarksMode: 'none',
+      });
+    }
+  }
+
+  // Render the table
+  let y = doc.y;
+  y = drawHeader(y);
+  y = drawDocumentReviewRow(y);
+
+  let remarksColumnStartY: number | null = null;
+
+  for (const row of activityRows) {
+    if (remarksColumnStartY === null) {
+      remarksColumnStartY = y;
+    }
+    const remarksMode = row.remarksMode ?? 'none';
+    y = drawActivityRowWithSubRows(
+      y,
+      row.name,
+      row.date,
+      row.members,
+      row.remarks,
+      { remarksMode },
+    );
+  }
+
+  if (remarksColumnStartY !== null) {
+    const remarksColumnHeight = y - remarksColumnStartY;
+    if (remarksColumnHeight > 0) {
+      doc.font('Helvetica').fontSize(11);
+      const remarksTextHeight = doc.heightOfString(globalRemarksText, {
+        width: remarksWidth - 10,
+        align: 'center',
+      });
+      const remarksTextY =
+        remarksColumnStartY +
+        Math.max(0, (remarksColumnHeight - remarksTextHeight) / 2);
+
+      // Draw enclosing borders for merged remarks column
+      doc.moveTo(remarksX, remarksColumnStartY);
+      doc.lineTo(remarksX, y).stroke();
+
+      doc.moveTo(left + tableWidth, remarksColumnStartY);
+      doc.lineTo(left + tableWidth, y).stroke();
+
+      // Top border (connect to previous section)
+      doc.moveTo(remarksX, remarksColumnStartY);
+      doc.lineTo(left + tableWidth, remarksColumnStartY).stroke();
+
+      // Bottom border of merged column
+      doc.moveTo(remarksX, y);
+      doc.lineTo(left + tableWidth, y).stroke();
+
+      doc.text(globalRemarksText, remarksX + 5, remarksTextY, {
+        width: remarksWidth - 10,
+        align: 'center',
+      });
+    }
+  }
+
+  doc.y = y;
+  doc.moveDown(1);
+}
+
+/**
+ * Draw Compliance to Project Location and Coverage Limits table
+ * 5 columns: Parameter | Specification | W/in Specs? (Y/N) | Remarks
+ */
+export function drawComplianceToProjectLocationTable(
+  doc: PDFKit.PDFDocument,
+  data: {
+    parameters?: Array<{
+      name?: string;
+      specification?: string | Record<string, string | undefined>;
+      withinSpecs?: boolean;
+      remarks?: string | Record<string, string | undefined>;
+    }>;
+    otherComponents?: Array<{
+      specification?: string;
+      withinSpecs?: boolean;
+      remarks?: string;
+    }>;
+  },
+): void {
+  if (!data || (!data.parameters && !data.otherComponents)) return;
+
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+
+  // Column widths: Parameter 20%, Specification 35%, W/in Specs Y 8%, W/in Specs N 8%, Remarks 29%
+  const colWidths = [
+    tableWidth * 0.2, // Parameter
+    tableWidth * 0.35, // Specification
+    tableWidth * 0.08, // Y
+    tableWidth * 0.08, // N
+    tableWidth * 0.29, // Remarks
+  ];
+
+  const rowMinHeight = 14;
+  const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+  // Helper to get X position for a column
+  const getColX = (colIndex: number): number => {
+    return left + colWidths.slice(0, colIndex).reduce((sum, w) => sum + w, 0);
+  };
+
+  let y = doc.y;
+
+  const headerRow1Height = 20;
+  const headerRow2Height = 20;
+  const totalHeaderHeight = headerRow1Height + headerRow2Height;
+
+  // Helper function to draw the complex header
+  const drawHeader = (yPos: number) => {
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(11)
+      .strokeColor('#000000')
+      .lineWidth(0.5);
+
+    // --- Draw Borders ---
+    // Outer borders
+    doc
+      .moveTo(left, yPos)
+      .lineTo(left + tableWidth, yPos)
+      .stroke(); // Top
+    doc
+      .moveTo(left, yPos)
+      .lineTo(left, yPos + totalHeaderHeight)
+      .stroke(); // Left
+    doc
+      .moveTo(left + tableWidth, yPos)
+      .lineTo(left + tableWidth, yPos + totalHeaderHeight)
+      .stroke(); // Right
+    doc
+      .moveTo(left, yPos + totalHeaderHeight)
+      .lineTo(left + tableWidth, yPos + totalHeaderHeight)
+      .stroke(); // Bottom
+
+    // Main vertical dividers (spanning both rows)
+    doc
+      .moveTo(getColX(1), yPos)
+      .lineTo(getColX(1), yPos + totalHeaderHeight)
+      .stroke(); // After Parameter
+    doc
+      .moveTo(getColX(2), yPos)
+      .lineTo(getColX(2), yPos + totalHeaderHeight)
+      .stroke(); // After Specification
+    doc
+      .moveTo(getColX(4), yPos)
+      .lineTo(getColX(4), yPos + totalHeaderHeight)
+      .stroke(); // After W/in Specs block (before Remarks)
+
+    // Horizontal divider inside W/in Specs?
+    doc
+      .moveTo(getColX(2), yPos + headerRow1Height)
+      .lineTo(getColX(4), yPos + headerRow1Height)
+      .stroke();
+
+    // Vertical divider between Y and N (only in second row)
+    doc
+      .moveTo(getColX(3), yPos + headerRow1Height)
+      .lineTo(getColX(3), yPos + totalHeaderHeight)
+      .stroke();
+
+    // --- Draw Text ---
+    // Merged Row Headers (Parameter, Specification, Remarks)
+    const mergedHeaders = [
+      { text: 'Parameter', colIndex: 0 },
+      { text: 'Specification', colIndex: 1 },
+      {
+        text: 'Remarks – Description of Actual Implementation ',
+        colIndex: 4,
+      },
+    ];
+
+    for (const header of mergedHeaders) {
+      const textHeight = doc.heightOfString(header.text, {
+        width: colWidths[header.colIndex] - 10,
+        align: 'center',
+      });
+      const textY = yPos + (totalHeaderHeight - textHeight) / 2;
+      doc.text(header.text, getColX(header.colIndex) + 5, textY, {
+        width: colWidths[header.colIndex] - 10,
+        align: 'center',
+      });
+    }
+
+    // W/in Specs? (Row 1)
+    const wInSpecsText = 'W/in Specs?';
+    const wInSpecsWidth = colWidths[2] + colWidths[3];
+    const wInSpecsTextHeight = doc.heightOfString(wInSpecsText, {
+      width: wInSpecsWidth - 10,
+      align: 'center',
+    });
+    const wInSpecsTextY = yPos + (headerRow1Height - wInSpecsTextHeight) / 2;
+    doc.text(wInSpecsText, getColX(2) + 5, wInSpecsTextY, {
+      width: wInSpecsWidth - 10,
+      align: 'center',
+    });
+
+    // Y (Row 2)
+    const yText = 'Y';
+    const yTextHeight = doc.heightOfString(yText, {
+      width: colWidths[2] - 10,
+      align: 'center',
+    });
+    const yTextY =
+      yPos + headerRow1Height + (headerRow2Height - yTextHeight) / 2;
+    doc.text(yText, getColX(2) + 5, yTextY, {
+      width: colWidths[2] - 10,
+      align: 'center',
+    });
+
+    // N (Row 2)
+    const nText = 'N';
+    const nTextHeight = doc.heightOfString(nText, {
+      width: colWidths[3] - 10,
+      align: 'center',
+    });
+    const nTextY =
+      yPos + headerRow1Height + (headerRow2Height - nTextHeight) / 2;
+    doc.text(nText, getColX(3) + 5, nTextY, {
+      width: colWidths[3] - 10,
+      align: 'center',
+    });
+
+    return yPos + totalHeaderHeight;
+  };
+
+  y = drawHeader(y);
+
+  // Data rows
+  doc.font('Helvetica').fontSize(11);
+
+  const rows: Array<{
+    parameter: string;
+    specification: string | Record<string, string | undefined>;
+    withinSpecs: boolean;
+    remarks: string | Record<string, string | undefined>;
+    hasSubRows: boolean;
+  }> = [];
+
+  // Add parameters
+  if (data.parameters) {
+    for (const param of data.parameters) {
+      const hasSubSpec =
+        typeof param.specification === 'object' && param.specification !== null;
+      const hasSubRemarks =
+        typeof param.remarks === 'object' && param.remarks !== null;
+      rows.push({
+        parameter: param.name || '',
+        specification: param.specification || '',
+        withinSpecs: param.withinSpecs ?? false,
+        remarks: param.remarks || '',
+        hasSubRows: hasSubSpec || hasSubRemarks,
+      });
+    }
+  }
+
+  // Add otherComponents
+  if (data.otherComponents) {
+    for (const comp of data.otherComponents) {
+      rows.push({
+        parameter: 'Other Components',
+        specification: comp.specification || '',
+        withinSpecs: comp.withinSpecs ?? false,
+        remarks: comp.remarks || '',
+        hasSubRows: false,
+      });
+    }
+  }
+
+  for (const row of rows) {
+    if (row.hasSubRows) {
+      // Handle rows with sub-specifications
+      const specEntries =
+        typeof row.specification === 'object'
+          ? Object.entries(row.specification)
+          : [];
+
+      // Calculate heights for each sub-row
+      const subRowHeights: number[] = [];
+      const maxSubRows = specEntries.length;
+
+      // Helper function to format text with bullets
+      const formatWithBullets = (text: string): string => {
+        // Split by semicolons or existing bullet points (not commas to preserve sentences)
+        const items = text
+          .split(/;|▪/)
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+
+        // If there's only one item or text is very short, return as is
+        if (items.length <= 1 || text.length < 50) {
+          return text;
+        }
+
+        // Join with bullets (using simple bullet that will render)
+        return items.map((item) => `• ${item}`).join('\n');
+      };
+
+      for (let i = 0; i < maxSubRows; i++) {
+        const specEntry = specEntries[i];
+
+        let specHeight = 0;
+        if (specEntry) {
+          const [key, value] = specEntry;
+          const specText = formatWithBullets(value || '');
+          const keyLabel =
+            key.charAt(0).toUpperCase() +
+            key.slice(1) +
+            (key.includes(':') ? '' : ':');
+
+          // Calculate label height
+          const labelHeight = doc.heightOfString(keyLabel, {
+            width: colWidths[1] - 10,
+            align: 'center',
+          });
+
+          // Calculate text height (use left alignment for bullets)
+          const textHeight = doc.heightOfString(specText, {
+            width: colWidths[1] - 10,
+            align: 'left',
+          });
+
+          // Total height includes label + line spacing + text
+          specHeight = labelHeight + 4 + textHeight;
+        }
+
+        subRowHeights.push(Math.max(rowMinHeight, specHeight) + 10);
+      }
+
+      const totalRowHeight = subRowHeights.reduce((sum, h) => sum + h, 0);
+
+      // Page break if needed
+      if (y + totalRowHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+        y = drawHeader(y);
+        doc.font('Helvetica').fontSize(11);
+      }
+
+      // Draw merged Parameter column
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc
+        .moveTo(left, y)
+        .lineTo(left, y + totalRowHeight)
+        .stroke();
+      doc
+        .moveTo(getColX(1), y)
+        .lineTo(getColX(1), y + totalRowHeight)
+        .stroke();
+
+      const paramTextHeight = doc.heightOfString(row.parameter, {
+        width: colWidths[0] - 10,
+        align: 'center',
+      });
+      const paramTextY = y + (totalRowHeight - paramTextHeight) / 2;
+      doc.text(row.parameter, getColX(0) + 5, paramTextY, {
+        width: colWidths[0] - 10,
+        align: 'center',
+      });
+
+      // Draw merged W/in Specs columns
+      doc
+        .moveTo(getColX(2), y)
+        .lineTo(getColX(2), y + totalRowHeight)
+        .stroke();
+      doc
+        .moveTo(getColX(3), y)
+        .lineTo(getColX(3), y + totalRowHeight)
+        .stroke();
+      doc
+        .moveTo(getColX(4), y)
+        .lineTo(getColX(4), y + totalRowHeight)
+        .stroke();
+
+      // Draw checkmark in merged W/in Specs area
+      if (row.withinSpecs) {
+        const checkmarkSize = 4;
+        const centerX = getColX(2) + colWidths[2] / 2;
+        const centerY = y + totalRowHeight / 2;
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      } else {
+        const checkmarkSize = 4;
+        const centerX = getColX(3) + colWidths[3] / 2;
+        const centerY = y + totalRowHeight / 2;
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      }
+
+      // Render remarks as merged cell (always, whether string or object)
+      let remarksText = '';
+      if (typeof row.remarks === 'string') {
+        remarksText = formatWithBullets(row.remarks);
+      } else if (typeof row.remarks === 'object' && row.remarks !== null) {
+        // If remarks is an object, concatenate all values
+        remarksText = Object.values(row.remarks)
+          .filter((val) => val)
+          .map((val) => formatWithBullets(val as string))
+          .join('\n\n');
+      }
+
+      if (remarksText.length > 0) {
+        const remarksTextHeight = doc.heightOfString(remarksText, {
+          width: colWidths[4] - 10,
+          align: 'left',
+        });
+        const remarksTextY = y + (totalRowHeight - remarksTextHeight) / 2;
+        doc.font('Helvetica').fontSize(11);
+        doc.text(remarksText, getColX(4) + 5, remarksTextY, {
+          width: colWidths[4] - 10,
+          align: 'left',
+        });
+      }
+
+      // Draw sub-rows
+      let currentY = y;
+      for (let i = 0; i < maxSubRows; i++) {
+        const subRowHeight = subRowHeights[i];
+        const specEntry = specEntries[i];
+
+        // Draw horizontal divider only in Specification column (except for first row)
+        if (i > 0) {
+          doc
+            .moveTo(getColX(1), currentY)
+            .lineTo(getColX(2), currentY)
+            .stroke();
+        }
+
+        // Specification sub-row
+        if (specEntry) {
+          const [key, value] = specEntry;
+          const specText = formatWithBullets(value || '');
+
+          // Format the key as a label (capitalize first letter, add colon if not present)
+          const keyLabel =
+            key.charAt(0).toUpperCase() +
+            key.slice(1) +
+            (key.includes(':') ? '' : ':');
+
+          // Calculate label height
+          const labelHeight = doc.heightOfString(keyLabel, {
+            width: colWidths[1] - 10,
+            align: 'center',
+          });
+
+          // Calculate text height
+          const textHeight = doc.heightOfString(specText, {
+            width: colWidths[1] - 10,
+            align: 'left',
+          });
+
+          // Calculate total content height and position
+          const totalContentHeight = labelHeight + 4 + textHeight;
+          const startY = currentY + (subRowHeight - totalContentHeight) / 2;
+
+          // Draw label in bold, centered
+          doc.font('Helvetica-Bold').fontSize(10);
+          doc.text(keyLabel, getColX(1) + 5, startY, {
+            width: colWidths[1] - 10,
+            align: 'center',
+            continued: false,
+          });
+
+          // Draw horizontal line below label (full width)
+          const lineY = startY + labelHeight + 2;
+          doc
+            .strokeColor('#000000')
+            .lineWidth(0.5)
+            .moveTo(getColX(1), lineY)
+            .lineTo(getColX(1) + colWidths[1], lineY)
+            .stroke();
+
+          // Draw value in regular font, left-aligned
+          doc.font('Helvetica').fontSize(11);
+          doc.text(specText, getColX(1) + 5, lineY + 2, {
+            width: colWidths[1] - 10,
+            align: 'left',
+          });
+        }
+
+        currentY += subRowHeight;
+      }
+
+      // Draw bottom border and right edge
+      doc
+        .moveTo(left, y + totalRowHeight)
+        .lineTo(left + tableWidth, y + totalRowHeight)
+        .stroke();
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + totalRowHeight)
+        .stroke();
+
+      y += totalRowHeight;
+    } else {
+      // Simple row without sub-specifications
+      const specText =
+        typeof row.specification === 'string' ? row.specification : '';
+      const remarksText = typeof row.remarks === 'string' ? row.remarks : '';
+
+      const paramHeight = doc.heightOfString(row.parameter, {
+        width: colWidths[0] - 10,
+        align: 'center',
+      });
+      const specHeight = doc.heightOfString(specText, {
+        width: colWidths[1] - 10,
+        align: 'center',
+      });
+      const remarksHeight = doc.heightOfString(remarksText, {
+        width: colWidths[4] - 10,
+        align: 'center',
+      });
+      const rowHeight =
+        Math.max(rowMinHeight, paramHeight, specHeight, remarksHeight) + 6;
+
+      // Page break if needed
+      if (y + rowHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+        y = drawHeader(y);
+        doc.font('Helvetica').fontSize(11);
+      }
+
+      // Draw row borders
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc
+        .moveTo(left, y)
+        .lineTo(left, y + rowHeight)
+        .stroke();
+
+      for (let i = 1; i <= 4; i++) {
+        doc
+          .moveTo(getColX(i), y)
+          .lineTo(getColX(i), y + rowHeight)
+          .stroke();
+      }
+
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left, y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      // Draw cell content
+      const paramTextHeight = doc.heightOfString(row.parameter, {
+        width: colWidths[0] - 10,
+        align: 'center',
+      });
+      const paramTextY = y + (rowHeight - paramTextHeight) / 2;
+      doc.text(row.parameter, getColX(0) + 5, paramTextY, {
+        width: colWidths[0] - 10,
+        align: 'center',
+      });
+
+      const specTextHeight = doc.heightOfString(specText, {
+        width: colWidths[1] - 10,
+        align: 'center',
+      });
+      const specTextY = y + (rowHeight - specTextHeight) / 2;
+      doc.text(specText, getColX(1) + 5, specTextY, {
+        width: colWidths[1] - 10,
+        align: 'center',
+      });
+
+      // Draw checkmark
+      if (row.withinSpecs) {
+        const checkmarkSize = 4;
+        const centerX = getColX(2) + colWidths[2] / 2;
+        const centerY = y + rowHeight / 2;
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      } else {
+        const checkmarkSize = 4;
+        const centerX = getColX(3) + colWidths[3] / 2;
+        const centerY = y + rowHeight / 2;
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      }
+
+      const remarksTextHeight = doc.heightOfString(remarksText, {
+        width: colWidths[4] - 10,
+        align: 'center',
+      });
+      const remarksTextY = y + (rowHeight - remarksTextHeight) / 2;
+      doc.text(remarksText, getColX(4) + 5, remarksTextY, {
+        width: colWidths[4] - 10,
+        align: 'center',
+      });
+
+      y += rowHeight;
+    }
+  }
+
+  doc.y = y;
+  doc.moveDown(0.5);
+}

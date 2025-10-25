@@ -94,7 +94,7 @@ export class CmvrController {
             dateOfIssuance: 'Apr. 30, 2012',
           },
           {
-            permitHolderName: 'Maechellenie C.\nCabanilla',
+            permitHolderName: 'Maechellenie C.Cabanilla',
             eccNumber: 'ECC No. 010609190137-1103 (1st amendment)',
             dateOfIssuance: 'Aug. 26, 2022',
           },
@@ -292,7 +292,7 @@ export class CmvrController {
             dateUpdated: 'July 11, 2025',
           },
           {
-            permitHolderName: 'Maechellenie C.\nCabanilla',
+            permitHolderName: 'Maechellenie C.Cabanilla',
             savingsAccountNumber: 'LBP 4051-0023-64',
             amountDeposited: '45,226.72',
             dateUpdated: 'July 11, 2025',
@@ -336,7 +336,7 @@ export class CmvrController {
         ],
         monitoringTrustFundUnified: [
           {
-            permitHolderName: 'Omnico Natural\nResources, Inc.',
+            permitHolderName: 'Omnico NaturalResources, Inc.',
             savingsAccountNumber: '0545-012835-030',
             amountDeposited: '2,250,401.06',
             dateUpdated: 'June 30, 2025',
@@ -392,7 +392,7 @@ export class CmvrController {
             dateUpdated: 'July 11, 2025',
           },
           {
-            permitHolderName: 'Maechellenie C.\nCabanilla',
+            permitHolderName: 'Maechellenie C.Cabanilla',
             savingsAccountNumber: '1821-2280-65',
             amountDeposited: '-',
             dateUpdated: '-',
@@ -429,6 +429,157 @@ export class CmvrController {
             specify: '',
             na: true,
           },
+        },
+        processDocumentationOfActivitiesUndertaken: {
+          dateConducted: 'September 9-10, 2025',
+          mergedMethodologyOrOtherRemarks:
+            'Ocular inspection of Quarry Areas, Siltation Ponds, Motorpool, Solid and Hazardous Waste Storage Area, Nursery, Port, Rehabilitation and Tree Planting Areas.',
+          sameDateForAllActivities: false,
+          activities: {
+            complianceWithEccConditionsCommitments: {
+              mmtMembersInvolved: [
+                'Angelica D. De Vera - MMT Head',
+                'Daryl S. Saguid - EMB Rep.',
+                'Nestor G. Rosales - CENRO-CSEIN Rep.',
+                'Ariel Rosario - PENRO IN Rep.',
+                'Arnold Ansagay - PGIN Rep.',
+              ],
+            },
+            complianceWithEpepAepepConditions: {
+              mmtMembersInvolved: [
+                'Edison D. Bolibol - Brgy. 8 – San Antonio Rep.',
+                'Jorge A. Ramos - Brgy. 9 – San Lorenzo Rep.',
+                'Jansen Agner - Brgy. 17 – San Felipe Rep.',
+                'Leonisa S. Asuncion - Brgy. 10 – San Miguel Rep.',
+              ],
+            },
+            siteOcularValidation: {
+              na: false,
+              mmtMembersInvolved: [
+                'Wilfred H. Sebastian - Brgy. 19 – Sto. Tomas Rep.',
+                'Reynaldo Malaqui - Brgy. 21 – San Marcos',
+                'Glenda H. Tamayo - Zanjera de Masiit, NGO Rep.',
+                'Julie Ann L. Cainglit - Brgy. Gabut Norte, Badoc',
+                'Roque B. Palmes - Mining Engineer, ONRI',
+              ],
+            },
+            siteValidationConfirmatorySampling: {
+              dateConducted: 'September 10, 2025',
+              applicable: true,
+              none: false,
+              mmtMembersInvolved: [
+                'Julie Ann L. Cainglit - Brgy. Gabut Norte, Badoc',
+                'Roque B. Palmes - Mining Engineer, ONRI',
+              ],
+              remarks:
+                'No confirmatory sampling required based on field observations.',
+            },
+          },
+        },
+        complianceToProjectLocationAndCoverageLimits: {
+          parameters: [
+            {
+              name: 'Project Location',
+              specification:
+                'Refer to attached ONRI Quarry Tenement Map and Project Location',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Project Area (ha)',
+              specification: 'ISAG Permit – 19.99 has. per permit',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Capital Cost (Php)',
+              specification: '750,000.00 per ISAG Permitted Area',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Type of Minerals',
+              specification: 'Sand and Gravel',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Mining Method',
+              specification: 'Quarrying',
+              remarks: 'Open Cast Quarrying',
+              withinSpecs: true,
+            },
+            {
+              name: 'Production',
+              specification: 'Refer to Annex A',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Mine Life',
+              specification: '5 years (not including replenishment)',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Mineral Reserves/Resource',
+              specification: '150,000 cu.m. of river aggregates each Permit',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Access/Transportation',
+              specification: 'Laoag-Sarrat-Apayao Road',
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Power Supply',
+              specification: {
+                plant:
+                  'Ilocos Norte Electric Cooperative; 2 units diesel-powered generators with 850 KVA nameplate rating; 1 unit BH PC 450',
+                port: '2 units 540 hp Daihatsu GPST-26D diesel-powered generator with rating of 600 KVA INEC power source.',
+              },
+              remarks: '',
+              withinSpecs: true,
+            },
+            {
+              name: 'Mining Equipment',
+              specification: {
+                plant:
+                  '3 units Backhoe 0.8 cu.m. Bucket capacity; 1-unit Backhoe 0.25 cu.m. bucket capacity; Wheel Loaders – Komatsu WA500 – 1 unit; Dump Trucks (10 wheeler) – at least 10 units; Water Tanker – 2 units; Submersible Pump – 2 sets',
+                port: 'Backhoe PC400 – 6 units; Payloader – 3 units; Tug Boats (1,800 hp/ 3,200 hp) – 2 units; Crane – 1 unit; Water Truck – 1 unit; Power Generator (600 KVA) – 2 units.',
+              },
+              remarks:
+                'Backhoe PC400 – 6 units; Payloader – 3 units; Tug Boats (1,800 hp/ 3,200 hp) – 2 units; Crane – 1 unit   ',
+              withinSpecs: true,
+            },
+            {
+              name: 'Work Force',
+              specification: {
+                employees:
+                  'Regular = 95; Probationary = 11; Casual = 1; Contractual = 0.',
+              },
+              remarks:
+                'Contractor – Gaspar Trucking: 3 excavators; 1 front end loader; 10 dump trucks',
+              withinSpecs: true,
+            },
+            {
+              name: 'Development/Utilization Schedule',
+              specification: 'Haulage/ Access roads developed',
+              remarks: '',
+              withinSpecs: true,
+            },
+          ],
+          otherComponents: [
+            {
+              name: 'Other Components',
+              specification: 'Shipment',
+              remarks:
+                'Shipped out1Q 2025: Sand = 43,564.10 MT Gravel = 3,259.06 MT Total = 46,823.16 MT2Q 2025: Sand = 34,794.50 MT Gravel = 7,630.00 MT Total = 46,823.16 MTOverall Total: Sand = 78,358.6 MT Gravel = 10,889.06 MT Total = 89,247.66 MT',
+              withinSpecs: true,
+            },
+          ],
         },
       };
 
