@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
 import { StorageModule } from './storage/storage.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { CmvrModule } from './cmvr/cmvr.module';
+import { EccModule } from './ecc/ecc.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { CmvrModule } from './cmvr/cmvr.module';
     StorageModule,
     AttendanceModule,
     CmvrModule,
+    EccModule,
   ],
   controllers: [AppController],
   providers: [
