@@ -4,6 +4,7 @@ import {
   toConditionRows,
 
 } from './ecc-pdf.helpers';
+import { func } from 'joi';
 
 
 // Shape for the normalized generalInfo JSON we agreed on
@@ -13,8 +14,10 @@ export interface ECCConditionInfo {
     condition?: string;
     status?: string; // ISO or human readable
     remarks?: string;
+    remark_list?: string[];
+    section?: number;
   }>;
-  permitHolder?: string;
+  permit_holders?: string[];
 
 }
 @Injectable()
@@ -40,7 +43,6 @@ export class ECCPdfGeneratorService {
 
    try {
         doc.moveDown(1);
-        const leftMargin = doc.page.margins.left; // Use the correct margin (72)
 
 
         
@@ -52,28 +54,31 @@ export class ECCPdfGeneratorService {
             doc.moveDown(0.5);
       
 
-    const conditionlist = toConditionRows(eccReport.conditions);
-    console.log('Condition Rows:',conditionlist); // Debug log to verify rows
-    // Get the full width of the table area
-    const tableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-          
-            // Draw the Permit Holder name spanning the full width
-          doc.font('Times-Roman', 12);
+    const conditionsBySection = toConditionRows(eccReport.conditions);
+for (const [index, conditionlistRows] of conditionsBySection.entries()) {
+           doc.font('Times-Roman', 12);
             doc.table(
               {
                 defaultStyle: { border: 0.5, borderColor: "gray" },
          
-                data: [[eccReport.permitHolder]],
+                data: [[eccReport.permit_holders[index]]],
               
-})
+          })
             doc.table(
               {defaultStyle: { border: 0.5, borderColor: "gray" },
 
                 columnStyles: [ 45, 178,  22, 22, 22,179],
                           
-              data: conditionlist
+              data: conditionlistRows
               
-})
+          })
+
+          doc.moveDown(1);
+    }
+
+
+     
+        
         }
         
         // 🎯 FIX 4: Ensure doc.end() and return await pdfPromise are outside the try/catch 

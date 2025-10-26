@@ -31,7 +31,7 @@ model ECCReport {
   createdById    String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  permitHolder   String?
+  permit_holders String[]
   createdBy      User?    @relation("UserCreatedECCReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_ecc_report_creator")
@@ -113,6 +113,8 @@ model ECCCondition {
   ECCReportID      String?   @db.VarChar
   nested_to        String?   @db.VarChar
   condition_number Int?
+  remark_list      String[]
+  section          Int       @db.SmallInt
 }
 
 enum UserRole {

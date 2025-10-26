@@ -17,10 +17,11 @@ export class CreateEccReportDto {
   // Columns matching the image: createdById (text)
 
   // Columns matching the image: permit_holder (text)
-  @ApiProperty({ description: 'Name of the permit holder/proponent' })
-  @IsString()
-  permitHolder: string; 
-
+ @ApiPropertyOptional({ description: 'List of remarks/observations related to the condition' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Ensures every element in the array is a string
+  permit_holders?: string[];
 
 
  @IsArray() // 👈 CORRECT: The field must be an array

@@ -1,6 +1,6 @@
 // dto/ecc-condition.dto.ts
 
-import { IsString, IsOptional, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsUUID } from 'class-validator';
 export class CreateEccConditionDto {
@@ -19,6 +19,12 @@ export class CreateEccConditionDto {
     @IsString()
     remarks?: string;
 
+    @ApiPropertyOptional({ description: 'List of remarks/observations related to the condition' })
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true }) // Ensures every element in the array is a string
+    remark_list?: string[];
+
     // ECCReportID is typically set by the backend via the relation, so we omit it here.
     @ApiPropertyOptional({ description: 'ID of the parent condition this entry is nested under' })
     @IsOptional()
@@ -26,7 +32,10 @@ export class CreateEccConditionDto {
     nested_to?: string;
 
     @ApiPropertyOptional({ description: 'The number identifying the condition' })
-    @IsOptional()
     @IsInt()
     condition_number?: number;
+
+    @ApiPropertyOptional({ description: 'The number identifying the condition' })
+    @IsInt()
+    section?: number;
 }
