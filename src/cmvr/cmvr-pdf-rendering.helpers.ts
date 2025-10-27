@@ -1894,7 +1894,7 @@ export function drawComplianceToProjectLocationTable(
   let y = doc.y;
 
   const headerRow1Height = 20;
-  const headerRow2Height = 20;
+  const headerRow2Height = 30;
   const totalHeaderHeight = headerRow1Height + headerRow2Height;
 
   // Helper function to draw the complex header
@@ -2407,6 +2407,2169 @@ export function drawComplianceToProjectLocationTable(
 
       y += rowHeight;
     }
+  }
+
+  doc.y = y;
+  doc.moveDown(0.5);
+}
+
+/**
+ * Draw Compliance to Impact Management Commitments table
+ */
+export function drawComplianceToImpactManagementCommitmentsTable(
+  doc: PDFKit.PDFDocument,
+  data: {
+    constructionInfo?: Array<{
+      areaName?: string;
+      commitments?: Array<{
+        plannedMeasure?: string;
+        actualObservation?: string;
+        isEffective?: boolean | null;
+        recommendations?: string;
+      }>;
+    }>;
+    implementationOfEnvironmentalImpactControlStrategies?: Array<{
+      areaName?: string;
+      commitments?: Array<{
+        plannedMeasure?: string;
+        actualObservation?: string;
+        isEffective?: boolean | null;
+        recommendations?: string;
+      }>;
+    }>;
+    overallComplianceAssessment?: string;
+  },
+): void {
+  if (!data) return;
+
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+
+  // Column widths: Project Impacts 20%, Planned 20%, Actual Observation 20%, Y 8%, N 8%, Recommendations 24%
+  const colWidths = [
+    tableWidth * 0.17, // Project Impacts
+    tableWidth * 0.25, // Planned
+    tableWidth * 0.21, // Actual Observation
+    tableWidth * 0.065, // Y
+    tableWidth * 0.065, // N
+    tableWidth * 0.24, // Recommendations
+  ];
+
+  const rowMinHeight = 14;
+  const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+  // Helper to get X position for a column
+  const getColX = (colIndex: number): number => {
+    return left + colWidths.slice(0, colIndex).reduce((sum, w) => sum + w, 0);
+  };
+
+  let y = doc.y;
+
+  // Draw header
+  const drawHeader = (yPos: number): number => {
+    const headerRow1Height = 20; // Increased from 20 to 25
+    const headerRow2Height = 30;
+    const totalHeaderHeight = headerRow1Height + headerRow2Height;
+
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(11)
+      .strokeColor('#000000')
+      .lineWidth(0.5);
+
+    // --- Draw Borders ---
+    // Outer borders
+    doc
+      .moveTo(left, yPos)
+      .lineTo(left + tableWidth, yPos)
+      .stroke(); // Top
+    doc
+      .moveTo(left, yPos)
+      .lineTo(left, yPos + totalHeaderHeight)
+      .stroke(); // Left
+    doc
+      .moveTo(left + tableWidth, yPos)
+      .lineTo(left + tableWidth, yPos + totalHeaderHeight)
+      .stroke(); // Right
+    doc
+      .moveTo(left, yPos + totalHeaderHeight)
+      .lineTo(left + tableWidth, yPos + totalHeaderHeight)
+      .stroke(); // Bottom
+
+    // Main vertical dividers (spanning both rows)
+    doc
+      .moveTo(getColX(1), yPos)
+      .lineTo(getColX(1), yPos + totalHeaderHeight)
+      .stroke(); // After Project Impacts
+    doc
+      .moveTo(getColX(3), yPos)
+      .lineTo(getColX(3), yPos + totalHeaderHeight)
+      .stroke(); // After Actual Observation
+    doc
+      .moveTo(getColX(5), yPos)
+      .lineTo(getColX(5), yPos + totalHeaderHeight)
+      .stroke(); // After N (before Recommendations)
+
+    // Horizontal divider inside Mitigating Measures and Effective?
+    doc
+      .moveTo(getColX(1), yPos + headerRow1Height)
+      .lineTo(getColX(3), yPos + headerRow1Height)
+      .stroke(); // Mitigating Measures divider
+    doc
+      .moveTo(getColX(3), yPos + headerRow1Height)
+      .lineTo(getColX(5), yPos + headerRow1Height)
+      .stroke(); // Effective? divider
+
+    // Vertical divider between Planned and Actual Observation (only in second row)
+    doc
+      .moveTo(getColX(2), yPos + headerRow1Height)
+      .lineTo(getColX(2), yPos + totalHeaderHeight)
+      .stroke();
+
+    // Vertical divider between Y and N (only in second row)
+    doc
+      .moveTo(getColX(4), yPos + headerRow1Height)
+      .lineTo(getColX(4), yPos + totalHeaderHeight)
+      .stroke();
+
+    // --- Draw Header Text ---
+    // Row 1 merged headers (Project Impacts, Mitigating Measures, Effective?, Recommendations)
+    const row1Headers = [
+      { text: 'Project Impacts', colIndex: 0 },
+      { text: 'Recommendations', colIndex: 5 },
+    ];
+
+    for (const header of row1Headers) {
+      const textHeight = doc.heightOfString(header.text, {
+        width: colWidths[header.colIndex] - 10,
+        align: 'center',
+      });
+      const textY = yPos + (totalHeaderHeight - textHeight) / 2;
+      doc.text(header.text, getColX(header.colIndex) + 5, textY, {
+        width: colWidths[header.colIndex] - 10,
+        align: 'center',
+      });
+    }
+
+    // Mitigating Measures/ Control Strategies (Row 1, merged across cols 1-2)
+    const mitigatingMeasuresText = 'Mitigating Measures/ Control Strategies';
+    const mitigatingMeasuresWidth = colWidths[1] + colWidths[2];
+    const mitigatingMeasuresTextHeight = doc.heightOfString(
+      mitigatingMeasuresText,
+      {
+        width: mitigatingMeasuresWidth - 10,
+        align: 'center',
+      },
+    );
+    const mitigatingMeasuresTextY =
+      yPos + (headerRow1Height - mitigatingMeasuresTextHeight) / 2;
+    doc.text(mitigatingMeasuresText, getColX(1) + 5, mitigatingMeasuresTextY, {
+      width: mitigatingMeasuresWidth - 10,
+      align: 'center',
+    });
+
+    // Effective? (Row 1, merged across cols 3-4)
+    const effectiveText = 'Effective?';
+    const effectiveWidth = colWidths[3] + colWidths[4];
+    const effectiveTextHeight = doc.heightOfString(effectiveText, {
+      width: effectiveWidth - 10,
+      align: 'center',
+    });
+    const effectiveTextY = yPos + (headerRow1Height - effectiveTextHeight) / 2;
+    doc.text(effectiveText, getColX(3) + 5, effectiveTextY, {
+      width: effectiveWidth - 10,
+      align: 'center',
+    });
+
+    // Row 2 sub-headers (Planned, Actual Observation, Y, N)
+    const plannedText = 'Planned';
+    const plannedTextHeight = doc.heightOfString(plannedText, {
+      width: colWidths[1] - 10,
+      align: 'center',
+    });
+    const plannedTextY =
+      yPos + headerRow1Height + (headerRow2Height - plannedTextHeight) / 2;
+    doc.text(plannedText, getColX(1) + 5, plannedTextY, {
+      width: colWidths[1] - 10,
+      align: 'center',
+    });
+
+    const actualObservationText = 'Actual Observation';
+    const actualObservationTextHeight = doc.heightOfString(
+      actualObservationText,
+      {
+        width: colWidths[2] - 10,
+        align: 'center',
+      },
+    );
+    const actualObservationTextY =
+      yPos +
+      headerRow1Height +
+      (headerRow2Height - actualObservationTextHeight) / 2;
+    doc.text(actualObservationText, getColX(2) + 5, actualObservationTextY, {
+      width: colWidths[2] - 10,
+      align: 'center',
+    });
+
+    const yText = 'Y';
+    const yTextHeight = doc.heightOfString(yText, {
+      width: colWidths[3] - 10,
+      align: 'center',
+    });
+    const yTextY =
+      yPos + headerRow1Height + (headerRow2Height - yTextHeight) / 2;
+    doc.text(yText, getColX(3) + 5, yTextY, {
+      width: colWidths[3] - 10,
+      align: 'center',
+    });
+
+    const nText = 'N';
+    const nTextHeight = doc.heightOfString(nText, {
+      width: colWidths[4] - 10,
+      align: 'center',
+    });
+    const nTextY =
+      yPos + headerRow1Height + (headerRow2Height - nTextHeight) / 2;
+    doc.text(nText, getColX(4) + 5, nTextY, {
+      width: colWidths[4] - 10,
+      align: 'center',
+    });
+
+    return yPos + totalHeaderHeight;
+  };
+
+  // Initial header
+  y = drawHeader(y);
+
+  // Helper function to process an area with its commitments
+  const processArea = (
+    areaName: string,
+    commitments: Array<{
+      plannedMeasure?: string;
+      actualObservation?: string;
+      isEffective?: boolean | null;
+      recommendations?: string;
+    }>,
+    useExtraPadding: boolean = false,
+  ) => {
+    if (commitments.length === 0) return;
+
+    doc.font('Helvetica').fontSize(11);
+
+    // Calculate areaName height first
+    doc.font('Helvetica-Bold').fontSize(11);
+    const areaNameHeight = doc.heightOfString(areaName, {
+      width: colWidths[0] - 10,
+      align: 'center',
+    });
+    doc.font('Helvetica').fontSize(11);
+
+    // Calculate heights for all commitment rows
+    const rowHeights: number[] = [];
+    for (let i = 0; i < commitments.length; i++) {
+      const commitment = commitments[i];
+      const isFirstRow = i === 0;
+
+      const plannedText = commitment.plannedMeasure || '';
+      const actualText = commitment.actualObservation || '';
+      const recommendationsText = commitment.recommendations || '';
+
+      // Check if plannedText already has numbering, if not add it
+      const hasNumbering = /^\d+\./.test(plannedText);
+      const numberedPlannedText = hasNumbering
+        ? plannedText
+        : plannedText
+          ? `${i + 1}. ${plannedText}`
+          : '';
+      const plannedHeight = doc.heightOfString(numberedPlannedText, {
+        width: colWidths[1] - 10,
+        align: 'left',
+      });
+      const actualHeight = doc.heightOfString(actualText, {
+        width: colWidths[2] - 10,
+        align: 'left',
+      });
+      const recommendationsHeight = doc.heightOfString(recommendationsText, {
+        width: colWidths[5] - 10,
+        align: 'left',
+      });
+
+      // For first row, ensure it's tall enough for the areaName text
+      const rowHeight = isFirstRow
+        ? Math.max(
+            rowMinHeight,
+            areaNameHeight + 6,
+            plannedHeight,
+            actualHeight,
+            recommendationsHeight,
+          ) + 6
+        : Math.max(
+            rowMinHeight,
+            plannedHeight,
+            actualHeight,
+            recommendationsHeight,
+          ) + 6;
+      rowHeights.push(rowHeight);
+    }
+
+    // Don't do page break check for entire area - handle it per row instead
+    let currentAreaSegmentStartY = y; // Track start of current page's segment
+    let hasDrawnAreaNameOnCurrentPage = false; // Track if we've drawn areaName on current page
+
+    // Draw each commitment row
+    let isFirstRowOnPage = true; // Track if this is the first row on current page
+    for (let i = 0; i < commitments.length; i++) {
+      const commitment = commitments[i];
+      const rowHeight = rowHeights[i];
+
+      const plannedText = commitment.plannedMeasure || '';
+      const actualText = commitment.actualObservation || '';
+      const recommendationsText = commitment.recommendations || '';
+
+      // Page break check for each row
+      if (y + rowHeight > bottomLimit) {
+        // Close the merged areaName cell on current page
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc.moveTo(left, currentAreaSegmentStartY).lineTo(left, y).stroke();
+        doc
+          .moveTo(getColX(1), currentAreaSegmentStartY)
+          .lineTo(getColX(1), y)
+          .stroke();
+        // Draw bottom border
+        doc
+          .moveTo(left, y)
+          .lineTo(left + tableWidth, y)
+          .stroke();
+
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+        // Don't redraw header - continue table on new page
+        doc.font('Helvetica').fontSize(11);
+
+        isFirstRowOnPage = true; // Reset flag for new page
+        currentAreaSegmentStartY = y; // Reset segment start for new page
+        hasDrawnAreaNameOnCurrentPage = false; // Need to redraw areaName on new page
+      }
+
+      // Draw areaName cell borders and text for current page segment (only once per page)
+      if (!hasDrawnAreaNameOnCurrentPage) {
+        // Calculate remaining rows on this page
+        let remainingHeightOnPage = 0;
+        for (let j = i; j < commitments.length; j++) {
+          if (y + remainingHeightOnPage + rowHeights[j] > bottomLimit) {
+            break; // Stop if next row won't fit
+          }
+          remainingHeightOnPage += rowHeights[j];
+        }
+
+        // Draw merged areaName cell borders for this page segment
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc
+          .moveTo(left, currentAreaSegmentStartY)
+          .lineTo(left, currentAreaSegmentStartY + remainingHeightOnPage)
+          .stroke();
+        doc
+          .moveTo(getColX(1), currentAreaSegmentStartY)
+          .lineTo(getColX(1), currentAreaSegmentStartY + remainingHeightOnPage)
+          .stroke();
+
+        // Draw areaName text at the top
+        const topPadding = useExtraPadding ? 20 : 3;
+        doc.font('Helvetica-Bold').fontSize(11);
+        doc.text(areaName, left + 5, currentAreaSegmentStartY + topPadding, {
+          width: colWidths[0] - 10,
+          align: 'center',
+        });
+        doc.font('Helvetica').fontSize(11); // Reset to normal font
+
+        hasDrawnAreaNameOnCurrentPage = true;
+      }
+
+      // Calculate text heights for vertical centering
+      const plannedHeight = doc.heightOfString(plannedText, {
+        width: colWidths[1] - 10,
+        align: 'left',
+      });
+      const actualHeight = doc.heightOfString(actualText, {
+        width: colWidths[2] - 10,
+        align: 'left',
+      });
+      const recommendationsHeight = doc.heightOfString(recommendationsText, {
+        width: colWidths[5] - 10,
+        align: 'left',
+      });
+
+      // Draw top border (only for first row on each page)
+      if (isFirstRowOnPage) {
+        doc
+          .moveTo(left, y)
+          .lineTo(left + tableWidth, y)
+          .stroke();
+        isFirstRowOnPage = false; // Clear flag after drawing
+      }
+
+      // Draw vertical borders for columns 2-6 (Planned through Recommendations)
+      for (let colIdx = 2; colIdx <= 5; colIdx++) {
+        doc
+          .moveTo(getColX(colIdx), y)
+          .lineTo(getColX(colIdx), y + rowHeight)
+          .stroke();
+      } // Draw right edge
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      // Draw bottom border for this row (only from column 1 onwards, not across the merged areaName cell)
+      doc
+        .moveTo(getColX(1), y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      // Draw cell content
+      if (plannedText) {
+        const textY = y + (rowHeight - plannedHeight) / 2;
+        // Add numbering only if text doesn't already start with a number
+        const hasNumbering = /^\d+\./.test(plannedText);
+        const displayText = hasNumbering
+          ? plannedText
+          : `${i + 1}. ${plannedText}`;
+        doc.text(displayText, getColX(1) + 5, textY, {
+          width: colWidths[1] - 10,
+          align: 'left',
+        });
+      }
+
+      if (actualText) {
+        const textY = y + (rowHeight - actualHeight) / 2;
+        doc.text(actualText, getColX(2) + 5, textY, {
+          width: colWidths[2] - 10,
+          align: 'left',
+        });
+      }
+
+      // Draw checkmark for Effective?
+      if (commitment.isEffective === true) {
+        const checkmarkSize = 4;
+        const centerX = getColX(3) + colWidths[3] / 2;
+        const centerY = y + rowHeight / 2;
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      } else if (commitment.isEffective === false) {
+        const checkmarkSize = 4;
+        const centerX = getColX(4) + colWidths[4] / 2;
+        const centerY = y + rowHeight / 2;
+        doc
+          .save()
+          .lineWidth(1.2)
+          .moveTo(centerX - checkmarkSize, centerY)
+          .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+          .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+          .stroke()
+          .restore();
+      }
+
+      if (recommendationsText) {
+        const textY = y + (rowHeight - recommendationsHeight) / 2;
+        doc.text(recommendationsText, getColX(5) + 5, textY, {
+          width: colWidths[5] - 10,
+          align: 'left',
+        });
+      }
+
+      y += rowHeight;
+    }
+  };
+
+  // Helper function to draw a section header row (merged cells, centered text, regular font)
+  const drawSectionHeader = (headerText: string) => {
+    doc.font('Helvetica').fontSize(11);
+
+    // Calculate row height
+    const textHeight = doc.heightOfString(headerText, {
+      width: tableWidth - 10,
+      align: 'center',
+    });
+    const rowHeight = Math.max(rowMinHeight, textHeight) + 6;
+
+    // Page break if needed
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+      y = drawHeader(y);
+      doc.font('Helvetica').fontSize(11);
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+
+    // Top border
+    doc
+      .moveTo(left, y)
+      .lineTo(left + tableWidth, y)
+      .stroke();
+
+    // Left edge
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke();
+
+    // Right edge
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    // Bottom border
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    // Draw centered text (merged across all columns)
+    const textY = y + (rowHeight - textHeight) / 2;
+    doc.text(headerText, left + 5, textY, {
+      width: tableWidth - 10,
+      align: 'center',
+    });
+
+    y += rowHeight;
+  };
+
+  // Process constructionInfo
+  if (data.constructionInfo && data.constructionInfo.length > 0) {
+    for (const area of data.constructionInfo) {
+      const areaName = area.areaName || '';
+      const commitments = area.commitments || [];
+      processArea(areaName, commitments);
+    }
+  }
+
+  // Add section header before implementationOfEnvironmentalImpactControlStrategies
+  if (
+    data.implementationOfEnvironmentalImpactControlStrategies &&
+    data.implementationOfEnvironmentalImpactControlStrategies.length > 0
+  ) {
+    drawSectionHeader(
+      'Implementation of Environmental Impact Control Strategies',
+    );
+  }
+
+  // Process implementationOfEnvironmentalImpactControlStrategies
+  if (
+    data.implementationOfEnvironmentalImpactControlStrategies &&
+    data.implementationOfEnvironmentalImpactControlStrategies.length > 0
+  ) {
+    for (const area of data.implementationOfEnvironmentalImpactControlStrategies) {
+      const areaName = area.areaName || '';
+      const commitments = area.commitments || [];
+      processArea(areaName, commitments, true); // Use extra padding for implementation sections
+    }
+  }
+
+  // Display Overall Compliance Assessment as a single merged row
+  if (data.overallComplianceAssessment) {
+    const labelText = 'Overall Compliance Assessment: ';
+    const valueText = data.overallComplianceAssessment;
+
+    // Calculate combined text width for centering
+    doc.font('Helvetica').fontSize(11);
+    const labelWidth = doc.widthOfString(labelText);
+    doc.font('Helvetica-Bold').fontSize(11);
+    const valueWidth = doc.widthOfString(valueText);
+    const totalTextWidth = labelWidth + valueWidth;
+
+    // Calculate row height
+    doc.font('Helvetica').fontSize(11);
+    const textHeight = doc.heightOfString(labelText, {
+      width: tableWidth - 10,
+      align: 'left',
+    });
+    const rowHeight = Math.max(rowMinHeight, textHeight) + 6;
+
+    // Page break if needed
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+      y = drawHeader(y);
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+
+    // Top border
+    doc
+      .moveTo(left, y)
+      .lineTo(left + tableWidth, y)
+      .stroke();
+
+    // Left edge
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke();
+
+    // Right edge
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    // Bottom border
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    // Calculate starting X position to center the combined text
+    const startX = left + (tableWidth - totalTextWidth) / 2;
+    const textY = y + (rowHeight - textHeight) / 2;
+
+    // Draw label text (regular font)
+    doc.font('Helvetica').fontSize(11);
+    doc.text(labelText, startX, textY, {
+      continued: true,
+      lineBreak: false,
+    });
+
+    // Draw value text (bold font)
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text(valueText, {
+      lineBreak: false,
+    });
+
+    y += rowHeight;
+  }
+
+  doc.y = y;
+  doc.moveDown(0.5);
+}
+
+/**
+ * Draw the Air Quality Impact Assessment table with 9 columns including nested headers
+ */
+export function drawAirQualityImpactAssessmentTable(
+  doc: PDFKit.PDFDocument,
+  data: {
+    quarry?: string;
+    plant?: string;
+    port?: string;
+    parameters?: Array<{
+      name?: string;
+      results?: {
+        inSMR?: {
+          current?: string;
+          previous?: string;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      eqpl?: {
+        redFlag?: string;
+        action?: string;
+        limit?: string;
+      };
+      remarks?: string;
+    }>;
+    samplingDate?: string;
+    weatherAndWind?: string;
+    explanationForConfirmatorySampling?: string;
+    overallAssessment?: string;
+  },
+) {
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+  const bottomMargin = doc.page.margins.bottom || 50;
+  const bottomLimit = doc.page.height - bottomMargin - 30;
+
+  let y = doc.y;
+
+  // Display quarry, plant, and port as text paragraphs with indentation
+  const textIndent = 60; // Indent from left margin
+
+  if (data.quarry) {
+    // Bold label, regular text for value
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Quarry: ', left + textIndent, y, {
+      continued: true,
+      lineBreak: false,
+    });
+    doc.font('Helvetica').fontSize(11);
+    doc.text(data.quarry);
+    y = doc.y;
+    doc.moveDown(0.3);
+    y = doc.y;
+  }
+
+  if (data.plant) {
+    // Bold label, regular text for value
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Plant: ', left + textIndent, y, {
+      continued: true,
+      lineBreak: false,
+    });
+    doc.font('Helvetica').fontSize(11);
+    doc.text(data.plant);
+    y = doc.y;
+    doc.moveDown(0.3);
+    y = doc.y;
+  }
+
+  if (data.port) {
+    // Bold label, regular text for value
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Port: ', left + textIndent, y, {
+      continued: true,
+      lineBreak: false,
+    });
+    doc.font('Helvetica').fontSize(11);
+    doc.text(data.port);
+    y = doc.y;
+    doc.moveDown(1.5);
+    y = doc.y;
+  }
+
+  // Check if we need to add a page before the table
+  if (y + 100 > bottomLimit) {
+    doc.addPage();
+    y = doc.page.margins.top || 50;
+  }
+
+  // Define column structure: 9 columns total
+  // Parameter | Results (4 cols) | EQPL (3 cols) | Remarks
+  // Results: inSMR (Current, Previous), mmtConfirmatorySampling (Current, Previous)
+  // EQPL: Red Flag, Action, Limit
+  const colWidths = [
+    tableWidth * 0.12, // Parameter
+    tableWidth * 0.11, // inSMR Current
+    tableWidth * 0.11, // inSMR Previous
+    tableWidth * 0.11, // MMT Current
+    tableWidth * 0.11, // MMT Previous
+    tableWidth * 0.11, // Red Flag
+    tableWidth * 0.11, // Action
+    tableWidth * 0.11, // Limit
+    tableWidth * 0.11, // Remarks
+  ];
+
+  const getColX = (colIndex: number): number =>
+    left + colWidths.slice(0, colIndex).reduce((s, w) => s + w, 0);
+
+  // Draw three-row header
+  const header1Height = 20; // "Results" and "EQPL" row
+  const header2Height = 40; // "inSMR" and "mmtConfirmatorySampling" row
+  const header3Height = 20; // Individual column names row
+  const totalHeaderHeight = header1Height + header2Height + header3Height;
+
+  const drawHeader = (startY: number): number => {
+    let currentY = startY;
+    doc.font('Helvetica-Bold').fontSize(10);
+    doc.strokeColor('#000000').lineWidth(0.5);
+
+    // Row 1: Parameter (merged 3 rows) | Results (4 cols merged) | EQPL (3 cols merged) | Remarks (merged 3 rows)
+    // Top border
+    doc
+      .moveTo(left, currentY)
+      .lineTo(left + tableWidth, currentY)
+      .stroke();
+
+    // Draw Parameter cell (spans all 3 rows)
+    const paramX = getColX(0);
+    const paramWidth = colWidths[0];
+    doc
+      .moveTo(paramX, currentY)
+      .lineTo(paramX, currentY + totalHeaderHeight)
+      .stroke();
+    doc
+      .moveTo(paramX + paramWidth, currentY)
+      .lineTo(paramX + paramWidth, currentY + totalHeaderHeight)
+      .stroke();
+    const paramTextHeight = doc.heightOfString('Parameter', {
+      width: paramWidth - 4,
+      align: 'center',
+    });
+    doc.text(
+      'Parameter',
+      paramX + 2,
+      currentY + (totalHeaderHeight - paramTextHeight) / 2,
+      {
+        width: paramWidth - 4,
+        align: 'center',
+      },
+    );
+
+    // Draw Results cell (row 1 only)
+    const resultsX = getColX(1);
+    const resultsWidth =
+      colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4];
+    doc
+      .moveTo(resultsX, currentY)
+      .lineTo(resultsX, currentY + header1Height)
+      .stroke();
+    doc
+      .moveTo(resultsX + resultsWidth, currentY)
+      .lineTo(resultsX + resultsWidth, currentY + header1Height)
+      .stroke();
+    const resultsTextHeight = doc.heightOfString('Results', {
+      width: resultsWidth - 4,
+      align: 'center',
+    });
+    doc.text(
+      'Results',
+      resultsX + 2,
+      currentY + (header1Height - resultsTextHeight) / 2,
+      {
+        width: resultsWidth - 4,
+        align: 'center',
+      },
+    );
+
+    // Draw EQPL cell (spans rows 1, 2, and 3) with sub-columns
+    const eqplX = getColX(5);
+    const eqplWidth = colWidths[5] + colWidths[6] + colWidths[7];
+    doc
+      .moveTo(eqplX, currentY)
+      .lineTo(eqplX, currentY + totalHeaderHeight)
+      .stroke();
+    doc
+      .moveTo(eqplX + eqplWidth, currentY)
+      .lineTo(eqplX + eqplWidth, currentY + totalHeaderHeight)
+      .stroke();
+
+    // Draw EQPL title at the top (bold)
+    doc.font('Helvetica-Bold').fontSize(10);
+    const eqplTitleHeight = doc.heightOfString('EQPL', {
+      width: eqplWidth - 4,
+      align: 'center',
+    });
+    doc.text('EQPL', eqplX + 2, currentY + 4, {
+      width: eqplWidth - 4,
+      align: 'center',
+    });
+
+    // Draw horizontal line below EQPL title to separate from sub-columns
+    const eqplTitleBottomY = currentY + eqplTitleHeight + 8;
+    doc
+      .moveTo(eqplX, eqplTitleBottomY)
+      .lineTo(eqplX + eqplWidth, eqplTitleBottomY)
+      .stroke();
+
+    // Draw internal vertical borders for EQPL sub-columns (only below the title line)
+    for (let i = 6; i <= 7; i++) {
+      const colX = getColX(i);
+      doc
+        .moveTo(colX, eqplTitleBottomY)
+        .lineTo(colX, currentY + totalHeaderHeight)
+        .stroke();
+    }
+
+    // Draw sub-column labels (Red Flag, Action, Limit) below EQPL title
+    const eqplSubLabels = ['Red Flag', 'Action', 'Limit\n(DENR std.\nPM 2.5)'];
+    const eqplSubAreaHeight = currentY + totalHeaderHeight - eqplTitleBottomY;
+
+    for (let i = 0; i < 3; i++) {
+      const colIndex = 5 + i;
+      const colX = getColX(colIndex);
+      const colWidth = colWidths[colIndex];
+
+      doc.font('Helvetica-Bold').fontSize(11);
+
+      // Calculate text height for vertical centering
+      const textHeight = doc.heightOfString(eqplSubLabels[i], {
+        width: colWidth - 4,
+        align: 'center',
+      });
+
+      // Center vertically within the sub-area
+      const centeredY = eqplTitleBottomY + (eqplSubAreaHeight - textHeight) / 2;
+
+      doc.text(eqplSubLabels[i], colX + 2, centeredY, {
+        width: colWidth - 4,
+        align: 'center',
+      });
+    }
+
+    doc.font('Helvetica-Bold').fontSize(10); // Reset to bold for other headers
+
+    // Draw Remarks cell (spans all 3 rows)
+    const remarksX = getColX(8);
+    const remarksWidth = colWidths[8];
+    doc
+      .moveTo(remarksX, currentY)
+      .lineTo(remarksX, currentY + totalHeaderHeight)
+      .stroke();
+    doc
+      .moveTo(remarksX + remarksWidth, currentY)
+      .lineTo(remarksX + remarksWidth, currentY + totalHeaderHeight)
+      .stroke();
+    const remarksTextHeight = doc.heightOfString('Remarks', {
+      width: remarksWidth - 4,
+      align: 'center',
+    });
+    doc.text(
+      'Remarks',
+      remarksX + 2,
+      currentY + (totalHeaderHeight - remarksTextHeight) / 2,
+      {
+        width: remarksWidth - 4,
+        align: 'center',
+      },
+    );
+
+    // Bottom border of row 1
+    doc
+      .moveTo(resultsX, currentY + header1Height)
+      .lineTo(resultsX + resultsWidth, currentY + header1Height)
+      .stroke();
+
+    currentY += header1Height;
+
+    // Row 2: inSMR (2 cols merged) | mmtConfirmatorySampling (2 cols merged)
+    const row2Cells = [
+      {
+        text: 'In SMR c/o Geosphere Technologies, Inc.',
+        x: getColX(1),
+        width: colWidths[1] + colWidths[2],
+        colSpan: 2,
+      },
+      {
+        text: 'MMT Confirmatory Sampling',
+        x: getColX(3),
+        width: colWidths[3] + colWidths[4],
+        colSpan: 2,
+      },
+    ];
+
+    row2Cells.forEach((cell) => {
+      // Left border
+      doc
+        .moveTo(cell.x, currentY)
+        .lineTo(cell.x, currentY + header2Height)
+        .stroke();
+      // Right border
+      doc
+        .moveTo(cell.x + cell.width, currentY)
+        .lineTo(cell.x + cell.width, currentY + header2Height)
+        .stroke();
+      // Text
+      const textHeight = doc.heightOfString(cell.text, {
+        width: cell.width - 4,
+        align: 'center',
+      });
+      doc.text(
+        cell.text,
+        cell.x + 2,
+        currentY + (header2Height - textHeight) / 2,
+        {
+          width: cell.width - 4,
+          align: 'center',
+        },
+      );
+    });
+
+    // Bottom border of row 2
+    doc
+      .moveTo(resultsX, currentY + header2Height)
+      .lineTo(resultsX + resultsWidth, currentY + header2Height)
+      .stroke();
+
+    currentY += header2Height;
+
+    // Row 3: Current | Previous | Current | Previous (only for Results columns)
+    const row3Headers = ['Current', 'Previous', 'Current', 'Previous'];
+
+    for (let i = 0; i < row3Headers.length; i++) {
+      const colIndex = i + 1; // Start from column 1 (after Parameter)
+      const colX = getColX(colIndex);
+      const colWidth = colWidths[colIndex];
+
+      // Left border
+      doc
+        .moveTo(colX, currentY)
+        .lineTo(colX, currentY + header3Height)
+        .stroke();
+      // Right border
+      doc
+        .moveTo(colX + colWidth, currentY)
+        .lineTo(colX + colWidth, currentY + header3Height)
+        .stroke();
+
+      // Text
+      const textHeight = doc.heightOfString(row3Headers[i], {
+        width: colWidth - 4,
+        align: 'center',
+      });
+      doc.text(
+        row3Headers[i],
+        colX + 2,
+        currentY + (header3Height - textHeight) / 2,
+        {
+          width: colWidth - 4,
+          align: 'center',
+        },
+      );
+    }
+
+    // Bottom border of row 3 (full width)
+    doc
+      .moveTo(left, currentY + header3Height)
+      .lineTo(left + tableWidth, currentY + header3Height)
+      .stroke();
+
+    currentY += header3Height;
+
+    return currentY;
+  };
+
+  // Draw initial header
+  y = drawHeader(y);
+
+  // Draw parameter rows
+  doc.font('Helvetica').fontSize(10);
+
+  if (data.parameters && data.parameters.length > 0) {
+    for (const param of data.parameters) {
+      const rowData = [
+        param.name || '',
+        param.results?.inSMR?.current || '',
+        param.results?.inSMR?.previous || '',
+        param.results?.mmtConfirmatorySampling?.current || '',
+        param.results?.mmtConfirmatorySampling?.previous || '',
+        param.eqpl?.redFlag || '',
+        param.eqpl?.action || '',
+        param.eqpl?.limit || '',
+        param.remarks || '',
+      ];
+
+      // Calculate row height based on content
+      const cellHeights = rowData.map((text, idx) =>
+        doc.heightOfString(text, {
+          width: colWidths[idx] - 4,
+          align: 'center',
+        }),
+      );
+      const rowHeight = Math.max(14, ...cellHeights) + 4;
+
+      // Check if we need a page break
+      if (y + rowHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+        y = drawHeader(y);
+      }
+
+      // Draw row
+      for (let i = 0; i < rowData.length; i++) {
+        const colX = getColX(i);
+        const colWidth = colWidths[i];
+
+        // Left border
+        doc
+          .moveTo(colX, y)
+          .lineTo(colX, y + rowHeight)
+          .stroke();
+        // Right border
+        doc
+          .moveTo(colX + colWidth, y)
+          .lineTo(colX + colWidth, y + rowHeight)
+          .stroke();
+
+        // Text - bold for parameter name (column 0), regular for others
+        if (i === 0) {
+          doc.font('Helvetica-Bold').fontSize(10);
+        } else {
+          doc.font('Helvetica').fontSize(10);
+        }
+
+        const textHeight = doc.heightOfString(rowData[i], {
+          width: colWidth - 4,
+          align: 'center',
+        });
+        doc.text(rowData[i], colX + 2, y + (rowHeight - textHeight) / 2, {
+          width: colWidth - 4,
+          align: 'center',
+        });
+      }
+
+      // Reset font
+      doc.font('Helvetica').fontSize(10);
+
+      // Bottom border
+      doc
+        .moveTo(left, y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      y += rowHeight;
+    }
+  }
+
+  // Draw the 4 additional rows (full width, centered text)
+  const additionalRows = [
+    { label: 'Date/ time of sampling:', value: data.samplingDate || '' },
+    { label: 'Weather and wind direction:', value: data.weatherAndWind || '' },
+    {
+      label:
+        'Explanation of why confirmatory sampling was conducted for specific parameter in the sampling station:',
+      value: data.explanationForConfirmatorySampling || '',
+    },
+    { label: 'Overall Assessment:', value: data.overallAssessment || '' },
+  ];
+
+  doc.font('Helvetica').fontSize(10);
+
+  for (const row of additionalRows) {
+    const isOverallAssessment = row.label === 'Overall Assessment:';
+
+    // For Overall Assessment, we need to handle bold value separately
+    if (isOverallAssessment) {
+      // Calculate combined width for positioning
+      const labelWidth = doc.widthOfString(row.label);
+      const valueWidth = doc.font('Helvetica-Bold').widthOfString(row.value);
+      const totalWidth = labelWidth + doc.widthOfString(' ') + valueWidth;
+
+      const textHeight = Math.max(
+        doc.font('Helvetica').heightOfString(row.label, {
+          width: tableWidth - 10,
+        }),
+        doc.font('Helvetica-Bold').heightOfString(row.value, {
+          width: tableWidth - 10,
+        }),
+      );
+      const rowHeight = Math.max(14, textHeight) + 4;
+
+      // Check if we need a page break
+      if (y + rowHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+      }
+
+      // Draw borders
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc
+        .moveTo(left, y)
+        .lineTo(left, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left, y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      // Calculate starting X to center the text
+      const startX = left + (tableWidth - totalWidth) / 2;
+      const textY = y + (rowHeight - textHeight) / 2;
+
+      // Draw label (regular)
+      doc.font('Helvetica').fontSize(10);
+      doc.text(row.label, startX, textY, {
+        continued: true,
+        lineBreak: false,
+      });
+
+      // Draw space
+      doc.text(' ', {
+        continued: true,
+        lineBreak: false,
+      });
+
+      // Draw value (bold)
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.text(row.value, {
+        lineBreak: false,
+      });
+
+      y += rowHeight;
+    } else {
+      // Regular rows with normal text
+      const combinedText = `${row.label} ${row.value}`;
+      const textHeight = doc.heightOfString(combinedText, {
+        width: tableWidth - 10,
+        align: 'left',
+      });
+      const rowHeight = Math.max(14, textHeight) + 4;
+
+      // Check if we need a page break
+      if (y + rowHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+      }
+
+      // Draw borders
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc
+        .moveTo(left, y)
+        .lineTo(left, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left, y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      // Text (centered)
+      doc.font('Helvetica').fontSize(10);
+      doc.text(combinedText, left + 5, y + (rowHeight - textHeight) / 2, {
+        width: tableWidth - 10,
+        align: 'left',
+      });
+
+      y += rowHeight;
+    }
+  }
+
+  doc.y = y;
+  doc.moveDown(0.5);
+}
+
+/**
+ * Draw the Water Quality Impact Assessment table
+ */
+export function drawWaterQualityImpactAssessmentTable(
+  doc: PDFKit.PDFDocument,
+  data: {
+    quarry?: string;
+    plant?: string;
+    parameters?: Array<{
+      name?: string;
+      result?: {
+        internalMonitoring?: {
+          month?: string;
+          readings?: Array<{
+            label?: string;
+            current_mgL?: number;
+            previous_mgL?: number;
+          }>;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      denrStandard?: {
+        redFlag?: string;
+        action?: string;
+        limit_mgL?: number;
+      };
+      remark?: string;
+    }>;
+    samplingDate?: string;
+    weatherAndWind?: string;
+    explanationForConfirmatorySampling?: string;
+    overallAssessment?: string;
+  },
+) {
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+  const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+  let y = doc.y;
+
+  // Quarry text
+  if (data.quarry) {
+    const textIndent = 60;
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Quarry: ', left + textIndent, y, {
+      continued: true,
+      lineBreak: false,
+    });
+    doc.font('Helvetica').fontSize(11);
+    doc.text(data.quarry);
+    y = doc.y;
+  }
+
+  // Plant text
+  if (data.plant) {
+    const textIndent = 60;
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Plant: ', left + textIndent, y, {
+      continued: true,
+      lineBreak: false,
+    });
+    doc.font('Helvetica').fontSize(11);
+    doc.text(data.plant);
+    y = doc.y;
+  }
+
+  doc.moveDown(2);
+  y = doc.y;
+
+  // Column structure: Parameter | Month | Current (mg/L) | Previous (mg/L) | MMT Current | MMT Previous | Red Flag | Action | Limit | Remark
+  const parameterWidth = tableWidth * 0.12;
+  const monthWidth = tableWidth * 0.08;
+  const currentWidth = tableWidth * 0.14;
+  const previousWidth = tableWidth * 0.14;
+  const mmtCurrentWidth = tableWidth * 0.09;
+  const mmtPreviousWidth = tableWidth * 0.09;
+  const redFlagWidth = tableWidth * 0.08;
+  const actionWidth = tableWidth * 0.08;
+  const limitWidth = tableWidth * 0.08;
+  const remarksWidth = tableWidth * 0.1;
+
+  // Calculate X positions
+  const parameterX = left;
+  const monthX = parameterX + parameterWidth;
+  const currentX = monthX + monthWidth;
+  const previousX = currentX + currentWidth;
+  const mmtCurrentX = previousX + previousWidth;
+  const mmtPreviousX = mmtCurrentX + mmtCurrentWidth;
+  const redFlagX = mmtPreviousX + mmtPreviousWidth;
+  const actionX = redFlagX + redFlagWidth;
+  const limitX = actionX + actionWidth;
+  const remarksX = limitX + limitWidth;
+
+  // Draw the header (3 rows)
+  const headerRow1Height = 18;
+  const headerRow2Height = 43;
+  const headerRow3Height = 30;
+  const totalHeaderHeight =
+    headerRow1Height + headerRow2Height + headerRow3Height;
+
+  const currentY = y;
+
+  // Row 1: Parameter | Result | DENR Standard | Remark
+  doc.font('Helvetica-Bold').fontSize(11).strokeColor('#000000').lineWidth(0.5);
+
+  // Outer borders for row 1
+  doc
+    .moveTo(left, currentY)
+    .lineTo(left + tableWidth, currentY)
+    .stroke(); // Top
+
+  // Left edge of table
+  doc
+    .moveTo(parameterX, currentY)
+    .lineTo(parameterX, currentY + totalHeaderHeight)
+    .stroke();
+
+  // Parameter column border (right edge) - merged 3 rows, no internal lines
+  doc
+    .moveTo(monthX, currentY)
+    .lineTo(monthX, currentY + totalHeaderHeight)
+    .stroke();
+
+  // Parameter text (centered vertically in merged cell)
+  const parameterText = 'Parameter';
+  const parameterTextHeight = doc.heightOfString(parameterText, {
+    width: parameterWidth - 5,
+    align: 'center',
+  });
+  const parameterCenteredY =
+    currentY + (totalHeaderHeight - parameterTextHeight) / 2;
+  doc.text(parameterText, parameterX + 2, parameterCenteredY, {
+    width: parameterWidth - 4,
+    align: 'center',
+  });
+
+  // Result header (spans Month + Current + Previous + MMT Current + MMT Previous)
+  const resultWidth =
+    monthWidth +
+    currentWidth +
+    previousWidth +
+    mmtCurrentWidth +
+    mmtPreviousWidth;
+  const resultX = monthX;
+  doc
+    .moveTo(resultX + resultWidth, currentY)
+    .lineTo(resultX + resultWidth, currentY + headerRow1Height)
+    .stroke();
+  doc.text('Result', resultX + 2, currentY + 4, {
+    width: resultWidth - 4,
+    align: 'center',
+  });
+
+  // DENR Standard header (spans Red Flag + Action + Limit) - merged with row 2, no line below
+  const denrWidth = redFlagWidth + actionWidth + limitWidth;
+  const denrX = redFlagX;
+  const denrMergedHeight = headerRow1Height + headerRow2Height;
+  doc
+    .moveTo(denrX, currentY)
+    .lineTo(denrX, currentY + denrMergedHeight)
+    .stroke();
+  doc
+    .moveTo(denrX + denrWidth, currentY)
+    .lineTo(denrX + denrWidth, currentY + denrMergedHeight)
+    .stroke();
+
+  // DENR Standard text (centered vertically in merged cell across rows 1 and 2)
+  const denrText = 'DENR Standard';
+  const denrTextHeight = doc.heightOfString(denrText, {
+    width: denrWidth - 4,
+    align: 'center',
+  });
+  const denrCenteredY = currentY + (denrMergedHeight - denrTextHeight) / 2;
+  doc.text(denrText, denrX + 2, denrCenteredY, {
+    width: denrWidth - 4,
+    align: 'center',
+  });
+
+  // Remark column border (left edge) - merged 3 rows, no internal lines
+  doc
+    .moveTo(remarksX, currentY)
+    .lineTo(remarksX, currentY + totalHeaderHeight)
+    .stroke();
+
+  // Right edge of table
+  doc
+    .moveTo(remarksX + remarksWidth, currentY)
+    .lineTo(remarksX + remarksWidth, currentY + totalHeaderHeight)
+    .stroke();
+
+  // Remark text (centered vertically in merged cell)
+  const remarksText = 'Remark';
+  const remarksTextHeight = doc.heightOfString(remarksText, {
+    width: remarksWidth - 5,
+    align: 'center',
+  });
+  const remarksCenteredY =
+    currentY + (totalHeaderHeight - remarksTextHeight) / 2;
+  doc.text(remarksText, remarksX + 2, remarksCenteredY, {
+    width: remarksWidth - 4,
+    align: 'center',
+  });
+
+  // Bottom of row 1 (only between monthX and denrX, not under Parameter, DENR Standard, or Remark)
+  doc
+    .moveTo(monthX, currentY + headerRow1Height)
+    .lineTo(denrX, currentY + headerRow1Height)
+    .stroke();
+
+  // Row 2: Internal Monitoring | MMT Confirmatory Sampling
+  const row2Y = currentY + headerRow1Height;
+
+  // Internal Monitoring (spans Month + Current + Previous)
+  const internalMonitoringWidth = monthWidth + currentWidth + previousWidth;
+  const internalMonitoringX = monthX;
+  doc
+    .moveTo(internalMonitoringX, row2Y)
+    .lineTo(internalMonitoringX, row2Y + headerRow2Height)
+    .stroke();
+  doc
+    .moveTo(internalMonitoringX + internalMonitoringWidth, row2Y)
+    .lineTo(
+      internalMonitoringX + internalMonitoringWidth,
+      row2Y + headerRow2Height,
+    )
+    .stroke();
+  doc.text('Internal Monitoring', internalMonitoringX + 2, row2Y + 4, {
+    width: internalMonitoringWidth - 4,
+    align: 'center',
+  });
+
+  // MMT Confirmatory Sampling (spans MMT Current + MMT Previous)
+  const mmtWidth = mmtCurrentWidth + mmtPreviousWidth;
+  const mmtX = mmtCurrentX;
+  doc
+    .moveTo(mmtX, row2Y)
+    .lineTo(mmtX, row2Y + headerRow2Height)
+    .stroke();
+  doc
+    .moveTo(mmtX + mmtWidth, row2Y)
+    .lineTo(mmtX + mmtWidth, row2Y + headerRow2Height)
+    .stroke();
+  doc.text('MMT Confirmatory Sampling', mmtX + 2, row2Y + 4, {
+    width: mmtWidth - 4,
+    align: 'center',
+  });
+
+  // Bottom of row 2 (only between monthX and denrX, not under Parameter or Remark)
+  // Also need to draw bottom line for DENR Standard section (where it will split into Red Flag, Action, Limit)
+  doc
+    .moveTo(monthX, row2Y + headerRow2Height)
+    .lineTo(denrX, row2Y + headerRow2Height)
+    .stroke();
+
+  // Bottom line of DENR Standard (between denrX and remarksX)
+  doc
+    .moveTo(denrX, row2Y + headerRow2Height)
+    .lineTo(remarksX, row2Y + headerRow2Height)
+    .stroke();
+
+  // Row 3: Month | Current (mg/L) | Previous (mg/L) | Current | Previous | Red Flag | Action | Limit mg/L
+  const row3Y = row2Y + headerRow2Height;
+
+  // Month
+  doc
+    .moveTo(monthX, row3Y)
+    .lineTo(monthX, row3Y + headerRow3Height)
+    .stroke();
+  doc
+    .moveTo(currentX, row3Y)
+    .lineTo(currentX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Month', monthX + 2, row3Y + 5, {
+    width: monthWidth - 4,
+    align: 'center',
+  });
+
+  // Current (mg/L)
+  doc
+    .moveTo(previousX, row3Y)
+    .lineTo(previousX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Current', currentX + 2, row3Y + 3, {
+    width: currentWidth - 4,
+    align: 'center',
+    lineBreak: false,
+  });
+  doc.text('(mg/L)', currentX + 2, row3Y + 12, {
+    width: currentWidth - 4,
+    align: 'center',
+  });
+  doc.font('Helvetica-Bold').fontSize(11);
+
+  // Previous (mg/L)
+  doc
+    .moveTo(mmtCurrentX, row3Y)
+    .lineTo(mmtCurrentX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Previous', previousX + 2, row3Y + 3, {
+    width: previousWidth - 4,
+    align: 'center',
+    lineBreak: false,
+  });
+  doc.text('(mg/L)', previousX + 2, row3Y + 12, {
+    width: previousWidth - 4,
+    align: 'center',
+  });
+  doc.font('Helvetica-Bold').fontSize(9);
+
+  // MMT Current
+  doc
+    .moveTo(mmtPreviousX, row3Y)
+    .lineTo(mmtPreviousX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Current', mmtCurrentX + 2, row3Y + 7, {
+    width: mmtCurrentWidth - 4,
+    align: 'center',
+  });
+
+  // MMT Previous
+  doc
+    .moveTo(redFlagX, row3Y)
+    .lineTo(redFlagX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Previous', mmtPreviousX + 2, row3Y + 7, {
+    width: mmtPreviousWidth - 4,
+    align: 'center',
+  });
+
+  // Red Flag
+  doc
+    .moveTo(actionX, row3Y)
+    .lineTo(actionX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Red Flag', redFlagX + 2, row3Y + 7, {
+    width: redFlagWidth - 4,
+    align: 'center',
+  });
+
+  // Action
+  doc
+    .moveTo(limitX, row3Y)
+    .lineTo(limitX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Action', actionX + 2, row3Y + 7, {
+    width: actionWidth - 4,
+    align: 'center',
+  });
+
+  // Limit mg/L
+  doc
+    .moveTo(remarksX, row3Y)
+    .lineTo(remarksX, row3Y + headerRow3Height)
+    .stroke();
+  doc.text('Limit', limitX + 2, row3Y + 3, {
+    width: limitWidth - 4,
+    align: 'center',
+    lineBreak: false,
+  });
+  doc.text('mg/L', limitX + 2, row3Y + 12, {
+    width: limitWidth - 4,
+    align: 'center',
+  });
+  doc.font('Helvetica-Bold').fontSize(11);
+
+  // Bottom of row 3 (end of header) - full width this time
+  doc
+    .moveTo(left, row3Y + headerRow3Height)
+    .lineTo(left + tableWidth, row3Y + headerRow3Height)
+    .stroke();
+
+  y = currentY + totalHeaderHeight;
+
+  // Data rows
+  if (data.parameters && data.parameters.length > 0) {
+    for (const param of data.parameters) {
+      const paramName = param.name || '';
+      const month = param.result?.internalMonitoring?.month || '';
+      const readings = param.result?.internalMonitoring?.readings || [];
+      const mmtCurrent = param.result?.mmtConfirmatorySampling?.current || '-';
+      const mmtPrevious =
+        param.result?.mmtConfirmatorySampling?.previous || '-';
+      const redFlag = param.denrStandard?.redFlag || '-';
+      const action = param.denrStandard?.action || '-';
+      const limit = param.denrStandard?.limit_mgL
+        ? param.denrStandard.limit_mgL.toString()
+        : '-';
+      const remark = param.remark || '';
+
+      // Calculate height needed for parameter name with text wrapping
+      doc.font('Helvetica-Bold').fontSize(9);
+      const paramTextHeight = doc.heightOfString(paramName, {
+        width: parameterWidth - 4,
+        align: 'center',
+      });
+
+      // Calculate height needed for remark with text wrapping
+      doc.font('Helvetica').fontSize(8);
+      const remarkTextHeight = doc.heightOfString(remark, {
+        width: remarksWidth - 4,
+        align: 'center',
+      });
+
+      // Calculate total height for this parameter (all readings)
+      const readingCount = readings.length > 0 ? readings.length : 1;
+      const minRowHeight = 27;
+      const singleRowHeight = Math.max(
+        minRowHeight,
+        paramTextHeight + 6,
+        remarkTextHeight + 6,
+      );
+      const totalParamHeight = singleRowHeight * readingCount;
+
+      // Check for page break - if the entire parameter doesn't fit, add a new page
+      let needsTopBorder = false;
+      if (y + totalParamHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+        needsTopBorder = true;
+      }
+
+      const startY = y;
+
+      // Draw top border if this is the first row on a new page
+      if (needsTopBorder) {
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc
+          .moveTo(left, y)
+          .lineTo(left + tableWidth, y)
+          .stroke();
+      }
+
+      // For each reading (TSS 01, TSS 02, TSS 03), create a sub-row
+      if (readings.length > 0) {
+        for (let i = 0; i < readings.length; i++) {
+          const reading = readings[i];
+          const label = reading.label || '';
+          const currentMgL = reading.current_mgL?.toString() || '-';
+          const previousMgL = reading.previous_mgL?.toString() || '-';
+
+          doc.font('Helvetica').fontSize(11);
+
+          // Draw vertical borders for this row
+          doc.strokeColor('#000000').lineWidth(0.5);
+
+          // Left border (parameter column)
+          doc
+            .moveTo(parameterX, y)
+            .lineTo(parameterX, y + singleRowHeight)
+            .stroke();
+
+          // Month column border
+          doc
+            .moveTo(monthX, y)
+            .lineTo(monthX, y + singleRowHeight)
+            .stroke();
+
+          // Current column border
+          doc
+            .moveTo(currentX, y)
+            .lineTo(currentX, y + singleRowHeight)
+            .stroke();
+
+          // Previous column border
+          doc
+            .moveTo(previousX, y)
+            .lineTo(previousX, y + singleRowHeight)
+            .stroke();
+
+          // MMT Current border
+          doc
+            .moveTo(mmtCurrentX, y)
+            .lineTo(mmtCurrentX, y + singleRowHeight)
+            .stroke();
+
+          // MMT Previous border
+          doc
+            .moveTo(mmtPreviousX, y)
+            .lineTo(mmtPreviousX, y + singleRowHeight)
+            .stroke();
+
+          // Red Flag border
+          doc
+            .moveTo(redFlagX, y)
+            .lineTo(redFlagX, y + singleRowHeight)
+            .stroke();
+
+          // Action border
+          doc
+            .moveTo(actionX, y)
+            .lineTo(actionX, y + singleRowHeight)
+            .stroke();
+
+          // Limit border
+          doc
+            .moveTo(limitX, y)
+            .lineTo(limitX, y + singleRowHeight)
+            .stroke();
+
+          // Remark border
+          doc
+            .moveTo(remarksX, y)
+            .lineTo(remarksX, y + singleRowHeight)
+            .stroke();
+
+          // Right border (remark column)
+          doc
+            .moveTo(remarksX + remarksWidth, y)
+            .lineTo(remarksX + remarksWidth, y + singleRowHeight)
+            .stroke();
+
+          // Current column: Display label and value separated by a line
+          // Draw label on the left half
+          const labelWidthRatio = 0.5; // 50% for label, 50% for value
+          const currentLabelWidth = currentWidth * labelWidthRatio;
+          const currentValueWidth = currentWidth * (1 - labelWidthRatio);
+          const currentLabelX = currentX;
+          const currentValueX = currentX + currentLabelWidth;
+
+          doc.fontSize(10);
+
+          // Draw vertical separator line in Current column
+          doc
+            .moveTo(currentValueX, y)
+            .lineTo(currentValueX, y + singleRowHeight)
+            .stroke();
+
+          // Label (left side)
+          doc.text(label, currentLabelX + 2, y + 5, {
+            width: currentLabelWidth - 4,
+            align: 'center',
+          });
+
+          doc.fontSize(11);
+
+          // Value (right side)
+          doc.text(currentMgL, currentValueX + 2, y + 5, {
+            width: currentValueWidth - 4,
+            align: 'center',
+          });
+
+          // Previous column: Display label and value separated by a line
+          const previousLabelWidth = previousWidth * labelWidthRatio;
+          const previousValueWidth = previousWidth * (1 - labelWidthRatio);
+          const previousLabelX = previousX;
+          const previousValueX = previousX + previousLabelWidth;
+
+          // Draw vertical separator line in Previous column
+          doc
+            .moveTo(previousValueX, y)
+            .lineTo(previousValueX, y + singleRowHeight)
+            .stroke();
+
+          doc.fontSize(10);
+
+          // Label (left side)
+          doc.text(label, previousLabelX + 2, y + 5, {
+            width: previousLabelWidth - 4,
+            align: 'center',
+          });
+
+          doc.fontSize(11);
+
+          // Value (right side)
+          doc.text(previousMgL, previousValueX + 2, y + 5, {
+            width: previousValueWidth - 4,
+            align: 'center',
+          });
+
+          doc.fontSize(11);
+
+          // Draw horizontal border between readings (but not after last one)
+          if (i < readings.length - 1) {
+            // Draw internal horizontal line only for Current and Previous columns
+            doc
+              .moveTo(currentX, y + singleRowHeight)
+              .lineTo(previousX + previousWidth, y + singleRowHeight)
+              .stroke();
+          }
+
+          y += singleRowHeight;
+        }
+
+        // Draw the merged cells content after all rows
+        // Parameter name (bold, centered vertically)
+        doc.font('Helvetica-Bold').fontSize(9);
+        const paramTextHeight2 = doc.heightOfString(paramName, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+        const paramCenterY = startY + (totalParamHeight - paramTextHeight2) / 2;
+        doc.text(paramName, parameterX + 2, paramCenterY, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+
+        // Month (centered vertically)
+        doc.font('Helvetica').fontSize(11);
+        const monthTextHeight = doc.heightOfString(month, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+        const monthCenterY = startY + (totalParamHeight - monthTextHeight) / 2;
+        doc.text(month, monthX + 2, monthCenterY, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+
+        // MMT Current (centered vertically)
+        const mmtCurrentTextHeight = doc.heightOfString(mmtCurrent, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+        const mmtCurrentCenterY =
+          startY + (totalParamHeight - mmtCurrentTextHeight) / 2;
+        doc.text(mmtCurrent, mmtCurrentX + 2, mmtCurrentCenterY, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+
+        // MMT Previous (centered vertically)
+        const mmtPreviousTextHeight = doc.heightOfString(mmtPrevious, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+        const mmtPreviousCenterY =
+          startY + (totalParamHeight - mmtPreviousTextHeight) / 2;
+        doc.text(mmtPrevious, mmtPreviousX + 2, mmtPreviousCenterY, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+
+        // DENR Red Flag (centered vertically)
+        const redFlagTextHeight = doc.heightOfString(redFlag, {
+          width: redFlagWidth - 4,
+          align: 'center',
+        });
+        const redFlagCenterY =
+          startY + (totalParamHeight - redFlagTextHeight) / 2;
+        doc.text(redFlag, redFlagX + 2, redFlagCenterY, {
+          width: redFlagWidth - 4,
+          align: 'center',
+        });
+
+        // DENR Action (centered vertically)
+        const actionTextHeight = doc.heightOfString(action, {
+          width: actionWidth - 4,
+          align: 'center',
+        });
+        const actionCenterY =
+          startY + (totalParamHeight - actionTextHeight) / 2;
+        doc.text(action, actionX + 2, actionCenterY, {
+          width: actionWidth - 4,
+          align: 'center',
+        });
+
+        // DENR Limit (centered vertically)
+        const limitTextHeight = doc.heightOfString(limit, {
+          width: limitWidth - 4,
+          align: 'center',
+        });
+        const limitCenterY = startY + (totalParamHeight - limitTextHeight) / 2;
+        doc.text(limit, limitX + 2, limitCenterY, {
+          width: limitWidth - 4,
+          align: 'center',
+        });
+
+        // Remark (centered vertically)
+        const remarkTextHeight = doc.heightOfString(remark, {
+          width: remarksWidth - 4,
+          align: 'center',
+        });
+        const remarkCenterY =
+          startY + (totalParamHeight - remarkTextHeight) / 2;
+        doc.text(remark, remarksX + 2, remarkCenterY, {
+          width: remarksWidth - 4,
+          align: 'center',
+        });
+
+        // Draw bottom border for entire parameter group
+        doc
+          .moveTo(left, y)
+          .lineTo(left + tableWidth, y)
+          .stroke();
+      } else {
+        // No readings - just show a single parameter row
+        doc.font('Helvetica').fontSize(9);
+
+        let needsTopBorder = false;
+        if (y + singleRowHeight > bottomLimit) {
+          doc.addPage();
+          y = doc.page.margins.top || 50;
+          needsTopBorder = true;
+        }
+
+        // Draw top border if this is the first row on a new page
+        if (needsTopBorder) {
+          doc.strokeColor('#000000').lineWidth(0.5);
+          doc
+            .moveTo(left, y)
+            .lineTo(left + tableWidth, y)
+            .stroke();
+        }
+
+        // Draw borders
+        doc.strokeColor('#000000').lineWidth(0.5);
+
+        // Vertical borders
+        doc
+          .moveTo(parameterX, y)
+          .lineTo(parameterX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(monthX, y)
+          .lineTo(monthX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(currentX, y)
+          .lineTo(currentX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(previousX, y)
+          .lineTo(previousX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(mmtCurrentX, y)
+          .lineTo(mmtCurrentX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(mmtPreviousX, y)
+          .lineTo(mmtPreviousX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(redFlagX, y)
+          .lineTo(redFlagX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(actionX, y)
+          .lineTo(actionX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(limitX, y)
+          .lineTo(limitX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(remarksX, y)
+          .lineTo(remarksX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(remarksX + remarksWidth, y)
+          .lineTo(remarksX + remarksWidth, y + singleRowHeight)
+          .stroke();
+
+        // Bottom border
+        doc
+          .moveTo(left, y + singleRowHeight)
+          .lineTo(left + tableWidth, y + singleRowHeight)
+          .stroke();
+
+        // Parameter name (with text wrapping support)
+        doc.font('Helvetica-Bold').fontSize(9);
+        doc.text(paramName, parameterX + 2, y + 5, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+
+        // Month
+        doc.font('Helvetica').fontSize(9);
+        doc.text(month, monthX + 2, y + 5, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+
+        // Current (empty)
+        doc.text('', currentX + 2, y + 5, {
+          width: currentWidth - 4,
+          align: 'center',
+        });
+
+        // Previous (empty)
+        doc.text('', previousX + 2, y + 5, {
+          width: previousWidth - 4,
+          align: 'center',
+        });
+
+        // MMT values
+        doc.text(mmtCurrent, mmtCurrentX + 2, y + 5, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+
+        doc.text(mmtPrevious, mmtPreviousX + 2, y + 5, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+
+        // DENR Standard
+        doc.text(redFlag, redFlagX + 2, y + 5, {
+          width: redFlagWidth - 4,
+          align: 'center',
+        });
+
+        doc.text(action, actionX + 2, y + 5, {
+          width: actionWidth - 4,
+          align: 'center',
+        });
+
+        doc.text(limit, limitX + 2, y + 5, {
+          width: limitWidth - 4,
+          align: 'center',
+        });
+
+        // Remark (with text wrapping support)
+        doc.font('Helvetica').fontSize(8);
+        doc.text(remark, remarksX + 2, y + 5, {
+          width: remarksWidth - 4,
+          align: 'center',
+        });
+
+        y += singleRowHeight;
+      }
+    }
+  }
+
+  // Footer rows - similar to air quality
+  const footerRows = [
+    ['Date/ Time of sampling', data.samplingDate || ''],
+    ['Weather and wind direction', data.weatherAndWind || ''],
+    [
+      'Explanation of why confirmatory sampling was conducted for specific parameter in the sampling station',
+      data.explanationForConfirmatorySampling || '',
+    ],
+  ];
+
+  for (const [label, value] of footerRows) {
+    const combinedText = `${label}: ${value}`;
+    doc.font('Helvetica').fontSize(11);
+    const textHeight = doc.heightOfString(combinedText, {
+      width: tableWidth - 10,
+      align: 'left',
+    });
+    const rowHeight = Math.max(14, textHeight) + 4;
+
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    doc.text(combinedText, left + 5, y + (rowHeight - textHeight) / 2, {
+      width: tableWidth - 10,
+      align: 'left',
+    });
+
+    y += rowHeight;
+  }
+
+  // Overall Assessment row (bold value)
+  if (data.overallAssessment) {
+    const label = 'Overall Assessment';
+    const value = data.overallAssessment;
+    const fullText = `${label}: ${value}`;
+
+    doc.font('Helvetica').fontSize(11);
+    const textHeight = doc.heightOfString(fullText, {
+      width: tableWidth - 10,
+      align: 'center',
+    });
+    const rowHeight = Math.max(14, textHeight) + 4;
+
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    // Calculate position for centered text
+    const textY = y + (rowHeight - textHeight) / 2;
+
+    // Calculate widths for positioning
+    doc.font('Helvetica').fontSize(11);
+    const labelWidth = doc.widthOfString(`${label}: `);
+
+    // Center the entire text block
+    const totalWidth =
+      doc.widthOfString(label + ': ') +
+      doc.font('Helvetica-Bold').widthOfString(value);
+    const startX = left + (tableWidth - totalWidth) / 2;
+
+    // Draw label
+    doc.font('Helvetica').fontSize(11);
+    doc.text(`${label}: `, startX, textY, {
+      continued: true,
+      lineBreak: false,
+    });
+
+    // Draw bold value
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text(value);
+
+    y += rowHeight;
   }
 
   doc.y = y;

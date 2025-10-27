@@ -14,6 +14,9 @@ import {
   drawExecutiveSummaryOfCompliance,
   drawProcessDocumentationOfActivitiesUndertaken,
   drawComplianceToProjectLocationTable,
+  drawComplianceToImpactManagementCommitmentsTable,
+  drawAirQualityImpactAssessmentTable,
+  drawWaterQualityImpactAssessmentTable,
 } from './cmvr-pdf-rendering.helpers';
 
 // Shape for the normalized generalInfo JSON we agreed on
@@ -162,6 +165,89 @@ export interface CMVRGeneralInfo {
       withinSpecs?: boolean;
       remarks?: string;
     }>;
+  };
+
+  complianceToImpactManagementCommitments?: {
+    constructionInfo?: Array<{
+      areaName?: string;
+      commitments?: Array<{
+        plannedMeasure?: string;
+        actualObservation?: string;
+        isEffective?: boolean | null;
+        recommendations?: string;
+      }>;
+    }>;
+    implementationOfEnvironmentalImpactControlStrategies?: Array<{
+      areaName?: string;
+      commitments?: Array<{
+        plannedMeasure?: string;
+        actualObservation?: string;
+        isEffective?: boolean | null;
+        recommendations?: string;
+      }>;
+    }>;
+    overallComplianceAssessment?: string;
+  };
+
+  airQualityImpactAssessment?: {
+    quarry?: string;
+    plant?: string;
+    port?: string;
+    parameters?: Array<{
+      name?: string;
+      results?: {
+        inSMR?: {
+          current?: string;
+          previous?: string;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      eqpl?: {
+        redFlag?: string;
+        action?: string;
+        limit?: string;
+      };
+      remarks?: string;
+    }>;
+    samplingDate?: string;
+    weatherAndWind?: string;
+    explanationForConfirmatorySampling?: string;
+    overallAssessment?: string;
+  };
+
+  waterQualityImpactAssessment?: {
+    quarry?: string;
+    plant?: string;
+    parameters?: Array<{
+      name?: string;
+      result?: {
+        internalMonitoring?: {
+          month?: string;
+          readings?: Array<{
+            label?: string;
+            current_mgL?: number;
+            previous_mgL?: number;
+          }>;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      denrStandard?: {
+        redFlag?: string;
+        action?: string;
+        limit_mgL?: number;
+      };
+      remark?: string;
+    }>;
+    samplingDate?: string;
+    weatherAndWind?: string;
+    explanationForConfirmatorySampling?: string;
+    overallAssessment?: string;
   };
 }
 
@@ -471,11 +557,11 @@ export class CMVRPdfGeneratorService {
         .fontSize(11)
         .font('Helvetica-Bold')
         .text(
-          `1. Compliance to Project Location and Coverage Limits (As specified in ECC and/ or EPEP) `,
+          `1.   Compliance to Project Location and Coverage Limits (As specified in ECC and/ or EPEP) `,
           leftMargin,
           doc.y,
           {
-            align: 'left',
+            align: 'center',
           },
         );
 
@@ -484,6 +570,90 @@ export class CMVRPdfGeneratorService {
         drawComplianceToProjectLocationTable(
           doc,
           generalInfo.complianceToProjectLocationAndCoverageLimits,
+        );
+      }
+
+      doc.moveDown(1);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          `2.   Compliance to Impact Management Commitments in EIA report & EPEP`,
+          leftMargin,
+          doc.y,
+          {
+            align: 'center',
+          },
+        );
+
+      if (generalInfo.complianceToImpactManagementCommitments) {
+        doc.moveDown(0.5);
+        drawComplianceToImpactManagementCommitmentsTable(
+          doc,
+          generalInfo.complianceToImpactManagementCommitments,
+        );
+      }
+
+      doc.moveDown(1);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          `B.1.  Compliance to Environmental Compliance Certificate Conditions `,
+          leftMargin,
+          doc.y,
+          {
+            align: 'center',
+          },
+        )
+        .moveDown(0.5);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica')
+        .text(
+          `Please see attached Annexes for ECC conditions`,
+          leftMargin,
+          doc.y,
+          {
+            align: 'center',
+          },
+        )
+        .moveDown(2);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(`B.2.  Air Quality Impact Assessment`, leftMargin, doc.y, {
+          align: 'center',
+        })
+        .moveDown(0.3);
+
+      if (generalInfo.airQualityImpactAssessment) {
+        doc.moveDown(0.5);
+        drawAirQualityImpactAssessmentTable(
+          doc,
+          generalInfo.airQualityImpactAssessment,
+        );
+      }
+
+      doc.moveDown(2);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(`B.3.  Water Quality Impact Assessment `, leftMargin, doc.y, {
+          align: 'center',
+        })
+        .moveDown(0.3);
+
+      if (generalInfo.waterQualityImpactAssessment) {
+        doc.moveDown(0.5);
+        drawWaterQualityImpactAssessmentTable(
+          doc,
+          generalInfo.waterQualityImpactAssessment,
         );
       }
 

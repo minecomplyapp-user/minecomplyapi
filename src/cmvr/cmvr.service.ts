@@ -4,6 +4,7 @@ import {
   CMVRPdfGeneratorService,
   CMVRGeneralInfo,
 } from './cmvr-pdf-generator.service';
+import { CreateCMVRDto } from './dto/create-cmvr.dto';
 
 @Injectable()
 export class CmvrService {
@@ -11,6 +12,30 @@ export class CmvrService {
     private readonly prisma: PrismaService,
     private readonly pdfGenerator: CMVRPdfGeneratorService,
   ) {}
+
+  async create(createCmvrDto: CreateCMVRDto) {
+    // Separate the data into proper sections
+    const {
+      complianceMonitoringReport,
+      executiveSummaryOfCompliance,
+      createdById,
+      ...generalInfoData
+    } = createCmvrDto;
+
+    return this.prisma.cMVRReport.create({
+      data: {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        generalInfo: generalInfoData as unknown as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        executiveSummaryOfCompliance:
+          executiveSummaryOfCompliance as unknown as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        complianceMonitoringReport:
+          complianceMonitoringReport as unknown as any,
+        createdById: createdById,
+      },
+    });
+  }
 
   async findOne(id: string) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
