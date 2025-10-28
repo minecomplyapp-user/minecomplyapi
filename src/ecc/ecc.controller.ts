@@ -87,7 +87,7 @@ create(@Body() createEccDto: CreateEccReportDto) {
     // 3. REMOVE Condition
     @ApiOperation({
     summary: 'Remove an ECC Condition by ID',
-})
+})  
     @Delete('condition/:conditionId')
     removeCondition(@Param('conditionId') conditionId: number) {
         return this.eccService.removeCondition(conditionId);
