@@ -387,6 +387,11 @@ class AirQualityImpactAssessmentDto {
   @IsString()
   quarry: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  quarryPlant?: string;
+
   @ApiProperty()
   @IsString()
   plant: string;
@@ -505,15 +510,32 @@ class WaterQualityImpactAssessmentDto {
   @IsString()
   quarry: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  quarryPlant?: string;
+
   @ApiProperty()
   @IsString()
   plant: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  port?: string;
 
   @ApiProperty({ type: [WaterQualityParameterDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => WaterQualityParameterDto)
   parameters: WaterQualityParameterDto[];
+
+  @ApiProperty({ type: [WaterQualityParameterDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WaterQualityParameterDto)
+  parametersTable2?: WaterQualityParameterDto[];
 
   @ApiProperty()
   @IsString()
@@ -530,6 +552,205 @@ class WaterQualityImpactAssessmentDto {
   @ApiProperty()
   @IsString()
   overallAssessment: string;
+}
+
+class NoiseQualityEqplDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  redFlag?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  action?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  denrStandard?: string;
+}
+
+class NoiseQualityResultsDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  inSMR?: {
+    current?: string;
+    previous?: string;
+  };
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  mmtConfirmatorySampling?: {
+    current?: string;
+    previous?: string;
+  };
+}
+
+class NoiseQualityParameterDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiProperty({ type: NoiseQualityResultsDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NoiseQualityResultsDto)
+  results?: NoiseQualityResultsDto;
+
+  @ApiProperty({ type: NoiseQualityEqplDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NoiseQualityEqplDto)
+  eqpl?: NoiseQualityEqplDto;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  remarks?: string;
+}
+
+class QuarterlyAssessmentDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  year?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  assessment?: string;
+}
+
+class OverallAssessmentDto {
+  @ApiProperty({ type: QuarterlyAssessmentDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuarterlyAssessmentDto)
+  firstQuarter?: QuarterlyAssessmentDto;
+
+  @ApiProperty({ type: QuarterlyAssessmentDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuarterlyAssessmentDto)
+  secondQuarter?: QuarterlyAssessmentDto;
+
+  @ApiProperty({ type: QuarterlyAssessmentDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuarterlyAssessmentDto)
+  thirdQuarter?: QuarterlyAssessmentDto;
+
+  @ApiProperty({ type: QuarterlyAssessmentDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuarterlyAssessmentDto)
+  fourthQuarter?: QuarterlyAssessmentDto;
+}
+
+class NoiseQualityImpactAssessmentDto {
+  @ApiProperty({ type: [NoiseQualityParameterDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => NoiseQualityParameterDto)
+  parameters?: NoiseQualityParameterDto[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  samplingDate?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  weatherAndWind?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  explanationForConfirmatorySampling?: string;
+
+  @ApiProperty({ type: OverallAssessmentDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OverallAssessmentDto)
+  overallAssessment?: OverallAssessmentDto;
+}
+
+class WasteCommitmentsDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  handling?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  storage?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  disposal?: boolean;
+}
+
+class WasteAdequateDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  y?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  n?: boolean;
+}
+
+class WasteItemDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  typeOfWaste?: string;
+
+  @ApiProperty({ type: WasteCommitmentsDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WasteCommitmentsDto)
+  eccEpepCommitments?: WasteCommitmentsDto;
+
+  @ApiProperty({ type: WasteAdequateDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WasteAdequateDto)
+  adequate?: WasteAdequateDto;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  previousRecord?: string | Record<string, number>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  q2_2025_Generated_HW?: string | Record<string, number>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  total?: string | Record<string, number>;
+}
+
+class ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  quarry?: string | WasteItemDto[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  plant?: string | WasteItemDto[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  port?: string | WasteItemDto[];
 }
 
 class ComplianceMonitoringReportDto {
@@ -552,6 +773,21 @@ class ComplianceMonitoringReportDto {
   @ValidateNested()
   @Type(() => WaterQualityImpactAssessmentDto)
   waterQualityImpactAssessment: WaterQualityImpactAssessmentDto;
+
+  @ApiProperty({ type: NoiseQualityImpactAssessmentDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NoiseQualityImpactAssessmentDto)
+  noiseQualityImpactAssessment?: NoiseQualityImpactAssessmentDto;
+
+  @ApiProperty({
+    type: ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto)
+  complianceWithGoodPracticeInSolidAndHazardousWasteManagement?: ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto;
 }
 
 export class CreateCMVRDto {

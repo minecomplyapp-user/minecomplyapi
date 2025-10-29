@@ -17,6 +17,8 @@ import {
   drawComplianceToImpactManagementCommitmentsTable,
   drawAirQualityImpactAssessmentTable,
   drawWaterQualityImpactAssessmentTable,
+  drawSolidAndHazardousWasteManagementTable,
+  drawNoiseQualityImpactAssessmentTable,
 } from './cmvr-pdf-rendering.helpers';
 
 // Shape for the normalized generalInfo JSON we agreed on
@@ -191,6 +193,7 @@ export interface CMVRGeneralInfo {
 
   airQualityImpactAssessment?: {
     quarry?: string;
+    quarryPlant?: string;
     plant?: string;
     port?: string;
     parameters?: Array<{
@@ -220,8 +223,33 @@ export interface CMVRGeneralInfo {
 
   waterQualityImpactAssessment?: {
     quarry?: string;
+    quarryPlant?: string;
     plant?: string;
+    port?: string;
     parameters?: Array<{
+      name?: string;
+      result?: {
+        internalMonitoring?: {
+          month?: string;
+          readings?: Array<{
+            label?: string;
+            current_mgL?: number;
+            previous_mgL?: number;
+          }>;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      denrStandard?: {
+        redFlag?: string;
+        action?: string;
+        limit_mgL?: number;
+      };
+      remark?: string;
+    }>;
+    parametersTable2?: Array<{
       name?: string;
       result?: {
         internalMonitoring?: {
@@ -248,6 +276,103 @@ export interface CMVRGeneralInfo {
     weatherAndWind?: string;
     explanationForConfirmatorySampling?: string;
     overallAssessment?: string;
+  };
+
+  noiseQualityImpactAssessment?: {
+    parameters?: Array<{
+      name?: string;
+      results?: {
+        inSMR?: {
+          current?: string;
+          previous?: string;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      eqpl?: {
+        redFlag?: string;
+        action?: string;
+        denrStandard?: string;
+      };
+      remarks?: string;
+    }>;
+    samplingDate?: string;
+    weatherAndWind?: string;
+    explanationForConfirmatorySampling?: string;
+    overallAssessment?: {
+      firstQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+      secondQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+      thirdQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+      fourthQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+    };
+  };
+
+  complianceWithGoodPracticeInSolidAndHazardousWasteManagement?: {
+    quarry?:
+      | string
+      | Array<{
+          typeOfWaste?: string;
+          eccEpepCommitments?: {
+            handling?: string;
+            storage?: string;
+            disposal?: boolean;
+          };
+          adequate?: {
+            y?: boolean;
+            n?: boolean;
+          };
+          previousRecord?: string | Record<string, number>;
+          q2_2025_Generated_HW?: string | Record<string, number>;
+          total?: string | Record<string, number>;
+        }>;
+    plant?:
+      | string
+      | Array<{
+          typeOfWaste?: string;
+          eccEpepCommitments?: {
+            handling?: string;
+            storage?: string;
+            disposal?: boolean;
+          };
+          adequate?: {
+            y?: boolean;
+            n?: boolean;
+          };
+          previousRecord?: string | Record<string, number>;
+          q2_2025_Generated_HW?: string | Record<string, number>;
+          total?: string | Record<string, number>;
+        }>;
+    port?:
+      | string
+      | Array<{
+          typeOfWaste?: string;
+          eccEpepCommitments?: {
+            handling?: string;
+            storage?: string;
+            disposal?: boolean;
+          };
+          adequate?: {
+            y?: boolean;
+            n?: boolean;
+          };
+          previousRecord?: string | Record<string, number>;
+          q2_2025_Generated_HW?: string | Record<string, number>;
+          total?: string | Record<string, number>;
+        }>;
   };
 }
 
@@ -654,6 +779,61 @@ export class CMVRPdfGeneratorService {
         drawWaterQualityImpactAssessmentTable(
           doc,
           generalInfo.waterQualityImpactAssessment,
+        );
+      }
+
+      doc.moveDown(2);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(`B.4.  Noise Quality Impact Assessment`, leftMargin, doc.y, {
+          align: 'center',
+        })
+        .moveDown(0.3);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica')
+        .text(
+          `Refer to attached internal noise level monitoring line graphs for April to June 2025 `,
+          leftMargin,
+          doc.y,
+          {
+            align: 'center',
+          },
+        )
+        .moveDown(1);
+
+      if (generalInfo.noiseQualityImpactAssessment) {
+        doc.moveDown(0.5);
+        drawNoiseQualityImpactAssessmentTable(
+          doc,
+          generalInfo.noiseQualityImpactAssessment,
+        );
+      }
+
+      doc.moveDown(2);
+
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          `3.   Compliance with Good Practice in Solid and Hazardous Waste Management`,
+          leftMargin,
+          doc.y,
+          {
+            align: 'center',
+          },
+        )
+        .moveDown(0.5);
+
+      if (
+        generalInfo.complianceWithGoodPracticeInSolidAndHazardousWasteManagement
+      ) {
+        drawSolidAndHazardousWasteManagementTable(
+          doc,
+          generalInfo.complianceWithGoodPracticeInSolidAndHazardousWasteManagement,
         );
       }
 

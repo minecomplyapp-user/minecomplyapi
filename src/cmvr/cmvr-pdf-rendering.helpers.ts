@@ -3060,6 +3060,7 @@ export function drawAirQualityImpactAssessmentTable(
   doc: PDFKit.PDFDocument,
   data: {
     quarry?: string;
+    quarryPlant?: string;
     plant?: string;
     port?: string;
     parameters?: Array<{
@@ -3107,6 +3108,20 @@ export function drawAirQualityImpactAssessmentTable(
     });
     doc.font('Helvetica').fontSize(11);
     doc.text(data.quarry);
+    y = doc.y;
+    doc.moveDown(0.3);
+    y = doc.y;
+  }
+
+  if (data.quarryPlant) {
+    // Bold label, regular text for value
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Quarry/Plant: ', left + textIndent, y, {
+      continued: true,
+      lineBreak: false,
+    });
+    doc.font('Helvetica').fontSize(11);
+    doc.text(data.quarryPlant);
     y = doc.y;
     doc.moveDown(0.3);
     y = doc.y;
@@ -3644,8 +3659,33 @@ export function drawWaterQualityImpactAssessmentTable(
   doc: PDFKit.PDFDocument,
   data: {
     quarry?: string;
+    quarryPlant?: string;
     plant?: string;
+    port?: string;
     parameters?: Array<{
+      name?: string;
+      result?: {
+        internalMonitoring?: {
+          month?: string;
+          readings?: Array<{
+            label?: string;
+            current_mgL?: number;
+            previous_mgL?: number;
+          }>;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      denrStandard?: {
+        redFlag?: string;
+        action?: string;
+        limit_mgL?: number;
+      };
+      remark?: string;
+    }>;
+    parametersTable2?: Array<{
       name?: string;
       result?: {
         internalMonitoring?: {
@@ -3681,30 +3721,32 @@ export function drawWaterQualityImpactAssessmentTable(
 
   let y = doc.y;
 
-  // Quarry text
-  if (data.quarry) {
+  // Helper function to render text fields
+  const renderTextField = (label: string, value: string) => {
     const textIndent = 60;
     doc.font('Helvetica-Bold').fontSize(11);
-    doc.text('Quarry: ', left + textIndent, y, {
+    doc.text(`${label}: `, left + textIndent, y, {
       continued: true,
       lineBreak: false,
     });
     doc.font('Helvetica').fontSize(11);
-    doc.text(data.quarry);
+    doc.text(value);
     y = doc.y;
+  };
+
+  // Quarry text
+  if (data.quarry) {
+    renderTextField('Quarry', data.quarry);
+  }
+
+  // Quarry Plant text
+  if (data.quarryPlant) {
+    renderTextField('Quarry Plant', data.quarryPlant);
   }
 
   // Plant text
   if (data.plant) {
-    const textIndent = 60;
-    doc.font('Helvetica-Bold').fontSize(11);
-    doc.text('Plant: ', left + textIndent, y, {
-      continued: true,
-      lineBreak: false,
-    });
-    doc.font('Helvetica').fontSize(11);
-    doc.text(data.plant);
-    y = doc.y;
+    renderTextField('Plant', data.plant);
   }
 
   doc.moveDown(2);
@@ -4465,6 +4507,713 @@ export function drawWaterQualityImpactAssessmentTable(
     }
   }
 
+  // Port text (between tables)
+  if (data.port) {
+    doc.moveDown(4);
+    y = doc.y;
+    renderTextField('Port', data.port);
+    doc.moveDown(2);
+    y = doc.y;
+  }
+
+  // Render second table if parametersTable2 exists
+  if (data.parametersTable2 && data.parametersTable2.length > 0) {
+    // Re-draw header for second table
+    const currentY2 = y;
+
+    // Row 1: Parameter | Result | DENR Standard | Remark
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(11)
+      .strokeColor('#000000')
+      .lineWidth(0.5);
+
+    // Outer borders for row 1
+    doc
+      .moveTo(left, currentY2)
+      .lineTo(left + tableWidth, currentY2)
+      .stroke(); // Top
+
+    // Left edge of table
+    doc
+      .moveTo(parameterX, currentY2)
+      .lineTo(parameterX, currentY2 + totalHeaderHeight)
+      .stroke();
+
+    // Parameter column border (right edge) - merged 3 rows
+    doc
+      .moveTo(monthX, currentY2)
+      .lineTo(monthX, currentY2 + totalHeaderHeight)
+      .stroke();
+
+    // Parameter text
+    const parameterText2 = 'Parameter';
+    const parameterTextHeight2 = doc.heightOfString(parameterText2, {
+      width: parameterWidth - 5,
+      align: 'center',
+    });
+    const parameterCenteredY2 =
+      currentY2 + (totalHeaderHeight - parameterTextHeight2) / 2;
+    doc.text(parameterText2, parameterX + 2, parameterCenteredY2, {
+      width: parameterWidth - 4,
+      align: 'center',
+    });
+
+    // Result header
+    const resultWidth2 =
+      monthWidth +
+      currentWidth +
+      previousWidth +
+      mmtCurrentWidth +
+      mmtPreviousWidth;
+    const resultX2 = monthX;
+    doc
+      .moveTo(resultX2 + resultWidth2, currentY2)
+      .lineTo(resultX2 + resultWidth2, currentY2 + headerRow1Height)
+      .stroke();
+    doc.text('Result', resultX2 + 2, currentY2 + 4, {
+      width: resultWidth2 - 4,
+      align: 'center',
+    });
+
+    // DENR Standard header
+    const denrWidth2 = redFlagWidth + actionWidth + limitWidth;
+    const denrX2 = redFlagX;
+    const denrMergedHeight2 = headerRow1Height + headerRow2Height;
+    doc
+      .moveTo(denrX2, currentY2)
+      .lineTo(denrX2, currentY2 + denrMergedHeight2)
+      .stroke();
+    doc
+      .moveTo(denrX2 + denrWidth2, currentY2)
+      .lineTo(denrX2 + denrWidth2, currentY2 + denrMergedHeight2)
+      .stroke();
+
+    const denrText2 = 'DENR Standard';
+    const denrTextHeight2 = doc.heightOfString(denrText2, {
+      width: denrWidth2 - 4,
+      align: 'center',
+    });
+    const denrCenteredY2 =
+      currentY2 + (denrMergedHeight2 - denrTextHeight2) / 2;
+    doc.text(denrText2, denrX2 + 2, denrCenteredY2, {
+      width: denrWidth2 - 4,
+      align: 'center',
+    });
+
+    // Remark column border
+    doc
+      .moveTo(remarksX, currentY2)
+      .lineTo(remarksX, currentY2 + totalHeaderHeight)
+      .stroke();
+
+    // Right edge of table
+    doc
+      .moveTo(remarksX + remarksWidth, currentY2)
+      .lineTo(remarksX + remarksWidth, currentY2 + totalHeaderHeight)
+      .stroke();
+
+    // Remark text
+    const remarksText2 = 'Remark';
+    const remarksTextHeight2 = doc.heightOfString(remarksText2, {
+      width: remarksWidth - 5,
+      align: 'center',
+    });
+    const remarksCenteredY2 =
+      currentY2 + (totalHeaderHeight - remarksTextHeight2) / 2;
+    doc.text(remarksText2, remarksX + 2, remarksCenteredY2, {
+      width: remarksWidth - 4,
+      align: 'center',
+    });
+
+    // Bottom of row 1
+    doc
+      .moveTo(monthX, currentY2 + headerRow1Height)
+      .lineTo(denrX2, currentY2 + headerRow1Height)
+      .stroke();
+
+    // Row 2
+    const row2Y2 = currentY2 + headerRow1Height;
+
+    // Internal Monitoring
+    const internalMonitoringWidth2 = monthWidth + currentWidth + previousWidth;
+    const internalMonitoringX2 = monthX;
+    doc
+      .moveTo(internalMonitoringX2, row2Y2)
+      .lineTo(internalMonitoringX2, row2Y2 + headerRow2Height)
+      .stroke();
+    doc
+      .moveTo(internalMonitoringX2 + internalMonitoringWidth2, row2Y2)
+      .lineTo(
+        internalMonitoringX2 + internalMonitoringWidth2,
+        row2Y2 + headerRow2Height,
+      )
+      .stroke();
+    doc.text('Internal Monitoring', internalMonitoringX2 + 2, row2Y2 + 4, {
+      width: internalMonitoringWidth2 - 4,
+      align: 'center',
+    });
+
+    // MMT Confirmatory Sampling
+    const mmtWidth2 = mmtCurrentWidth + mmtPreviousWidth;
+    const mmtX2 = mmtCurrentX;
+    doc
+      .moveTo(mmtX2, row2Y2)
+      .lineTo(mmtX2, row2Y2 + headerRow2Height)
+      .stroke();
+    doc
+      .moveTo(mmtX2 + mmtWidth2, row2Y2)
+      .lineTo(mmtX2 + mmtWidth2, row2Y2 + headerRow2Height)
+      .stroke();
+    doc.text('MMT Confirmatory Sampling', mmtX2 + 2, row2Y2 + 4, {
+      width: mmtWidth2 - 4,
+      align: 'center',
+    });
+
+    // Bottom of row 2
+    doc
+      .moveTo(monthX, row2Y2 + headerRow2Height)
+      .lineTo(denrX2, row2Y2 + headerRow2Height)
+      .stroke();
+
+    doc
+      .moveTo(denrX2, row2Y2 + headerRow2Height)
+      .lineTo(remarksX, row2Y2 + headerRow2Height)
+      .stroke();
+
+    // Row 3
+    const row3Y2 = row2Y2 + headerRow2Height;
+
+    // Month
+    doc
+      .moveTo(monthX, row3Y2)
+      .lineTo(monthX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc
+      .moveTo(currentX, row3Y2)
+      .lineTo(currentX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Month', monthX + 2, row3Y2 + 5, {
+      width: monthWidth - 4,
+      align: 'center',
+    });
+
+    // Current (mg/L)
+    doc
+      .moveTo(previousX, row3Y2)
+      .lineTo(previousX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Current', currentX + 2, row3Y2 + 3, {
+      width: currentWidth - 4,
+      align: 'center',
+      lineBreak: false,
+    });
+    doc.text('(mg/L)', currentX + 2, row3Y2 + 12, {
+      width: currentWidth - 4,
+      align: 'center',
+    });
+    doc.font('Helvetica-Bold').fontSize(11);
+
+    // Previous (mg/L)
+    doc
+      .moveTo(mmtCurrentX, row3Y2)
+      .lineTo(mmtCurrentX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Previous', previousX + 2, row3Y2 + 3, {
+      width: previousWidth - 4,
+      align: 'center',
+      lineBreak: false,
+    });
+    doc.text('(mg/L)', previousX + 2, row3Y2 + 12, {
+      width: previousWidth - 4,
+      align: 'center',
+    });
+    doc.font('Helvetica-Bold').fontSize(9);
+
+    // MMT Current
+    doc
+      .moveTo(mmtPreviousX, row3Y2)
+      .lineTo(mmtPreviousX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Current', mmtCurrentX + 2, row3Y2 + 5, {
+      width: mmtCurrentWidth - 4,
+      align: 'center',
+    });
+
+    // MMT Previous
+    doc
+      .moveTo(redFlagX, row3Y2)
+      .lineTo(redFlagX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Previous', mmtPreviousX + 2, row3Y2 + 5, {
+      width: mmtPreviousWidth - 4,
+      align: 'center',
+    });
+
+    // Red Flag
+    doc
+      .moveTo(actionX, row3Y2)
+      .lineTo(actionX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Red Flag', redFlagX + 2, row3Y2 + 7, {
+      width: redFlagWidth - 4,
+      align: 'center',
+    });
+
+    // Action
+    doc
+      .moveTo(limitX, row3Y2)
+      .lineTo(limitX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Action', actionX + 2, row3Y2 + 7, {
+      width: actionWidth - 4,
+      align: 'center',
+    });
+
+    // Limit mg/L
+    doc
+      .moveTo(remarksX, row3Y2)
+      .lineTo(remarksX, row3Y2 + headerRow3Height)
+      .stroke();
+    doc.text('Limit', limitX + 2, row3Y2 + 3, {
+      width: limitWidth - 4,
+      align: 'center',
+      lineBreak: false,
+    });
+    doc.text('mg/L', limitX + 2, row3Y2 + 12, {
+      width: limitWidth - 4,
+      align: 'center',
+    });
+    doc.font('Helvetica-Bold').fontSize(11);
+
+    // Bottom of row 3
+    doc
+      .moveTo(left, row3Y2 + headerRow3Height)
+      .lineTo(left + tableWidth, row3Y2 + headerRow3Height)
+      .stroke();
+
+    y = currentY2 + totalHeaderHeight;
+
+    // Data rows for second table (same logic as first table)
+    for (const param of data.parametersTable2) {
+      const paramName = param.name || '';
+      const month = param.result?.internalMonitoring?.month || '';
+      const readings = param.result?.internalMonitoring?.readings || [];
+      const mmtCurrent = param.result?.mmtConfirmatorySampling?.current || '-';
+      const mmtPrevious =
+        param.result?.mmtConfirmatorySampling?.previous || '-';
+      const redFlag = param.denrStandard?.redFlag || '-';
+      const action = param.denrStandard?.action || '-';
+      const limit = param.denrStandard?.limit_mgL
+        ? param.denrStandard.limit_mgL.toString()
+        : '-';
+      const remark = param.remark || '';
+
+      doc.font('Helvetica-Bold').fontSize(9);
+      const paramTextHeight = doc.heightOfString(paramName, {
+        width: parameterWidth - 4,
+        align: 'center',
+      });
+
+      doc.font('Helvetica').fontSize(8);
+      const remarkTextHeight = doc.heightOfString(remark, {
+        width: remarksWidth - 4,
+        align: 'center',
+      });
+
+      const readingCount = readings.length > 0 ? readings.length : 1;
+      const minRowHeight = 27;
+      const singleRowHeight = Math.max(
+        minRowHeight,
+        paramTextHeight + 6,
+        remarkTextHeight + 6,
+      );
+      const totalParamHeight = singleRowHeight * readingCount;
+
+      let needsTopBorder = false;
+      if (y + totalParamHeight > bottomLimit) {
+        doc.addPage();
+        y = doc.page.margins.top || 50;
+        needsTopBorder = true;
+      }
+
+      const startY = y;
+
+      if (needsTopBorder) {
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc
+          .moveTo(left, y)
+          .lineTo(left + tableWidth, y)
+          .stroke();
+      }
+
+      if (readings && readings.length > 0) {
+        // Draw vertical borders for the entire parameter group
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc
+          .moveTo(parameterX, y)
+          .lineTo(parameterX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(monthX, y)
+          .lineTo(monthX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(currentX, y)
+          .lineTo(currentX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(previousX, y)
+          .lineTo(previousX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(mmtCurrentX, y)
+          .lineTo(mmtCurrentX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(mmtPreviousX, y)
+          .lineTo(mmtPreviousX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(redFlagX, y)
+          .lineTo(redFlagX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(actionX, y)
+          .lineTo(actionX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(limitX, y)
+          .lineTo(limitX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(remarksX, y)
+          .lineTo(remarksX, y + totalParamHeight)
+          .stroke();
+        doc
+          .moveTo(remarksX + remarksWidth, y)
+          .lineTo(remarksX + remarksWidth, y + totalParamHeight)
+          .stroke();
+
+        // Draw readings rows
+        for (let i = 0; i < readings.length; i++) {
+          const reading = readings[i];
+          const label = reading.label || '';
+          const currentMgL =
+            reading.current_mgL !== undefined
+              ? reading.current_mgL.toString()
+              : '-';
+          const previousMgL =
+            reading.previous_mgL !== undefined
+              ? reading.previous_mgL.toString()
+              : '-';
+
+          // Current column: Display label and value separated by a line
+          const labelWidthRatio = 0.5; // 50% for label, 50% for value
+          const currentLabelWidth = currentWidth * labelWidthRatio;
+          const currentValueWidth = currentWidth * (1 - labelWidthRatio);
+          const currentLabelX = currentX;
+          const currentValueX = currentX + currentLabelWidth;
+
+          // Draw vertical separator line in Current column
+          doc
+            .moveTo(currentValueX, y)
+            .lineTo(currentValueX, y + singleRowHeight)
+            .stroke();
+
+          doc.font('Helvetica').fontSize(10);
+
+          // Label (left side)
+          doc.text(label, currentLabelX + 2, y + 5, {
+            width: currentLabelWidth - 4,
+            align: 'center',
+          });
+
+          doc.fontSize(11);
+
+          // Value (right side)
+          doc.text(currentMgL, currentValueX + 2, y + 5, {
+            width: currentValueWidth - 4,
+            align: 'center',
+          });
+
+          // Previous column: Display label and value separated by a line
+          const previousLabelWidth = previousWidth * labelWidthRatio;
+          const previousValueWidth = previousWidth * (1 - labelWidthRatio);
+          const previousLabelX = previousX;
+          const previousValueX = previousX + previousLabelWidth;
+
+          // Draw vertical separator line in Previous column
+          doc
+            .moveTo(previousValueX, y)
+            .lineTo(previousValueX, y + singleRowHeight)
+            .stroke();
+
+          doc.fontSize(10);
+
+          // Label (left side)
+          doc.text(label, previousLabelX + 2, y + 5, {
+            width: previousLabelWidth - 4,
+            align: 'center',
+          });
+
+          doc.fontSize(11);
+
+          // Value (right side)
+          doc.text(previousMgL, previousValueX + 2, y + 5, {
+            width: previousValueWidth - 4,
+            align: 'center',
+          });
+
+          // Draw horizontal line between readings
+          if (i < readings.length - 1) {
+            doc
+              .moveTo(currentX, y + singleRowHeight)
+              .lineTo(previousX + previousWidth, y + singleRowHeight)
+              .stroke();
+          }
+
+          y += singleRowHeight;
+        }
+
+        // Draw merged cells content
+        doc.font('Helvetica-Bold').fontSize(9);
+        const paramTextHeight2 = doc.heightOfString(paramName, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+        const paramCenterY = startY + (totalParamHeight - paramTextHeight2) / 2;
+        doc.text(paramName, parameterX + 2, paramCenterY, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+
+        doc.font('Helvetica').fontSize(11);
+        const monthTextHeight = doc.heightOfString(month, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+        const monthCenterY = startY + (totalParamHeight - monthTextHeight) / 2;
+        doc.text(month, monthX + 2, monthCenterY, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+
+        const mmtCurrentTextHeight = doc.heightOfString(mmtCurrent, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+        const mmtCurrentCenterY =
+          startY + (totalParamHeight - mmtCurrentTextHeight) / 2;
+        doc.text(mmtCurrent, mmtCurrentX + 2, mmtCurrentCenterY, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+
+        const mmtPreviousTextHeight = doc.heightOfString(mmtPrevious, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+        const mmtPreviousCenterY =
+          startY + (totalParamHeight - mmtPreviousTextHeight) / 2;
+        doc.text(mmtPrevious, mmtPreviousX + 2, mmtPreviousCenterY, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+
+        const redFlagTextHeight = doc.heightOfString(redFlag, {
+          width: redFlagWidth - 4,
+          align: 'center',
+        });
+        const redFlagCenterY =
+          startY + (totalParamHeight - redFlagTextHeight) / 2;
+        doc.text(redFlag, redFlagX + 2, redFlagCenterY, {
+          width: redFlagWidth - 4,
+          align: 'center',
+        });
+
+        const actionTextHeight = doc.heightOfString(action, {
+          width: actionWidth - 4,
+          align: 'center',
+        });
+        const actionCenterY =
+          startY + (totalParamHeight - actionTextHeight) / 2;
+        doc.text(action, actionX + 2, actionCenterY, {
+          width: actionWidth - 4,
+          align: 'center',
+        });
+
+        const limitTextHeight = doc.heightOfString(limit, {
+          width: limitWidth - 4,
+          align: 'center',
+        });
+        const limitCenterY = startY + (totalParamHeight - limitTextHeight) / 2;
+        doc.text(limit, limitX + 2, limitCenterY, {
+          width: limitWidth - 4,
+          align: 'center',
+        });
+
+        const remarkTextHeight2 = doc.heightOfString(remark, {
+          width: remarksWidth - 4,
+          align: 'center',
+        });
+        const remarkCenterY =
+          startY + (totalParamHeight - remarkTextHeight2) / 2;
+        doc.text(remark, remarksX + 2, remarkCenterY, {
+          width: remarksWidth - 4,
+          align: 'center',
+        });
+
+        doc
+          .moveTo(left, y)
+          .lineTo(left + tableWidth, y)
+          .stroke();
+      } else {
+        // No readings - single row
+        doc.font('Helvetica').fontSize(9);
+
+        let needsTopBorder2 = false;
+        if (y + singleRowHeight > bottomLimit) {
+          doc.addPage();
+          y = doc.page.margins.top || 50;
+          needsTopBorder2 = true;
+        }
+
+        if (needsTopBorder2) {
+          doc.strokeColor('#000000').lineWidth(0.5);
+          doc
+            .moveTo(left, y)
+            .lineTo(left + tableWidth, y)
+            .stroke();
+        }
+
+        doc.strokeColor('#000000').lineWidth(0.5);
+
+        doc
+          .moveTo(parameterX, y)
+          .lineTo(parameterX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(monthX, y)
+          .lineTo(monthX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(currentX, y)
+          .lineTo(currentX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(previousX, y)
+          .lineTo(previousX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(mmtCurrentX, y)
+          .lineTo(mmtCurrentX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(mmtPreviousX, y)
+          .lineTo(mmtPreviousX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(redFlagX, y)
+          .lineTo(redFlagX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(actionX, y)
+          .lineTo(actionX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(limitX, y)
+          .lineTo(limitX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(remarksX, y)
+          .lineTo(remarksX, y + singleRowHeight)
+          .stroke();
+        doc
+          .moveTo(remarksX + remarksWidth, y)
+          .lineTo(remarksX + remarksWidth, y + singleRowHeight)
+          .stroke();
+
+        doc.font('Helvetica-Bold').fontSize(9);
+        const paramTextHeight3 = doc.heightOfString(paramName, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+        const paramCenterY2 = y + (singleRowHeight - paramTextHeight3) / 2;
+        doc.text(paramName, parameterX + 2, paramCenterY2, {
+          width: parameterWidth - 4,
+          align: 'center',
+        });
+
+        doc.font('Helvetica').fontSize(8);
+        const monthTextHeight2 = doc.heightOfString(month, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+        const monthCenterY2 = y + (singleRowHeight - monthTextHeight2) / 2;
+        doc.text(month, monthX + 2, monthCenterY2, {
+          width: monthWidth - 4,
+          align: 'center',
+        });
+
+        doc.text('-', currentX + 2, y + 5, {
+          width: currentWidth - 4,
+          align: 'center',
+        });
+
+        doc.text('-', previousX + 2, y + 5, {
+          width: previousWidth - 4,
+          align: 'center',
+        });
+
+        const mmtCurrentTextHeight2 = doc.heightOfString(mmtCurrent, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+        const mmtCurrentCenterY2 =
+          y + (singleRowHeight - mmtCurrentTextHeight2) / 2;
+        doc.text(mmtCurrent, mmtCurrentX + 2, mmtCurrentCenterY2, {
+          width: mmtCurrentWidth - 4,
+          align: 'center',
+        });
+
+        const mmtPreviousTextHeight2 = doc.heightOfString(mmtPrevious, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+        const mmtPreviousCenterY2 =
+          y + (singleRowHeight - mmtPreviousTextHeight2) / 2;
+        doc.text(mmtPrevious, mmtPreviousX + 2, mmtPreviousCenterY2, {
+          width: mmtPreviousWidth - 4,
+          align: 'center',
+        });
+
+        doc.text(redFlag, redFlagX + 2, y + 5, {
+          width: redFlagWidth - 4,
+          align: 'center',
+        });
+
+        doc.text(action, actionX + 2, y + 5, {
+          width: actionWidth - 4,
+          align: 'center',
+        });
+
+        doc.text(limit, limitX + 2, y + 5, {
+          width: limitWidth - 4,
+          align: 'center',
+        });
+
+        doc.font('Helvetica').fontSize(8);
+        doc.text(remark, remarksX + 2, y + 5, {
+          width: remarksWidth - 4,
+          align: 'center',
+        });
+
+        y += singleRowHeight;
+      }
+    }
+  }
+
   // Footer rows - similar to air quality
   const footerRows = [
     ['Date/ Time of sampling', data.samplingDate || ''],
@@ -4570,6 +5319,1219 @@ export function drawWaterQualityImpactAssessmentTable(
     doc.text(value);
 
     y += rowHeight;
+  }
+
+  doc.y = y;
+  doc.moveDown(0.5);
+}
+
+/**
+ * Draw Noise Quality Impact Assessment table
+ */
+export function drawNoiseQualityImpactAssessmentTable(
+  doc: PDFKit.PDFDocument,
+  data: {
+    parameters?: Array<{
+      name?: string;
+      results?: {
+        inSMR?: {
+          current?: string;
+          previous?: string;
+        };
+        mmtConfirmatorySampling?: {
+          current?: string;
+          previous?: string;
+        };
+      };
+      eqpl?: {
+        redFlag?: string;
+        action?: string;
+        denrStandard?: string;
+      };
+      remarks?: string;
+    }>;
+    samplingDate?: string;
+    weatherAndWind?: string;
+    explanationForConfirmatorySampling?: string;
+    overallAssessment?: {
+      firstQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+      secondQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+      thirdQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+      fourthQuarter?: {
+        year?: string;
+        assessment?: string;
+      };
+    };
+  },
+) {
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+
+  const parameters = data.parameters ?? [];
+
+  if (parameters.length > 0) {
+    // Multi-row header structure with 3 rows
+    // Row 1: Parameter | Results (merged) | EQPL (merged) | Remarks
+    // Row 2: Parameter | In SMR (merged) | MMT Confirmatory Sampling (merged) | Red Flag | Action | DENR Standard Class C - Daytime | Remarks
+    // Row 3: Parameter | Current | Previous | Current | Previous | Red Flag | Action | DENR Standard Class C - Daytime | Remarks
+
+    const columnWidths = [0.15, 0.1, 0.1, 0.1, 0.1, 0.08, 0.08, 0.14, 0.15];
+    const colWidths = columnWidths.map((pct) => tableWidth * pct);
+
+    let y = doc.y;
+    const topMargin = doc.page.margins.top || 50;
+    const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+    const headerRow1Height = 16;
+    const headerRow2Height = 32;
+    const headerRow3Height = 16;
+    const totalHeaderHeight =
+      headerRow1Height + headerRow2Height + headerRow3Height;
+
+    if (y + totalHeaderHeight > bottomLimit) {
+      doc.addPage();
+      y = topMargin;
+    }
+
+    const startY = y;
+    doc.strokeColor('#000000').lineWidth(0.5);
+    doc.font('Helvetica-Bold').fontSize(9);
+
+    // Calculate column positions
+    const parameterX = left;
+    const inSMRCurrentX = left + colWidths[0];
+    const inSMRPreviousX = inSMRCurrentX + colWidths[1];
+    const mmtCurrentX = inSMRPreviousX + colWidths[2];
+    const mmtPreviousX = mmtCurrentX + colWidths[3];
+    const redFlagX = mmtPreviousX + colWidths[4];
+    const actionX = redFlagX + colWidths[5];
+    const denrStandardX = actionX + colWidths[6];
+    const remarksX = denrStandardX + colWidths[7];
+
+    // Outer border
+    doc.rect(left, startY, tableWidth, totalHeaderHeight).stroke();
+
+    // ===== ROW 1 =====
+    // Parameter (spans 3 rows)
+    const parameterWidth = colWidths[0];
+    doc
+      .moveTo(parameterX + parameterWidth, startY)
+      .lineTo(parameterX + parameterWidth, startY + totalHeaderHeight)
+      .stroke();
+    const paramText = 'Parameter';
+    const paramTextHeight = doc.heightOfString(paramText, {
+      width: parameterWidth - 4,
+      align: 'center',
+    });
+    const paramTextY = startY + (totalHeaderHeight - paramTextHeight) / 2;
+    doc.text(paramText, parameterX + 2, paramTextY, {
+      width: parameterWidth - 4,
+      align: 'center',
+    });
+
+    // Results (merged: spans inSMRCurrent, inSMRPrevious, mmtCurrent, mmtPrevious)
+    const resultsWidth =
+      colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4];
+    doc
+      .moveTo(mmtPreviousX + colWidths[4], startY)
+      .lineTo(mmtPreviousX + colWidths[4], startY + headerRow1Height)
+      .stroke();
+    doc
+      .moveTo(inSMRCurrentX, startY + headerRow1Height)
+      .lineTo(mmtPreviousX + colWidths[4], startY + headerRow1Height)
+      .stroke();
+    doc.text('Results', inSMRCurrentX + 2, startY + 5, {
+      width: resultsWidth - 4,
+      align: 'center',
+    });
+
+    // EQPL (merged: spans redFlag, action, denrStandard)
+    const eqplWidth = colWidths[5] + colWidths[6] + colWidths[7];
+    doc
+      .moveTo(remarksX, startY)
+      .lineTo(remarksX, startY + headerRow1Height)
+      .stroke();
+    doc
+      .moveTo(redFlagX, startY + headerRow1Height)
+      .lineTo(remarksX, startY + headerRow1Height)
+      .stroke();
+    doc.text('EQPL', redFlagX + 2, startY + 5, {
+      width: eqplWidth - 4,
+      align: 'center',
+    });
+
+    // Remarks (spans 3 rows)
+    const remarksWidth = colWidths[8];
+    const remarksText = 'Remarks';
+    const remarksTextHeight = doc.heightOfString(remarksText, {
+      width: remarksWidth - 4,
+      align: 'center',
+    });
+    const remarksTextY = startY + (totalHeaderHeight - remarksTextHeight) / 2;
+    doc.text(remarksText, remarksX + 2, remarksTextY, {
+      width: remarksWidth - 4,
+      align: 'center',
+    });
+
+    // ===== ROW 2 =====
+    const row2Y = startY + headerRow1Height;
+
+    // In SMR (merged: spans current and previous)
+    const inSMRWidth = colWidths[1] + colWidths[2];
+    doc
+      .moveTo(inSMRPreviousX + colWidths[2], row2Y)
+      .lineTo(inSMRPreviousX + colWidths[2], row2Y + headerRow2Height)
+      .stroke();
+    doc.text('In SMR', inSMRCurrentX + 2, row2Y + 5, {
+      width: inSMRWidth - 4,
+      align: 'center',
+    });
+
+    // MMT Confirmatory Sampling (merged: spans current and previous)
+    const mmtWidth = colWidths[3] + colWidths[4];
+    doc
+      .moveTo(mmtPreviousX + colWidths[4], row2Y)
+      .lineTo(mmtPreviousX + colWidths[4], row2Y + headerRow2Height)
+      .stroke();
+    const mmtText = 'MMT Confirmatory\nSampling';
+    const mmtTextHeight = doc.heightOfString(mmtText, {
+      width: mmtWidth - 4,
+      align: 'center',
+    });
+    const mmtTextY = row2Y + (headerRow2Height - mmtTextHeight) / 2;
+    doc.text(mmtText, mmtCurrentX + 2, mmtTextY, {
+      width: mmtWidth - 4,
+      align: 'center',
+    });
+
+    // Vertical divider between DENR Standard and Remarks (row 2)
+    doc
+      .moveTo(remarksX, row2Y)
+      .lineTo(remarksX, row2Y + headerRow2Height)
+      .stroke();
+
+    // Horizontal divider under row 2 for Results section
+    doc
+      .moveTo(inSMRCurrentX, row2Y + headerRow2Height)
+      .lineTo(mmtPreviousX + colWidths[4], row2Y + headerRow2Height)
+      .stroke();
+
+    // Red Flag (spans rows 2 and 3)
+    doc
+      .moveTo(actionX, row2Y)
+      .lineTo(actionX, startY + totalHeaderHeight)
+      .stroke();
+    const redFlagText = 'Red\nFlag';
+    const redFlagTextHeight = doc.heightOfString(redFlagText, {
+      width: colWidths[5] - 4,
+      align: 'center',
+    });
+    const redFlagTextY =
+      row2Y + (headerRow2Height + headerRow3Height - redFlagTextHeight) / 2;
+    doc.text(redFlagText, redFlagX + 2, redFlagTextY, {
+      width: colWidths[5] - 4,
+      align: 'center',
+    });
+
+    // Action (spans rows 2 and 3)
+    doc
+      .moveTo(denrStandardX, row2Y)
+      .lineTo(denrStandardX, startY + totalHeaderHeight)
+      .stroke();
+    const actionText = 'Action';
+    const actionTextHeight = doc.heightOfString(actionText, {
+      width: colWidths[6] - 4,
+      align: 'center',
+    });
+    const actionTextY =
+      row2Y + (headerRow2Height + headerRow3Height - actionTextHeight) / 2;
+    doc.text(actionText, actionX + 2, actionTextY, {
+      width: colWidths[6] - 4,
+      align: 'center',
+    });
+
+    // DENR Standard Class C - Daytime (spans rows 2 and 3)
+    const denrText = 'DENR Standard Class C - Daytime';
+    const denrTextHeight = doc.heightOfString(denrText, {
+      width: colWidths[7] - 4,
+      align: 'center',
+    });
+    const denrTextY =
+      row2Y + (headerRow2Height + headerRow3Height - denrTextHeight) / 2;
+    doc.text(denrText, denrStandardX + 2, denrTextY, {
+      width: colWidths[7] - 4,
+      align: 'center',
+    });
+
+    // ===== ROW 3 =====
+    const row3Y = row2Y + headerRow2Height;
+
+    // Vertical divider between In SMR Current and Previous (row 3)
+    doc
+      .moveTo(inSMRPreviousX, row3Y)
+      .lineTo(inSMRPreviousX, startY + totalHeaderHeight)
+      .stroke();
+
+    // Vertical divider between In SMR Previous and MMT Current (row 3)
+    doc
+      .moveTo(mmtCurrentX, row3Y)
+      .lineTo(mmtCurrentX, startY + totalHeaderHeight)
+      .stroke();
+
+    // Vertical divider between MMT Current and Previous (row 3)
+    doc
+      .moveTo(mmtPreviousX, row3Y)
+      .lineTo(mmtPreviousX, startY + totalHeaderHeight)
+      .stroke();
+
+    // Vertical divider between Previous and Red Flag (row 3)
+    doc
+      .moveTo(redFlagX, row3Y)
+      .lineTo(redFlagX, startY + totalHeaderHeight)
+      .stroke();
+
+    // Vertical divider between DENR Standard and Remarks (row 3)
+    doc
+      .moveTo(remarksX, row3Y)
+      .lineTo(remarksX, startY + totalHeaderHeight)
+      .stroke();
+
+    // Current label under In SMR
+    doc.text('Current', inSMRCurrentX + 2, row3Y + 4, {
+      width: colWidths[1] - 4,
+      align: 'center',
+    });
+
+    // Previous label under In SMR
+    doc.text('Previous', inSMRPreviousX + 2, row3Y + 4, {
+      width: colWidths[2] - 4,
+      align: 'center',
+    });
+
+    // Current label under MMT Confirmatory Sampling
+    doc.text('Current', mmtCurrentX + 2, row3Y + 4, {
+      width: colWidths[3] - 4,
+      align: 'center',
+    });
+
+    // Previous label under MMT Confirmatory Sampling
+    doc.text('Previous', mmtPreviousX + 2, row3Y + 4, {
+      width: colWidths[4] - 4,
+      align: 'center',
+    });
+
+    y = startY + totalHeaderHeight;
+
+    // Data rows
+    doc.font('Helvetica').fontSize(10);
+    for (const param of parameters) {
+      const name = param.name || '';
+      const currentInSMR = param.results?.inSMR?.current || '-';
+      const previousInSMR = param.results?.inSMR?.previous || '-';
+      const currentMMT = param.results?.mmtConfirmatorySampling?.current || '-';
+      const previousMMT =
+        param.results?.mmtConfirmatorySampling?.previous || '-';
+      const redFlag = param.eqpl?.redFlag || '-';
+      const action = param.eqpl?.action || '-';
+      const denrStandard = param.eqpl?.denrStandard || '-';
+      const remarks = param.remarks || '-';
+
+      // Calculate row height
+      const cellTexts = [
+        name,
+        currentInSMR,
+        previousInSMR,
+        currentMMT,
+        previousMMT,
+        redFlag,
+        action,
+        denrStandard,
+        remarks,
+      ];
+      const cellHeights = cellTexts.map((text, idx) =>
+        doc.heightOfString(text, {
+          width: colWidths[idx] - 4,
+          align: 'center',
+        }),
+      );
+      const rowHeight = Math.max(14, ...cellHeights) + 6;
+
+      if (y + rowHeight > bottomLimit) {
+        doc.addPage();
+        y = topMargin;
+      }
+
+      // Draw row borders
+      doc.rect(left, y, tableWidth, rowHeight).stroke();
+
+      // Column dividers
+      const columnXPositions = [
+        inSMRCurrentX,
+        inSMRPreviousX,
+        mmtCurrentX,
+        mmtPreviousX,
+        redFlagX,
+        actionX,
+        denrStandardX,
+        remarksX,
+      ];
+
+      for (const xPos of columnXPositions) {
+        doc
+          .moveTo(xPos, y)
+          .lineTo(xPos, y + rowHeight)
+          .stroke();
+      }
+
+      // Cell text
+      const cellData = [
+        { text: name, x: parameterX, width: colWidths[0] },
+        { text: currentInSMR, x: inSMRCurrentX, width: colWidths[1] },
+        { text: previousInSMR, x: inSMRPreviousX, width: colWidths[2] },
+        { text: currentMMT, x: mmtCurrentX, width: colWidths[3] },
+        { text: previousMMT, x: mmtPreviousX, width: colWidths[4] },
+        { text: redFlag, x: redFlagX, width: colWidths[5] },
+        { text: action, x: actionX, width: colWidths[6] },
+        { text: denrStandard, x: denrStandardX, width: colWidths[7] },
+        { text: remarks, x: remarksX, width: colWidths[8] },
+      ];
+
+      for (let i = 0; i < cellData.length; i++) {
+        const { text, x, width } = cellData[i];
+        const textY = y + (rowHeight - cellHeights[i]) / 2;
+        doc.text(text, x + 2, textY, {
+          width: width - 4,
+          align: 'center',
+        });
+      }
+
+      y += rowHeight;
+    }
+
+    // Additional info rows as table cells (similar to water quality footer rows)
+    const additionalInfoRows: Array<{ label: string; value: string }> = [];
+    if (data.samplingDate) {
+      additionalInfoRows.push({
+        label: 'Date/ time of sampling',
+        value: data.samplingDate,
+      });
+    }
+    if (data.weatherAndWind) {
+      additionalInfoRows.push({
+        label: 'Weather and wind direction',
+        value: data.weatherAndWind,
+      });
+    }
+    if (data.explanationForConfirmatorySampling) {
+      additionalInfoRows.push({
+        label:
+          'Explanation of why confirmatory sampling was conducted for specific parameter in the sampling station',
+        value: data.explanationForConfirmatorySampling,
+      });
+    }
+
+    // Draw additional info rows as table footer rows
+    doc.font('Helvetica').fontSize(11);
+    for (const { label, value } of additionalInfoRows) {
+      const combinedText = `${label}: ${value}`;
+      const textHeight = doc.heightOfString(combinedText, {
+        width: tableWidth - 10,
+        align: 'left',
+      });
+      const rowHeight = Math.max(14, textHeight) + 4;
+
+      if (y + rowHeight > bottomLimit) {
+        doc.addPage();
+        y = topMargin;
+      }
+
+      // Draw borders
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc
+        .moveTo(left, y)
+        .lineTo(left, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left + tableWidth, y)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(left, y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      doc.text(combinedText, left + 5, y + (rowHeight - textHeight) / 2, {
+        width: tableWidth - 10,
+        align: 'left',
+      });
+
+      y += rowHeight;
+    }
+
+    doc.y = y;
+    doc.moveDown(0.5);
+  }
+
+  // Overall Assessment Table (quarterly)
+  if (data.overallAssessment) {
+    doc.moveDown(0.5);
+
+    const quarters = [
+      data.overallAssessment.firstQuarter,
+      data.overallAssessment.secondQuarter,
+      data.overallAssessment.thirdQuarter,
+      data.overallAssessment.fourthQuarter,
+    ];
+
+    const validQuarters = quarters.filter((q) => q && (q.year || q.assessment));
+
+    if (validQuarters.length > 0) {
+      // Label column (30%) + 4 equal columns for each quarter (17.5% each)
+      const columnWidths = [0.2, 0.2, 0.2, 0.2, 0.2];
+      const colWidths = columnWidths.map((pct) => tableWidth * pct);
+
+      let y = doc.y;
+      const topMargin = doc.page.margins.top || 50;
+      const bottomLimit =
+        doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+      const headerRow1Height = 20;
+      const headerRow2Height = 20;
+      const totalHeaderHeight = headerRow1Height + headerRow2Height;
+
+      if (y + totalHeaderHeight > bottomLimit) {
+        doc.addPage();
+        y = topMargin;
+      }
+
+      const startY = y;
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc.font('Helvetica-Bold').fontSize(9);
+
+      // Column positions
+      const labelX = left;
+      const col1X = left + colWidths[0];
+      const col2X = left + colWidths[0] + colWidths[1];
+      const col3X = left + colWidths[0] + colWidths[1] + colWidths[2];
+      const col4X =
+        left + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3];
+
+      // Outer border
+      doc.rect(left, startY, tableWidth, totalHeaderHeight).stroke();
+
+      // ===== ROW 1: Quarter headers with years =====
+      // Draw vertical dividers
+      doc
+        .moveTo(col1X, startY)
+        .lineTo(col1X, startY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(col2X, startY)
+        .lineTo(col2X, startY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(col3X, startY)
+        .lineTo(col3X, startY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(col4X, startY)
+        .lineTo(col4X, startY + totalHeaderHeight)
+        .stroke();
+
+      // Horizontal divider after row 1 (only for quarter columns, not label)
+      doc
+        .moveTo(col1X, startY + headerRow1Height)
+        .lineTo(left + tableWidth, startY + headerRow1Height)
+        .stroke();
+
+      // Row 1: Label + Quarter headers
+      const labelText = 'Overall Noise\nQuality Impact\nAssessment';
+      const labelTextHeight = doc.heightOfString(labelText, {
+        width: colWidths[0] - 4,
+        align: 'center',
+      });
+      const labelY = startY + (totalHeaderHeight - labelTextHeight) / 2;
+      doc.text(labelText, labelX + 2, labelY, {
+        width: colWidths[0] - 4,
+        align: 'center',
+      });
+
+      const q1Header = `1st Quarter ${quarters[0]?.year || 'Year'}`;
+      const q2Header = `2nd Quarter ${quarters[1]?.year || '2025'}`;
+      const q3Header = `3rd Quarter ${quarters[2]?.year || '2025'}`;
+      const q4Header = `4th Quarter ${quarters[3]?.year || '2025'}`;
+
+      doc.text(q1Header, col1X + 2, startY + 5, {
+        width: colWidths[1] - 4,
+        align: 'center',
+      });
+      doc.text(q2Header, col2X + 2, startY + 5, {
+        width: colWidths[2] - 4,
+        align: 'center',
+      });
+      doc.text(q3Header, col3X + 2, startY + 5, {
+        width: colWidths[3] - 4,
+        align: 'center',
+      });
+      doc.text(q4Header, col4X + 2, startY + 5, {
+        width: colWidths[4] - 4,
+        align: 'center',
+      });
+
+      // ===== ROW 2: Assessment values =====
+      const row2Y = startY + headerRow1Height;
+
+      const q1Assessment = quarters[0]?.assessment || '1ST QUARTER';
+      const q2Assessment = quarters[1]?.assessment || '2ND QUARTER';
+      const q3Assessment = quarters[2]?.assessment || '3RD QUARTER';
+      const q4Assessment = quarters[3]?.assessment || '4TH QUARTER';
+
+      doc.text(q1Assessment, col1X + 2, row2Y + 5, {
+        width: colWidths[1] - 4,
+        align: 'center',
+      });
+      doc.text(q2Assessment, col2X + 2, row2Y + 5, {
+        width: colWidths[2] - 4,
+        align: 'center',
+      });
+      doc.text(q3Assessment, col3X + 2, row2Y + 5, {
+        width: colWidths[3] - 4,
+        align: 'center',
+      });
+      doc.text(q4Assessment, col4X + 2, row2Y + 5, {
+        width: colWidths[4] - 4,
+        align: 'center',
+      });
+
+      y = startY + totalHeaderHeight;
+      doc.y = y;
+      doc.moveDown(0.5);
+    }
+  }
+}
+
+/**
+ * Draw Compliance with Good Practice in Solid and Hazardous Waste Management table
+ */
+export function drawSolidAndHazardousWasteManagementTable(
+  doc: PDFKit.PDFDocument,
+  data: {
+    quarry?:
+      | string
+      | Array<{
+          typeOfWaste?: string;
+          eccEpepCommitments?: {
+            handling?: string;
+            storage?: string;
+            disposal?: boolean;
+          };
+          adequate?: {
+            y?: boolean;
+            n?: boolean;
+          };
+          previousRecord?: string | Record<string, number>;
+          q2_2025_Generated_HW?: string | Record<string, number>;
+          total?: string | Record<string, number>;
+        }>;
+    plant?:
+      | string
+      | Array<{
+          typeOfWaste?: string;
+          eccEpepCommitments?: {
+            handling?: string;
+            storage?: string;
+            disposal?: boolean;
+          };
+          adequate?: {
+            y?: boolean;
+            n?: boolean;
+          };
+          previousRecord?: string | Record<string, number>;
+          q2_2025_Generated_HW?: string | Record<string, number>;
+          total?: string | Record<string, number>;
+        }>;
+    port?:
+      | string
+      | Array<{
+          typeOfWaste?: string;
+          eccEpepCommitments?: {
+            handling?: string;
+            storage?: string;
+            disposal?: boolean;
+          };
+          adequate?: {
+            y?: boolean;
+            n?: boolean;
+          };
+          previousRecord?: string | Record<string, number>;
+          q2_2025_Generated_HW?: string | Record<string, number>;
+          total?: string | Record<string, number>;
+        }>;
+  },
+) {
+  const left = doc.page.margins.left || 50;
+  const right = doc.page.width - (doc.page.margins.right || 50);
+  const tableWidth = right - left;
+  const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+  let y = doc.y;
+
+  // Quarry - can be text or table
+  if (data.quarry) {
+    if (typeof data.quarry === 'string') {
+      // Display as text
+      const textIndent = 60;
+      doc.font('Helvetica-Bold').fontSize(11);
+      doc.text('Quarry: ', left + textIndent, y, {
+        continued: true,
+        lineBreak: false,
+      });
+      doc.font('Helvetica').fontSize(11);
+      doc.text(data.quarry);
+      y = doc.y;
+      doc.moveDown(2);
+      y = doc.y;
+    }
+  }
+
+  // Helper function to render a waste management table
+  const renderWasteTable = (
+    title: string,
+    items: Array<{
+      typeOfWaste?: string;
+      eccEpepCommitments?: {
+        handling?: string;
+        storage?: string;
+        disposal?: boolean;
+      };
+      adequate?: {
+        y?: boolean;
+        n?: boolean;
+      };
+      previousRecord?: string | Record<string, number>;
+      q2_2025_Generated_HW?: string | Record<string, number>;
+      total?: string | Record<string, number>;
+    }>,
+  ) => {
+    // Display title
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text(title, left, y, {
+      align: 'center',
+    });
+    y = doc.y;
+    doc.moveDown(1);
+    y = doc.y;
+
+    // Column widths
+    const typeOfWasteWidth = tableWidth * 0.15;
+    const handlingWidth = tableWidth * 0.12;
+    const storageWidth = tableWidth * 0.12;
+    const disposalWidth = tableWidth * 0.12;
+    const adequateYWidth = tableWidth * 0.06;
+    const adequateNWidth = tableWidth * 0.06;
+    const previousRecordWidth = tableWidth * 0.12;
+    const q2GeneratedWidth = tableWidth * 0.13;
+    const totalWidth2 = tableWidth * 0.12;
+
+    // Column X positions
+    const typeOfWasteX = left;
+    const handlingX = typeOfWasteX + typeOfWasteWidth;
+    const storageX = handlingX + handlingWidth;
+    const disposalX = storageX + storageWidth;
+    const adequateYX = disposalX + disposalWidth;
+    const adequateNX = adequateYX + adequateYWidth;
+    const previousRecordX = adequateNX + adequateNWidth;
+    const q2GeneratedX = previousRecordX + previousRecordWidth;
+    const totalX2 = q2GeneratedX + q2GeneratedWidth;
+
+    // Header heights
+    const headerRow1Height = 17;
+    const headerRow2Height = 22;
+    const totalHeaderHeight = headerRow1Height + headerRow2Height;
+
+    const minRowHeight = 16;
+    const rowPadding = 6;
+    let tableBottomLimit = bottomLimit;
+
+    const recalcBottomLimit = () =>
+      doc.page.height - (doc.page.margins.bottom || 50) - 30;
+
+    const drawRowTopBorder = (rowY: number) => {
+      doc.strokeColor('#000000').lineWidth(0.5);
+      doc
+        .moveTo(left, rowY)
+        .lineTo(left + tableWidth, rowY)
+        .stroke();
+    };
+
+    const drawCheckMark = (
+      cellX: number,
+      cellWidth: number,
+      rowY: number,
+      cellHeight: number,
+    ) => {
+      const checkmarkSize = 4;
+      const centerX = cellX + cellWidth / 2;
+      const centerY = rowY + cellHeight / 2;
+
+      doc
+        .save()
+        .lineWidth(1.2)
+        .moveTo(centerX - checkmarkSize, centerY)
+        .lineTo(centerX - checkmarkSize / 2, centerY + checkmarkSize)
+        .lineTo(centerX + checkmarkSize, centerY - checkmarkSize)
+        .stroke()
+        .restore();
+    };
+
+    if (y + totalHeaderHeight + minRowHeight > tableBottomLimit) {
+      doc.addPage();
+      tableBottomLimit = recalcBottomLimit();
+      y = doc.page.margins.top || 50;
+    }
+
+    // Draw header
+    const drawHeader = (startY: number): number => {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(11)
+        .strokeColor('#000000')
+        .lineWidth(0.5);
+
+      // Outer borders
+      doc
+        .moveTo(left, startY)
+        .lineTo(left + tableWidth, startY)
+        .stroke();
+
+      // Row 1: Type of Waste | ECC/EPEP Commitments | Adequate | Previous Record | Q2 2025 Generated HW | Total
+      // Type of Waste (merged 3 rows)
+      doc
+        .moveTo(typeOfWasteX, startY)
+        .lineTo(typeOfWasteX, startY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(handlingX, startY)
+        .lineTo(handlingX, startY + totalHeaderHeight)
+        .stroke();
+
+      const typeText = 'Type of Waste';
+      const typeTextHeight = doc.heightOfString(typeText, {
+        width: typeOfWasteWidth - 4,
+        align: 'center',
+      });
+      const typeCenteredY = startY + (totalHeaderHeight - typeTextHeight) / 2;
+      doc.text(typeText, typeOfWasteX + 2, typeCenteredY, {
+        width: typeOfWasteWidth - 4,
+        align: 'center',
+      });
+
+      // ECC/EPEP Commitments (spans Handling, Storage, Disposal)
+      const eccWidth = handlingWidth + storageWidth + disposalWidth;
+      doc
+        .moveTo(handlingX + eccWidth, startY)
+        .lineTo(handlingX + eccWidth, startY + headerRow1Height)
+        .stroke();
+      doc.text('ECC/ EPEP Commitments', handlingX + 2, startY + 5, {
+        width: eccWidth - 4,
+        align: 'center',
+      });
+
+      // Adequate (spans Y, N - merged rows 1 and 2)
+      const adequateWidth = adequateYWidth + adequateNWidth;
+      doc
+        .moveTo(adequateYX, startY)
+        .lineTo(adequateYX, startY + headerRow1Height)
+        .stroke();
+      doc
+        .moveTo(adequateYX + adequateWidth, startY)
+        .lineTo(adequateYX + adequateWidth, startY + headerRow1Height)
+        .stroke();
+
+      const adequateText = 'Adequate';
+      const adequateTextHeight = doc.heightOfString(adequateText, {
+        width: adequateWidth - 4,
+        align: 'center',
+      });
+      const adequateCenteredY =
+        startY + (headerRow1Height - adequateTextHeight + 4) / 2;
+      doc.text(adequateText, adequateYX + 2, adequateCenteredY, {
+        width: adequateWidth - 4,
+        align: 'center',
+      });
+
+      // Previous Record (merged 3 rows)
+      doc
+        .moveTo(previousRecordX, startY)
+        .lineTo(previousRecordX, startY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(q2GeneratedX, startY)
+        .lineTo(q2GeneratedX, startY + totalHeaderHeight)
+        .stroke();
+
+      const prevText = 'Previous Record';
+      const prevTextHeight = doc.heightOfString(prevText, {
+        width: previousRecordWidth - 4,
+        align: 'center',
+      });
+      const prevCenteredY = startY + (totalHeaderHeight - prevTextHeight) / 2;
+      doc.text(prevText, previousRecordX + 2, prevCenteredY, {
+        width: previousRecordWidth - 4,
+        align: 'center',
+      });
+
+      // Q2 2025 Generated HW (merged 3 rows)
+      doc
+        .moveTo(totalX2, startY)
+        .lineTo(totalX2, startY + totalHeaderHeight)
+        .stroke();
+
+      const q2Text = 'Q2 2025 Generated HW';
+      const q2TextHeight = doc.heightOfString(q2Text, {
+        width: q2GeneratedWidth - 4,
+        align: 'center',
+      });
+      const q2CenteredY = startY + (totalHeaderHeight - q2TextHeight + 4) / 2;
+      doc.text(q2Text, q2GeneratedX + 2, q2CenteredY, {
+        width: q2GeneratedWidth - 4,
+        align: 'center',
+      });
+
+      // Total (merged 3 rows)
+      doc
+        .moveTo(totalX2 + totalWidth2, startY)
+        .lineTo(totalX2 + totalWidth2, startY + totalHeaderHeight)
+        .stroke();
+
+      const totalText = 'Total';
+      const totalTextHeight = doc.heightOfString(totalText, {
+        width: totalWidth2 - 4,
+        align: 'center',
+      });
+      const totalCenteredY = startY + (totalHeaderHeight - totalTextHeight) / 2;
+      doc.text(totalText, totalX2 + 2, totalCenteredY, {
+        width: totalWidth2 - 4,
+        align: 'center',
+      });
+
+      const row1BottomY = startY + headerRow1Height;
+      doc
+        .moveTo(handlingX, row1BottomY)
+        .lineTo(adequateYX, row1BottomY)
+        .stroke();
+      doc
+        .moveTo(adequateYX, row1BottomY)
+        .lineTo(previousRecordX, row1BottomY)
+        .stroke();
+
+      // Row 2: Handling | Storage | Disposal | Y | N
+      const row2Y = startY + headerRow1Height;
+
+      doc
+        .moveTo(storageX, row2Y)
+        .lineTo(storageX, row2Y + headerRow2Height)
+        .stroke()
+        .fontSize(10);
+      doc.text('Handling', handlingX + 2, row2Y + 5, {
+        width: handlingWidth - 4,
+        align: 'center',
+      });
+
+      doc
+        .moveTo(disposalX, row2Y)
+        .lineTo(disposalX, row2Y + headerRow2Height)
+        .stroke();
+      doc.text('Storage', storageX + 2, row2Y + 5, {
+        width: storageWidth - 4,
+        align: 'center',
+      });
+
+      doc.text('Disposal', disposalX + 2, row2Y + 5, {
+        width: disposalWidth - 4,
+        align: 'center',
+      });
+
+      doc
+        .moveTo(adequateYX, row2Y)
+        .lineTo(adequateYX, row2Y + headerRow2Height)
+        .stroke();
+      doc
+        .moveTo(adequateNX, row2Y)
+        .lineTo(adequateNX, row2Y + headerRow2Height)
+        .stroke();
+      doc.text('Y', adequateYX + 2, row2Y + 5, {
+        width: adequateYWidth - 4,
+        align: 'center',
+      });
+
+      doc.text('N', adequateNX + 2, row2Y + 5, {
+        width: adequateNWidth - 4,
+        align: 'center',
+      });
+
+      const row2BottomY = row2Y + headerRow2Height;
+      doc
+        .moveTo(left, row2BottomY)
+        .lineTo(left + tableWidth, row2BottomY)
+        .stroke();
+
+      return startY + totalHeaderHeight;
+    };
+
+    y = drawHeader(y);
+
+    // Data rows
+    doc.font('Helvetica').fontSize(9);
+
+    for (const item of items) {
+      const typeOfWaste = item.typeOfWaste || '';
+      const handling = item.eccEpepCommitments?.handling || '-';
+      const storage = item.eccEpepCommitments?.storage || '-';
+      const disposalValue = item.eccEpepCommitments?.disposal;
+      const adequateYValue = item.adequate?.y ?? false;
+      const adequateNValue = item.adequate?.n ?? false;
+
+      const disposalTextForHeight =
+        disposalValue === undefined ? '-' : disposalValue ? 'Yes' : 'No';
+      const adequateYTextForHeight = adequateYValue ? 'Yes' : '';
+      const adequateNTextForHeight = adequateNValue ? 'Yes' : '';
+
+      // Format the record values (handle both string and object)
+      const formatValue = (
+        val: string | Record<string, number> | undefined,
+      ): string => {
+        if (!val) return '-';
+        if (typeof val === 'string') return val;
+        // If object, format as "KEY: value, KEY: value"
+        return Object.entries(val)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(', ');
+      };
+
+      const previousRecord = formatValue(item.previousRecord);
+      const q2Generated = formatValue(item.q2_2025_Generated_HW);
+      const totalValue = formatValue(item.total);
+
+      // Calculate row height based on all columns
+      doc.font('Helvetica').fontSize(9);
+
+      const typeTextHeight = doc.heightOfString(typeOfWaste, {
+        width: typeOfWasteWidth - 4,
+      });
+      const handlingTextHeight = doc.heightOfString(handling, {
+        width: handlingWidth - 4,
+      });
+      const storageTextHeight = doc.heightOfString(storage, {
+        width: storageWidth - 4,
+      });
+      const disposalTextHeight = doc.heightOfString(disposalTextForHeight, {
+        width: disposalWidth - 4,
+      });
+      const adequateYTextHeight = doc.heightOfString(adequateYTextForHeight, {
+        width: adequateYWidth - 4,
+      });
+      const adequateNTextHeight = doc.heightOfString(adequateNTextForHeight, {
+        width: adequateNWidth - 4,
+      });
+      const previousTextHeight = doc.heightOfString(previousRecord, {
+        width: previousRecordWidth - 4,
+      });
+      const q2TextHeight = doc.heightOfString(q2Generated, {
+        width: q2GeneratedWidth - 4,
+      });
+      const totalTextHeight = doc.heightOfString(totalValue, {
+        width: totalWidth2 - 4,
+      });
+
+      const maxTextHeight = Math.max(
+        typeTextHeight,
+        handlingTextHeight,
+        storageTextHeight,
+        disposalTextHeight,
+        adequateYTextHeight,
+        adequateNTextHeight,
+        previousTextHeight,
+        q2TextHeight,
+        totalTextHeight,
+      );
+
+      const rowHeight = Math.max(minRowHeight, maxTextHeight + rowPadding);
+
+      if (y + rowHeight > tableBottomLimit) {
+        doc.addPage();
+        tableBottomLimit = recalcBottomLimit();
+        y = doc.page.margins.top || 50;
+        drawRowTopBorder(y);
+        doc.font('Helvetica').fontSize(9);
+      }
+
+      // Draw borders
+      doc.strokeColor('#000000').lineWidth(0.5);
+
+      doc
+        .moveTo(typeOfWasteX, y)
+        .lineTo(typeOfWasteX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(handlingX, y)
+        .lineTo(handlingX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(storageX, y)
+        .lineTo(storageX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(disposalX, y)
+        .lineTo(disposalX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(adequateYX, y)
+        .lineTo(adequateYX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(adequateNX, y)
+        .lineTo(adequateNX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(previousRecordX, y)
+        .lineTo(previousRecordX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(q2GeneratedX, y)
+        .lineTo(q2GeneratedX, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(totalX2, y)
+        .lineTo(totalX2, y + rowHeight)
+        .stroke();
+      doc
+        .moveTo(totalX2 + totalWidth2, y)
+        .lineTo(totalX2 + totalWidth2, y + rowHeight)
+        .stroke();
+
+      const typeTextY = y + (rowHeight - typeTextHeight) / 2;
+      doc.text(typeOfWaste, typeOfWasteX + 2, typeTextY, {
+        width: typeOfWasteWidth - 4,
+        align: 'center',
+      });
+
+      const handlingTextY = y + (rowHeight - handlingTextHeight) / 2;
+      doc.text(handling, handlingX + 2, handlingTextY, {
+        width: handlingWidth - 4,
+        align: 'center',
+      });
+
+      const storageTextY = y + (rowHeight - storageTextHeight) / 2;
+      doc.text(storage, storageX + 2, storageTextY, {
+        width: storageWidth - 4,
+        align: 'center',
+      });
+
+      if (disposalValue === undefined) {
+        const disposalTextY = y + (rowHeight - disposalTextHeight) / 2;
+        doc.text('-', disposalX + 2, disposalTextY, {
+          width: disposalWidth - 4,
+          align: 'center',
+        });
+      } else if (disposalValue) {
+        drawCheckMark(disposalX, disposalWidth, y, rowHeight);
+      } else {
+        const disposalTextY = y + (rowHeight - disposalTextHeight) / 2;
+        doc.text('No', disposalX + 2, disposalTextY, {
+          width: disposalWidth - 4,
+          align: 'center',
+        });
+      }
+
+      if (adequateYValue) {
+        drawCheckMark(adequateYX, adequateYWidth, y, rowHeight);
+      }
+
+      if (adequateNValue) {
+        drawCheckMark(adequateNX, adequateNWidth, y, rowHeight);
+      }
+
+      const previousTextY = y + (rowHeight - previousTextHeight) / 2;
+      doc.text(previousRecord, previousRecordX + 2, previousTextY, {
+        width: previousRecordWidth - 4,
+        align: 'center',
+      });
+
+      const q2TextY = y + (rowHeight - q2TextHeight) / 2;
+      doc.text(q2Generated, q2GeneratedX + 2, q2TextY, {
+        width: q2GeneratedWidth - 4,
+        align: 'center',
+      });
+
+      const totalTextY = y + (rowHeight - totalTextHeight) / 2;
+      doc.text(totalValue, totalX2 + 2, totalTextY, {
+        width: totalWidth2 - 4,
+        align: 'center',
+      });
+
+      // Bottom border
+      doc
+        .moveTo(left, y + rowHeight)
+        .lineTo(left + tableWidth, y + rowHeight)
+        .stroke();
+
+      y += rowHeight;
+    }
+
+    doc.moveDown(1);
+    y = doc.y;
+  };
+
+  // Render quarry table if it's an array
+  if (data.quarry && Array.isArray(data.quarry) && data.quarry.length > 0) {
+    renderWasteTable('Quarry', data.quarry);
+  }
+
+  // Render plant - can be text or table
+  if (data.plant) {
+    if (typeof data.plant === 'string') {
+      // Display as text
+      const textIndent = 60;
+      doc.font('Helvetica-Bold').fontSize(11);
+      doc.text('Plant: ', left + textIndent, doc.y, {
+        continued: true,
+        lineBreak: false,
+      });
+      doc.font('Helvetica').fontSize(11);
+      doc.text(data.plant);
+      doc.moveDown(2);
+    } else if (Array.isArray(data.plant) && data.plant.length > 0) {
+      renderWasteTable('Plant', data.plant);
+    }
+  }
+
+  // Render port - can be text or table
+  if (data.port) {
+    if (typeof data.port === 'string') {
+      // Display as text
+      const textIndent = 60;
+      doc.font('Helvetica-Bold').fontSize(11);
+      doc.text('Port: ', left + textIndent, doc.y, {
+        continued: true,
+        lineBreak: false,
+      });
+      doc.font('Helvetica').fontSize(11);
+      doc.text(data.port);
+      doc.moveDown(2);
+    } else if (Array.isArray(data.port) && data.port.length > 0) {
+      renderWasteTable('Port', data.port);
+    }
   }
 
   doc.y = y;

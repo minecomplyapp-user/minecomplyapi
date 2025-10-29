@@ -24,33 +24,32 @@ model User {
 }
 
 model ECCReport {
-  id             String    @id @default(uuid())
+  id             String   @id @default(uuid())
   generalInfo    Json?
   mmtInfo        Json?
   monitoringData Json?
   createdById    String?
-  createdBy      User?     @relation("UserCreatedECCReports", fields: [createdById], references: [id])
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  permit_holders String[]
+  createdBy      User?    @relation("UserCreatedECCReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_ecc_report_creator")
 }
 
 model CMVRReport {
-  id                              String    @id @default(uuid())
-  generalInfo                     Json?     // Company Name, Location, Quarter, Year, Date of Compliance, Monitoring Period, Date of Submission
-  executiveSummaryOfCompliance    Json?     // Executive summary section
-  complianceMonitoringReport      Json?     // ECC, ISAG/MPP, EPEP/FMRDP, RCF/MTF/FMRDF data
-  discussions                     Json?     // Discussions and findings
-  createdById                     String?
-  createdBy                       User?     @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
-  createdAt                       DateTime  @default(now())
-  updatedAt                       DateTime  @updatedAt
+  id                           String   @id @default(uuid())
+  generalInfo                  Json?
+  executiveSummaryOfCompliance Json?
+  complianceMonitoringReport   Json?
+  discussions                  Json?
+  createdById                  String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+  createdBy                    User?    @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_cmvr_report_creator")
 }
-
-
 
 model ValidationSession {
   id           String            @id @default(uuid())
@@ -70,37 +69,52 @@ model ValidationSession {
 }
 
 model ValidationEntry {
-  id                 String            @id @default(uuid())
-  validationId       String
-  status             ValidationOutcome @default(APPROVED)
-  fieldValue         Decimal?          @db.Decimal(12, 4)
-  fieldUnit          String?
-  comparisonData     Json?
-  notes              String?
-  recommendation     String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  validation         ValidationSession @relation(fields: [validationId], references: [id])
+  id             String            @id @default(uuid())
+  validationId   String
+  status         ValidationOutcome @default(APPROVED)
+  fieldValue     Decimal?          @db.Decimal(12, 4)
+  fieldUnit      String?
+  comparisonData Json?
+  notes          String?
+  recommendation String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  validation     ValidationSession @relation(fields: [validationId], references: [id])
 
   @@index([validationId], map: "idx_validation_entry_session")
 }
 
 model AttendanceRecord {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   reportId    String?
-  createdById String?
   fileName    String
   title       String?
   description String?
   meetingDate DateTime?
   location    String?
-  attendees   Json     // Array of attendee objects: { name, agency, office, position, signatureUrl, attendanceStatus }
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdBy   User?    @relation("UserAttendanceRecords", fields: [createdById], references: [id])
+  attendees   Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  createdBy   User?     @relation("UserAttendanceRecords", fields: [createdById], references: [id])
 
   @@index([reportId], map: "idx_attendance_record_report")
   @@index([createdById], map: "idx_attendance_record_creator")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ECCCondition {
+  id               BigInt    @id @default(autoincrement())
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamp(6)
+  condition        String?
+  status           String?   @db.VarChar
+  remarks          String?
+  ECCReportID      String?   @db.VarChar
+  nested_to        String?   @db.VarChar
+  condition_number Int?
+  remark_list      String[]
+  section          Int       @db.SmallInt
 }
 
 enum UserRole {
