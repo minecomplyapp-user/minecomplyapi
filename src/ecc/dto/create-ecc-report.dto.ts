@@ -49,4 +49,14 @@ generalInfo: object;
 @IsObject()
 mmtInfo: object;
 
+
+@ApiProperty({ description: 'Details about the Multi-Partite Monitoring Team' })
+@IsObject()
+remarks_list?: object
+
+@ApiProperty({ description: 'ID of the user who created the report' })
+@IsString()
+filename: string;
+
+
 }

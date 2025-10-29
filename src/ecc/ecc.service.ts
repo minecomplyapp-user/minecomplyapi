@@ -8,12 +8,15 @@ import {
   ECCPdfGeneratorService,
 } from './ecc-pdf-generator.service';
 
+import { ECCWordGeneratorService } from './ecc-word-generator.service';
+
 
 @Injectable()
 export class EccService {
    constructor(
       private readonly prisma: PrismaService,
       private readonly pdfGenerator: ECCPdfGeneratorService,
+      private readonly wordGenerator: ECCWordGeneratorService,
     ) {}
   
     async findOne(id: string) {
@@ -125,6 +128,26 @@ export class EccService {
       return this.pdfGenerator.generateECCreportPDF(eccReport, eCCConditions
       );
     }
+
+
+    async generateWordReport(id: string): Promise<{ fileName: string; buffer: Buffer }> {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const eccReport = await this.findOne(id);
+
+      const eCCConditions =await this.getEccConditionsByReportId(eccReport.id)
+  
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (!eccReport.permit_holders) {
+        throw new NotFoundException(
+          `CMVR Report with ID ${id} has no permit_holders data`,
+        );
+      }
+  
+
+    return this.wordGenerator.generateECCreportWord(eccReport, eCCConditions)
+
+    }
+
 async createEccReport(createEccReportDto: CreateEccReportDto) {
     // 1. Destructure DTO: Separate relation IDs, the nested array, and the rest of the data.
     const { 

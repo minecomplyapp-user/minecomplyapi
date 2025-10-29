@@ -38,4 +38,6 @@ export class CreateEccConditionDto {
     @ApiPropertyOptional({ description: 'The number identifying the condition' })
     @IsInt()
     section?: number;
+
+
 }

@@ -32,6 +32,8 @@ model ECCReport {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   permit_holders String[]
+  remarks_list   Json?
+  filename       String?  @db.VarChar
   createdBy      User?    @relation("UserCreatedECCReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_ecc_report_creator")

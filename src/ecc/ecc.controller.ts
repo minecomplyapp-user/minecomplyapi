@@ -19,6 +19,8 @@ import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ECCPdfGeneratorService } from './ecc-pdf-generator.service';
 
+import{ECCWordGeneratorService} from './ecc-word-generator.service';
+
 @Controller('ecc')
 export class EccController {
   constructor(private readonly eccService: EccService) {}
@@ -94,6 +96,9 @@ create(@Body() createEccDto: CreateEccReportDto) {
     }
   
 
+
+
+
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'ECC Report not found',
@@ -127,6 +132,27 @@ create(@Body() createEccDto: CreateEccReportDto) {
       }
     }
   }
-}
+    @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'ECC Report not found',
+  })
+  @Get('generateEccWord/:id') 
+  @ApiOperation({
+    summary: 'Generate ECC Report PDF by ID',
+})
+  async generateWordReport(@Param('id') id: string, @Res() res: Response) {
+   const { fileName, buffer } = await this.eccService.generateWordReport(id);
 
+  res.set({
+    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'Content-Disposition': `attachment; filename="${fileName}"`,
+    'Content-Length': buffer.length,
+  });
+    
+
+    res.end(buffer);
+  }
+
+  
+}
 
