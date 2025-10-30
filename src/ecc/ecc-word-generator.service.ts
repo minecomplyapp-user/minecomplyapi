@@ -34,7 +34,10 @@ export class ECCWordGeneratorService {
     const hasConditions = eccReport.conditions?.length > 0;
     const conditionsBySection = toConditionRows(eccReport.conditions);
 const children: (Paragraph | Table)[] = [];
-    if (hasConditions) {
+   
+  
+const columnWidths = [1474, 3088, 601, 601, 601, 2706]; // 6 columns (DXA)
+ if (hasConditions) {
      for (const [sectionIndex, conditionRows] of conditionsBySection.entries()) {
       let permitHolderRow ;
       if(sectionIndex>1){
@@ -71,9 +74,6 @@ const children: (Paragraph | Table)[] = [];
     new Paragraph({ text: "" }) // spacing below company name
   );
       }
-  
-const columnWidths = [1474, 3088, 601, 601, 601, 2706]; // 6 columns (DXA)
-
 const dataRows = conditionRows.map(
   (row) =>
     new TableRow({
