@@ -163,6 +163,7 @@ export interface CMVRGeneralInfo {
       remarks?: string | Record<string, string | undefined>;
     }>;
     otherComponents?: Array<{
+      name?: string;
       specification?: string;
       withinSpecs?: boolean;
       remarks?: string;

@@ -440,7 +440,6 @@ function loadDataOrSample(): CMVRGeneralInfo {
           ],
         },
         siteOcularValidation: {
-          na: false,
           mmtMembersInvolved: [
             'Wilfred H. Sebastian - Brgy. 19 – Sto. Tomas Rep.',
             'Reynaldo Malaqui - Brgy. 21 – San Marcos',
