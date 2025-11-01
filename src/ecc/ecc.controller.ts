@@ -6,7 +6,7 @@ import { CreateEccConditionDto } from './dto/create-ecc-condition.dto';
 import {
   Controller,
   Get,
-  Delete, 
+  Delete,
   Patch,
   Post,
   Body,
@@ -19,94 +19,81 @@ import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ECCPdfGeneratorService } from './ecc-pdf-generator.service';
 
-import{ECCWordGeneratorService} from './ecc-word-generator.service';
+import { ECCWordGeneratorService } from './ecc-word-generator.service';
 
 @Controller('ecc')
 export class EccController {
   constructor(private readonly eccService: EccService) {}
 
-@Post('createEccReport')
-@ApiOperation({
+  @Post('createEccReport')
+  @ApiOperation({
     summary: 'Create a new ECC Report',
-})
-create(@Body() createEccDto: CreateEccReportDto) {
-  return this.eccService.createEccReport(createEccDto);
-}
-
-
-
-
-
-
-
+  })
+  create(@Body() createEccDto: CreateEccReportDto) {
+    return this.eccService.createEccReport(createEccDto);
+  }
 
   @Get('getAllEccReports')
   @ApiOperation({
     summary: 'Retrieve all ECC Reports',
-})
+  })
   findAll() {
     return this.eccService.findAll();
   }
 
-
-@ApiOperation({
+  @ApiOperation({
     summary: 'Retrieve a specific ECC Report by ID',
-})
+  })
   @Get('getEccReportById/:id')
   findOne(@Param('id') id: string) {
     return this.eccService.getEccReportById(id);
   }
 
-
   //CONDITION NI NA PART
 
-// 1. UPDATE Condition
-@ApiOperation({
+  // 1. UPDATE Condition
+  @ApiOperation({
     summary: 'Update an ECC Condition by ID',
-})
+  })
   @Patch('condition/:conditionId')
-    updateCondition(
-        @Param('conditionId') conditionId: number,
-        @Body() updateDto: UpdateConditionDto,
-    ) {
-        return this.eccService.updateCondition(conditionId, updateDto);
-    }
+  updateCondition(
+    @Param('conditionId') conditionId: number,
+    @Body() updateDto: UpdateConditionDto,
+  ) {
+    return this.eccService.updateCondition(conditionId, updateDto);
+  }
 
-    // 2. ADD Condition
+  // 2. ADD Condition
 
-    @ApiOperation({
+  @ApiOperation({
     summary: 'Add a new ECC Condition to a specific ECC Report',
-})
-    @Post('addCondition/:reportId')
-    addCondition(
-        @Param('reportId') reportId: string,
-        @Body() createDto: CreateEccConditionDto, // Reuse the DTO, but ensure 'section' is included
-    ) {
-        // Note: The service will handle linking this new condition to the reportId
-        return this.eccService.addCondition(reportId, createDto);
-    }
+  })
+  @Post('addCondition/:reportId')
+  addCondition(
+    @Param('reportId') reportId: string,
+    @Body() createDto: CreateEccConditionDto, // Reuse the DTO, but ensure 'section' is included
+  ) {
+    // Note: The service will handle linking this new condition to the reportId
+    return this.eccService.addCondition(reportId, createDto);
+  }
 
-    // 3. REMOVE Condition
-    @ApiOperation({
+  // 3. REMOVE Condition
+  @ApiOperation({
     summary: 'Remove an ECC Condition by ID',
-})  
-    @Delete('condition/:conditionId')
-    removeCondition(@Param('conditionId') conditionId: number) {
-        return this.eccService.removeCondition(conditionId);
-    }
-  
-
-
-
+  })
+  @Delete('condition/:conditionId')
+  removeCondition(@Param('conditionId') conditionId: number) {
+    return this.eccService.removeCondition(conditionId);
+  }
 
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'ECC Report not found',
   })
-  @Get('generateEccPdf/:id') 
+  @Get('generateEccPdf/:id')
   @ApiOperation({
     summary: 'Generate ECC Report PDF by ID',
-})
+  })
   async generateGeneralInfoPdf(@Param('id') id: string, @Res() res: Response) {
     try {
       const pdfBuffer = await this.eccService.generateECCreportPDF(id);
@@ -132,27 +119,24 @@ create(@Body() createEccDto: CreateEccReportDto) {
       }
     }
   }
-    @ApiResponse({
+  @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'ECC Report not found',
   })
-  @Get('generateEccWord/:id') 
+  @Get('generateEccWord/:id')
   @ApiOperation({
     summary: 'Generate ECC Report PDF by ID',
-})
+  })
   async generateWordReport(@Param('id') id: string, @Res() res: Response) {
-   const { fileName, buffer } = await this.eccService.generateWordReport(id);
+    const { fileName, buffer } = await this.eccService.generateWordReport(id);
 
-  res.set({
-    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'Content-Disposition': `attachment; filename="${fileName}"`,
-    'Content-Length': buffer.length,
-  });
-    
+    res.set({
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Content-Length': buffer.length,
+    });
 
     res.end(buffer);
   }
-
-  
 }
-
