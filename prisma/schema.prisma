@@ -1,11 +1,13 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
   relationMode = "prisma"
+  schemas      = ["public", "auth"]
 }
 
 model User {
@@ -21,6 +23,8 @@ model User {
   createdCMVRReports CMVRReport[]        @relation("UserCreatedCMVRReports")
   validations        ValidationSession[] @relation("ValidationReviewer")
   attendanceRecords  AttendanceRecord[]  @relation("UserAttendanceRecords")
+
+  @@schema("public")
 }
 
 model ECCReport {
@@ -37,6 +41,7 @@ model ECCReport {
   createdBy      User?    @relation("UserCreatedECCReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_ecc_report_creator")
+  @@schema("public")
 }
 
 model CMVRReport {
@@ -51,6 +56,7 @@ model CMVRReport {
   createdBy                    User?    @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_cmvr_report_creator")
+  @@schema("public")
 }
 
 model ValidationSession {
@@ -68,6 +74,7 @@ model ValidationSession {
 
   @@index([submissionId], map: "idx_validation_submission")
   @@index([reviewerId], map: "idx_validation_reviewer")
+  @@schema("public")
 }
 
 model ValidationEntry {
@@ -84,6 +91,7 @@ model ValidationEntry {
   validation     ValidationSession @relation(fields: [validationId], references: [id])
 
   @@index([validationId], map: "idx_validation_entry_session")
+  @@schema("public")
 }
 
 model AttendanceRecord {
@@ -95,6 +103,7 @@ model AttendanceRecord {
   meetingDate DateTime?
   location    String?
   attendees   Json
+  attachments String[] @default([])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdById String?
@@ -102,6 +111,7 @@ model AttendanceRecord {
 
   @@index([reportId], map: "idx_attendance_record_report")
   @@index([createdById], map: "idx_attendance_record_creator")
+  @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -117,6 +127,8 @@ model ECCCondition {
   condition_number Int?
   remark_list      String[]
   section          Int       @db.SmallInt
+
+  @@schema("public")
 }
 
 enum UserRole {
@@ -124,6 +136,7 @@ enum UserRole {
   MMT
   REGULATOR
   ADMIN
+  @@schema("public")
 }
 
 enum OrganizationType {
@@ -132,6 +145,7 @@ enum OrganizationType {
   REGULATOR
   GOVERNMENT
   OTHER
+  @@schema("public")
 }
 
 enum OrganizationMembershipRole {
@@ -140,18 +154,21 @@ enum OrganizationMembershipRole {
   CONTRIBUTOR
   REVIEWER
   OBSERVER
+  @@schema("public")
 }
 
 enum ProjectAssignmentRole {
   PROPONENT_EDITOR
   MMT_REVIEWER
   REGULATOR_VIEWER
+  @@schema("public")
 }
 
 enum ConditionType {
   ECC
   EPEP
   OTHER
+  @@schema("public")
 }
 
 enum ComplianceCategory {
@@ -164,6 +181,7 @@ enum ComplianceCategory {
   INFRASTRUCTURE
   BIODIVERSITY
   OTHER
+  @@schema("public")
 }
 
 enum SubmissionStatus {
@@ -173,6 +191,7 @@ enum SubmissionStatus {
   APPROVED
   REVISIONS_REQUIRED
   ARCHIVED
+  @@schema("public")
 }
 
 enum ValidationStatus {
@@ -180,6 +199,7 @@ enum ValidationStatus {
   IN_PROGRESS
   COMPLETED
   NEEDS_INFORMATION
+  @@schema("public")
 }
 
 enum ValidationOutcome {
@@ -188,6 +208,7 @@ enum ValidationOutcome {
   REQUIRES_CORRECTION
   REJECTED
   NOT_APPLICABLE
+  @@schema("public")
 }
 
 enum ReportType {
@@ -195,6 +216,7 @@ enum ReportType {
   CMVR
   SUMMARY
   OTHER
+  @@schema("public")
 }
 
 enum EvidenceType {
@@ -204,10 +226,12 @@ enum EvidenceType {
   AUDIO
   DATASET
   OTHER
+  @@schema("public")
 }
 
 enum AttendanceStatus {
   IN_PERSON
   ONLINE
   ABSENT
+  @@schema("public")
 }

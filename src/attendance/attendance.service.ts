@@ -24,6 +24,8 @@ export class AttendanceService {
         createdById: createAttendanceRecordDto.createdById,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         attendees: createAttendanceRecordDto.attendees as any,
+        // @ts-ignore - field exists after migration and prisma generate
+        attachments: createAttendanceRecordDto.attachments,
       },
     });
   }
@@ -70,6 +72,8 @@ export class AttendanceService {
         createdById: updateAttendanceRecordDto.createdById,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         attendees: updateAttendanceRecordDto.attendees as any,
+        // @ts-ignore - field exists after migration and prisma generate
+        attachments: updateAttendanceRecordDto.attachments,
       },
     });
   }

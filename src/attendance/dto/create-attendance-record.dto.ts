@@ -94,4 +94,13 @@ export class CreateAttendanceRecordDto {
   @ValidateNested({ each: true })
   @Type(() => AttendeeDto)
   attendees: AttendeeDto[];
+
+  @ApiPropertyOptional({
+    description: 'Attachment storage paths',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  attachments?: string[];
 }

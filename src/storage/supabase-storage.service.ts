@@ -40,6 +40,40 @@ export class SupabaseStorageService {
         autoRefreshToken: false,
       },
     });
+
+    // Log resolved Supabase project and storage configuration once for diagnostics
+    try {
+      const host = new URL(url).host;
+      this.logger.log(`Supabase project host: ${host}`);
+      this.logger.log(`Supabase storage bucket: ${this.bucket}`);
+      this.logger.log(`Supabase uploads prefix: '${this.uploadsPrefix}'`);
+    } catch (e) {
+      this.logger.warn(`Unable to parse Supabase URL for logging: ${e}`);
+    }
+
+    // At startup, list available buckets to help detect bucket name mismatches across environments
+    void (async () => {
+      try {
+        const { data, error } = await this.client.storage.listBuckets();
+        if (error) {
+          this.logger.warn(`Could not list storage buckets: ${error.message}`);
+          return;
+        }
+        const names = (data ?? []).map((b) => b.name);
+        this.logger.log(
+          `Supabase storage buckets available: [${names.join(', ')}]`,
+        );
+        if (!names.includes(this.bucket)) {
+          this.logger.warn(
+            `Configured bucket '${this.bucket}' is not in this project. Uploads will fail with 404 until this is fixed.`,
+          );
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Failed to retrieve storage buckets for diagnostics: ${String(err)}`,
+        );
+      }
+    })();
   }
 
   async createSignedUploadUrl(
@@ -73,6 +107,18 @@ export class SupabaseStorageService {
           : 'NONE'
       }`,
     );
+
+    // Also log the storage API host encoded in the signed URL to avoid project mix-ups
+    try {
+      if (data?.signedUrl) {
+        const uploadHost = new URL(data.signedUrl).host;
+        this.logger.log(
+          `Signed upload URL host: ${uploadHost} (bucket: ${this.bucket})`,
+        );
+      }
+    } catch {
+      this.logger.debug('Could not parse signed upload URL for host logging');
+    }
 
     if (error || !data?.signedUrl) {
       this.logger.error(
@@ -128,7 +174,6 @@ export class SupabaseStorageService {
     return `${this.uploadsPrefix}/${unique}-${safeName}`;
   }
 }
-
 const sanitizeFilename = (filename: string): string => {
   if (!filename) {
     return 'file';
