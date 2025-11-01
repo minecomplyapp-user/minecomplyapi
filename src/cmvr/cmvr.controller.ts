@@ -1018,6 +1018,130 @@ const cmvrReport = {
     explanationForConfirmatorySampling: 'N/A',
     overallAssessment: 'Within the DENR Standard',
   },
+  noiseQualityImpactAssessment :{
+ 
+    parameters: [
+      {
+        name: "Noise Level at Boundary (dB)",
+        results: {
+          inSMR: {
+            current: "65 dB",
+            previous: "62 dB",
+          },
+          mmtConfirmatorySampling: {
+            current: "64 dB",
+            previous: "63 dB",
+          },
+        },
+        eqpl: {
+          redFlag: "None",
+          action: "Continue regular monitoring",
+          denrStandard: "75 dB (Daytime)",
+        },
+        remarks: "Within permissible limits.",
+      },
+      {
+        name: "Noise Level at Residential Area (dB)",
+        results: {
+          inSMR: {
+            current: "55 dB",
+            previous: "53 dB",
+          },
+          mmtConfirmatorySampling: {
+            current: "54 dB",
+            previous: "52 dB",
+          },
+        },
+        eqpl: {
+          redFlag: "Slight increase observed",
+          action: "Recommend noise source identification",
+          denrStandard: "65 dB (Daytime)",
+        },
+        remarks: "Slightly higher but still within standards.",
+      },
+    ],
+    samplingDate: "2025-09-15",
+    weatherAndWind: "Sunny, light breeze (NNE, 5 km/h)",
+      explanationForConfirmatorySampling:
+      "Confirmatory sampling was conducted due to observed increase in residential area noise levels.",
+    overallAssessment: {
+      firstQuarter: {
+        year: "2025",
+        assessment: "Noise levels within DENR limits.",
+      },
+      secondQuarter: {
+        year: "2025",
+        assessment: "Minor fluctuations, still compliant.",
+      },
+      thirdQuarter: {
+        year: "2025",
+        assessment: "Stable readings, no significant changes.",
+      },
+      fourthQuarter: {
+        year: "2025",
+        assessment: "Compliant throughout the year.",
+      },
+    },
+  
+
+
+
+  },
+  complianceWithGoodPracticeInSolidAndHazardousWasteManagement: {
+    quarry: [
+      {
+        typeOfWaste: "Waste Oil (H501)",
+        eccEpepCommitments: {
+          handling: "Properly labeled and placed in leak-proof drums.",
+          storage: "Stored in dedicated, covered, and bunded area.",
+          disposal: true
+        },
+        adequate: {
+          y: true,
+          n: false
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: "150.5 Liters", 
+        q2_2025_Generated_HW: "25.0 Liters",
+        total: "175.5 Liters"
+      },
+      {
+        typeOfWaste: "Used Lead-Acid Batteries (I101)",
+        eccEpepCommitments: {
+          handling: "Insulated and kept upright; no stacking.",
+          storage: "Stored on non-permeable floor, covered.",
+          disposal: true
+        },
+        adequate: {
+          y: true,
+          n: false
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: "15 pieces", 
+        q2_2025_Generated_HW: "5 pieces",
+        total: "20 pieces"
+      }
+    ],
+    plant: [
+      {
+        typeOfWaste: "Infectious Waste (A101)",
+        eccEpepCommitments: {
+          handling: "Segregated and placed in yellow bags/containers.",
+          storage: "Stored in cold room for less than 48 hours.",
+          disposal: true
+        },
+        adequate: {
+          y: false, // Indicates a non-compliance issue
+          n: true
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: "25 kg (3 bags)",
+        q2_2025_Generated_HW: "8.5 kg (1 bag)",
+        total: "33.5 kg (4 bags)"
+      }
+    ],
+    port: "All port waste is general solid waste (non-hazardous), collected daily by a contracted service. Segregation compliance was observed and adequate." // Using simple string for port
+  }
 };
 
 export { cmvrReport };

@@ -31,6 +31,7 @@ import {
   createAirQualitySection,
   createWaterQualitySection,
   createNoiseQualityTable,
+  createOverallNoiseQualityTable,
   createSolidAndHazardousWasteSection,
 } from './cmvr-sections/compliance-monitoring.helper';
 import { createProcessDocumentation } from './cmvr-sections/process-documentation.helper';
@@ -568,6 +569,16 @@ export class CMVRDocxGeneratorService {
     );
     if (info.noiseQualityImpactAssessment) {
       children.push(createNoiseQualityTable(info.noiseQualityImpactAssessment));
+
+      if( info.noiseQualityImpactAssessment.overallAssessment){
+        children.push(
+          new Paragraph({
+           
+          })
+        );
+      
+        children.push(createOverallNoiseQualityTable(info.noiseQualityImpactAssessment));
+              }
     }
 
     // 3. Solid and Hazardous Waste Management
