@@ -1,0 +1,52 @@
+{
+  "companyName": "Acme Mining Corporation",
+  "quarter": "3rd",
+  "year": 2025,
+  "projectCurrentName": "OMNICO NATURAL RESOURCES, INC. (ONRI)",
+  "projectStatus": "Active",
+  "ecc": [
+    {
+      "permitHolderName": "Flor T. Lagang",
+      "eccNumber": "ECC No. 010607050100-1103",
+      "dateOfIssuance": "Jul. 05, 2006"
+    }
+  ],
+  "isagMpp": [
+    {
+      "permitHolderName": "Flor T. Lagang",
+      "isagPermitNumber": "06-004",
+      "dateOfIssuance": "Sep. 06, 2022 (3rd renewal)"
+    }
+  ],
+  "epep": [
+    {
+      "permitHolderName": "Acme Mining Corporation",
+      "epepNumber": "EPEP-2019-0001",
+      "dateOfApproval": "2019-12-01"
+    }
+  ],
+  "rehabilitationCashFund": [
+    {
+      "permitHolderName": "ONRI",
+      "savingsAccountNumber": "DBP 00-0-01347-545-9",
+      "amountDeposited": "830,328.90",
+      "dateUpdated": "June 30, 2025"
+    }
+  ],
+  "monitoringTrustFundUnified": [
+    {
+      "permitHolderName": "Omnico Natural Resources, Inc.",
+      "savingsAccountNumber": "0545-012835-030",
+      "amountDeposited": "2,250,401.06",
+      "dateUpdated": "June 30, 2025"
+    }
+  ],
+  "finalMineRehabilitationAndDecommissioningFund": [
+    {
+      "permitHolderName": "ONRI",
+      "savingsAccountNumber": "4051-0020-03",
+      "amountDeposited": "1,110,559.91",
+      "dateUpdated": "July 11, 2025"
+    }
+  ]
+}
