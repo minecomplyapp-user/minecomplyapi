@@ -118,7 +118,12 @@ export class AttendanceController {
 
   @Get(':id/pdf')
   @ApiOperation({ summary: 'Generate PDF for an attendance record' })
-  @ApiQuery({ name: 'token', required: false, description: 'JWT token for authentication (alternative to Authorization header)' })
+  @ApiQuery({
+    name: 'token',
+    required: false,
+    description:
+      'JWT token for authentication (alternative to Authorization header)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Return the attendance record as a PDF.',

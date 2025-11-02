@@ -134,7 +134,10 @@ const createJwtFromRequestExtractor = (): JwtFromRequestFunction<unknown> => {
     const query = (request as { query?: unknown }).query;
     if (query && typeof query === 'object') {
       const tokenFromQuery = (query as Record<string, unknown>).token;
-      if (typeof tokenFromQuery === 'string' && tokenFromQuery.trim().length > 0) {
+      if (
+        typeof tokenFromQuery === 'string' &&
+        tokenFromQuery.trim().length > 0
+      ) {
         setAuthToken(tokenFromQuery);
         return tokenFromQuery;
       }
