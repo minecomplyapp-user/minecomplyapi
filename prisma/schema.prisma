@@ -103,7 +103,7 @@ model AttendanceRecord {
   meetingDate DateTime?
   location    String?
   attendees   Json
-  attachments String[] @default([])
+  attachments Json      @default("[]")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdById String?
