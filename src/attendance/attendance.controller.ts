@@ -143,7 +143,7 @@ export class AttendanceController {
     const pdfBuffer = await this.attendanceService.generatePdf(id);
     const attendanceRecord = await this.attendanceService.findOne(id);
 
-    const filename = `attendance_${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const filename = `${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.pdf`;
 
     res.set({
       'Content-Disposition': `attachment; filename="${filename}"`,
@@ -181,7 +181,7 @@ export class AttendanceController {
     const docxBuffer = await this.attendanceService.generateDocx(id);
     const attendanceRecord = await this.attendanceService.findOne(id);
 
-    const filename = `attendance_${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.docx`;
+    const filename = `${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.docx`;
 
     res.set({
       'Content-Disposition': `attachment; filename="${filename}"`,
