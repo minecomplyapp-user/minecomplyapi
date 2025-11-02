@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
 import { AttendancePdfGeneratorService } from './pdf-generator.service';
+import { AttendanceDocxGeneratorService } from './docx-generator.service';
 import { SupabaseStorageService } from '../storage/supabase-storage.service';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AttendanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfGenerator: AttendancePdfGeneratorService,
+    private readonly docxGenerator: AttendanceDocxGeneratorService,
     private readonly storageService: SupabaseStorageService,
   ) {}
 
@@ -128,6 +130,12 @@ export class AttendanceService {
     });
   }
 
+  async generateDocx(id: string): Promise<Buffer> {
+    const attendanceRecord = await this.findOne(id);
+    return this.docxGenerator.generateAttendanceDocx(attendanceRecord);
+  }
+
+  // Keep PDF generation for backward compatibility if needed
   async generatePdf(id: string): Promise<Buffer> {
     const attendanceRecord = await this.findOne(id);
     return this.pdfGenerator.generateAttendancePdf(attendanceRecord);

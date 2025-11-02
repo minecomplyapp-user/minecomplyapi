@@ -152,4 +152,42 @@ export class AttendanceController {
 
     res.end(pdfBuffer);
   }
+
+  @Get(':id/docx')
+  @ApiOperation({ summary: 'Generate DOCX for an attendance record' })
+  @ApiQuery({
+    name: 'token',
+    required: false,
+    description:
+      'JWT token for authentication (alternative to Authorization header)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return the attendance record as a DOCX.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Attendance record not found.',
+  })
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  )
+  async generateDocx(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('token') token: string | undefined,
+    @Res() res: Response,
+  ) {
+    const docxBuffer = await this.attendanceService.generateDocx(id);
+    const attendanceRecord = await this.attendanceService.findOne(id);
+
+    const filename = `attendance_${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.docx`;
+
+    res.set({
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': docxBuffer.length,
+    });
+
+    res.end(docxBuffer);
+  }
 }
