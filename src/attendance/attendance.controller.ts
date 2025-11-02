@@ -11,8 +11,19 @@ import {
   HttpStatus,
   Res,
   Header,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
@@ -30,6 +41,128 @@ export class AttendanceController {
   })
   create(@Body() createAttendanceRecordDto: CreateAttendanceRecordDto) {
     return this.attendanceService.create(createAttendanceRecordDto);
+  }
+
+  @Post('upload-signature')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload a signature image to Supabase storage' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Signature image file (PNG, JPG, JPEG, WebP)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Signature uploaded successfully. Returns the storage path.',
+    schema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', example: 'signatures/uuid-signature.png' },
+        url: {
+          type: 'string',
+          example: 'https://...supabase.co/storage/v1/...',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'No file uploaded or invalid file type.',
+  })
+  async uploadSignature(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Validate file type
+    const allowedMimeTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp',
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Only PNG, JPG, JPEG, and WebP are allowed.',
+      );
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('File size must be less than 5MB');
+    }
+
+    return this.attendanceService.uploadSignature(file);
+  }
+
+  @Post('upload-attachment')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload an attachment image to Supabase storage' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Attachment image file (PNG, JPG, JPEG, WebP)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Attachment uploaded successfully. Returns the storage path.',
+    schema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', example: 'uploads/uuid-photo.jpg' },
+        url: {
+          type: 'string',
+          example: 'https://...supabase.co/storage/v1/...',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'No file uploaded or invalid file type.',
+  })
+  async uploadAttachment(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Validate file type
+    const allowedMimeTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp',
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Only PNG, JPG, JPEG, and WebP are allowed.',
+      );
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('File size must be less than 10MB');
+    }
+
+    return this.attendanceService.uploadAttachment(file);
   }
 
   @Get()

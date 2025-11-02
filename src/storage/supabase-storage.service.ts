@@ -78,9 +78,9 @@ export class SupabaseStorageService {
 
   async createSignedUploadUrl(
     originalFilename: string,
-    options?: { upsert?: boolean },
+    options?: { upsert?: boolean; folder?: string },
   ): Promise<SignedUploadUrl> {
-    const objectPath = this.buildObjectPath(originalFilename);
+    const objectPath = this.buildObjectPath(originalFilename, options?.folder);
 
     this.logger.log(`Creating signed upload URL for path: ${objectPath}`);
     this.logger.log(`Options: ${JSON.stringify(options)}`);
@@ -165,9 +165,50 @@ export class SupabaseStorageService {
     }
   }
 
-  private buildObjectPath(filename: string): string {
+  async deleteFiles(
+    paths: string[],
+  ): Promise<{ data: any[] | null; error: any | null }> {
+    if (!paths || paths.length === 0) {
+      this.logger.warn('Delete files request received with no paths.');
+      return { data: [], error: null };
+    }
+
+    this.logger.log(
+      `Attempting to delete ${paths.length} files from Supabase.`,
+    );
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .remove(paths);
+
+    if (error) {
+      this.logger.error(
+        `Supabase storage error while deleting files: ${error.message}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        `Failed to delete one or more files: ${error.message}`,
+      );
+    }
+
+    this.logger.log(
+      `Successfully processed deletion for ${paths.length} files.`,
+    );
+    return { data, error };
+  }
+
+  private buildObjectPath(filename: string, folder?: string): string {
     const safeName = sanitizeFilename(filename);
     const unique = randomUUID();
+
+    // If a specific folder is provided, use it
+    if (folder) {
+      const normalizedFolder = normalizePrefix(folder);
+      return normalizedFolder
+        ? `${normalizedFolder}/${unique}-${safeName}`
+        : `${unique}-${safeName}`;
+    }
+
+    // Otherwise use the default uploads prefix
     if (!this.uploadsPrefix) {
       return `${unique}-${safeName}`;
     }

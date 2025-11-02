@@ -140,4 +140,78 @@ export class AttendanceService {
     const attendanceRecord = await this.findOne(id);
     return this.pdfGenerator.generateAttendancePdf(attendanceRecord);
   }
+
+  /**
+   * Upload a signature image to Supabase Storage in the signatures/ folder
+   */
+  async uploadSignature(file: Express.Multer.File) {
+    const filename = file.originalname;
+    const buffer = file.buffer;
+
+    // Create signed upload URL with signatures folder
+    const signedUpload = await this.storageService.createSignedUploadUrl(
+      filename,
+      { folder: 'signatures' },
+    );
+
+    // Upload the file to Supabase using the signed URL
+    const uploadResponse = await fetch(signedUpload.url, {
+      method: 'PUT',
+      body: buffer as unknown as BodyInit,
+      headers: {
+        'Content-Type': file.mimetype,
+        'x-upsert': 'false', // Don't overwrite existing files
+      },
+    });
+
+    if (!uploadResponse.ok) {
+      this.logger.error(
+        `Failed to upload signature: ${uploadResponse.statusText}`,
+      );
+      throw new Error('Failed to upload signature to storage');
+    }
+
+    this.logger.log(`Signature uploaded successfully: ${signedUpload.path}`);
+
+    return {
+      path: signedUpload.path,
+      url: this.storageService.getPublicUrl(signedUpload.path),
+    };
+  }
+
+  /**
+   * Upload an attachment image to Supabase Storage in the uploads/ folder
+   */
+  async uploadAttachment(file: Express.Multer.File) {
+    const filename = file.originalname;
+    const buffer = file.buffer;
+
+    // Create signed upload URL (uses default uploads prefix)
+    const signedUpload =
+      await this.storageService.createSignedUploadUrl(filename);
+
+    // Upload the file to Supabase using the signed URL
+    const uploadResponse = await fetch(signedUpload.url, {
+      method: 'PUT',
+      body: buffer as unknown as BodyInit,
+      headers: {
+        'Content-Type': file.mimetype,
+        'x-upsert': 'false',
+      },
+    });
+
+    if (!uploadResponse.ok) {
+      this.logger.error(
+        `Failed to upload attachment: ${uploadResponse.statusText}`,
+      );
+      throw new Error('Failed to upload attachment to storage');
+    }
+
+    this.logger.log(`Attachment uploaded successfully: ${signedUpload.path}`);
+
+    return {
+      path: signedUpload.path,
+      url: this.storageService.getPublicUrl(signedUpload.path),
+    };
+  }
 }

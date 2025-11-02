@@ -395,8 +395,8 @@ export class AttendanceDocxGeneratorService {
         signatureImage = new ImageRun({
           data: imageBuffer,
           transformation: {
-            width: 80,
-            height: 40,
+            width: 60,
+            height: 30,
           },
           type: 'png',
         });
@@ -572,8 +572,8 @@ export class AttendanceDocxGeneratorService {
                   new ImageRun({
                     data: imageBuffer1,
                     transformation: {
-                      width: 200,
-                      height: 150, // 4:3 ratio
+                      width: 180,
+                      height: 135, // 4:3 ratio
                     },
                     type: 'jpg',
                   }),
@@ -666,8 +666,8 @@ export class AttendanceDocxGeneratorService {
                   new ImageRun({
                     data: imageBuffer2,
                     transformation: {
-                      width: 200,
-                      height: 150, // 4:3 ratio
+                      width: 180,
+                      height: 135, // 4:3 ratio
                     },
                     type: 'jpg',
                   }),
