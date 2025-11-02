@@ -769,6 +769,73 @@ class ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto {
   @IsOptional()
   port?: string | WasteItemDto[];
 }
+class ComplianceWithGoodPracticeInChemicalSafetyManagementDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  chemicalsInPclAndCoo?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  riskManagement?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  training?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  handling?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  emergencyPreparedness?: boolean;
+
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  remarks?: string
+
+  
+}
+
+
+
+class complaintsVerificationAndManagementDto {
+  @ApiProperty({ description: 'Date the complaint was officially filed.', example: '2025-06-15', required: false })
+  @IsOptional()
+  @IsString()
+  dateFiled?: string;
+
+  @ApiProperty({ description: 'Indicates if the complaint was filed through DENR.', example: true, required: false })
+  @IsOptional()
+  @IsBoolean()
+  denr?: boolean;
+
+  @ApiProperty({ description: 'Indicates if the complaint was filed directly to the Company.', example: false, required: false })
+  @IsOptional()
+  @IsBoolean()
+  company?: boolean;
+
+  @ApiProperty({ description: 'Indicates if the complaint was filed through the MMT (Multi-partite Monitoring Team).', example: true, required: false })
+  @IsOptional()
+  @IsBoolean()
+  mmt?: boolean;
+
+  @ApiProperty({ description: 'If the complaint source is other than DENR, Company, or MMT, specify here.', example: 'Local Barangay Council', required: false })
+  @IsOptional()
+  @IsString()
+  otherSpecify?: string;
+
+  @ApiProperty({ description: 'Description of the nature of the complaint (e.g., Dust emission, Noise Pollution).', example: 'Excessive noise levels near monitoring station B3.', required: false })
+  @IsOptional()
+  @IsString()
+  natureOfComplaint?: string;
+
+  @ApiProperty({ description: 'Detailed resolution or action taken to address the complaint.', example: 'Noise barrier height increased by 1 meter; operations scheduled adjusted.', required: false })
+  @IsOptional()
+  @IsString()
+  resulotionMade?: string; // Note: Assuming 'resulotionMade' is the intended field name
+}
 
 class ComplianceMonitoringReportDto {
   @ApiProperty({ type: ComplianceToProjectLocationAndCoverageLimitsDto })
@@ -805,6 +872,17 @@ class ComplianceMonitoringReportDto {
   @ValidateNested()
   @Type(() => ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto)
   complianceWithGoodPracticeInSolidAndHazardousWasteManagement?: ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ComplianceWithGoodPracticeInChemicalSafetyManagementDto)
+  complianceWithGoodPracticeInChemicalSafetyManagement: ComplianceWithGoodPracticeInChemicalSafetyManagementDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @IsArray()
+  @Type(() => ComplianceWithGoodPracticeInChemicalSafetyManagementDto)
+  complaintsVerificationAndManagementDto: complaintsVerificationAndManagementDto;
 }
 
 export class CreateCMVRDto {
