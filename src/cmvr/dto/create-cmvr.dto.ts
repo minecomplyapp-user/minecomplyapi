@@ -207,6 +207,12 @@ class ActivityDto {
   mmtMembersInvolved: string[];
 }
 
+class SiteOcularValidationDto extends ActivityDto {
+  @ApiProperty()
+  @IsBoolean()
+  na: boolean;
+}
+
 class SiteValidationConfirmatorySamplingDto extends ActivityDto {
   @ApiProperty()
   @IsString()
@@ -236,10 +242,10 @@ class ActivitiesDto {
   @Type(() => ActivityDto)
   complianceWithEpepAepepConditions: ActivityDto;
 
-  @ApiProperty({ type: ActivityDto })
+  @ApiProperty({ type: SiteOcularValidationDto })
   @ValidateNested()
-  @Type(() => ActivityDto)
-  siteOcularValidation: ActivityDto;
+  @Type(() => SiteOcularValidationDto)
+  siteOcularValidation: SiteOcularValidationDto;
 
   @ApiProperty({ type: SiteValidationConfirmatorySamplingDto })
   @ValidateNested()
@@ -370,12 +376,23 @@ class AirQualityParameterDto {
   name: string;
 
   @ApiProperty({ type: 'object', additionalProperties: true })
-  @IsOptional()
-  results: any;
+  results: {
+    inSMR: {
+      current: string;
+      previous: string;
+    };
+    mmtConfirmatorySampling: {
+      current: string;
+      previous: string;
+    };
+  };
 
   @ApiProperty({ type: 'object', additionalProperties: true })
-  @IsOptional()
-  eqpl: any;
+  eqpl: {
+    redFlag: string;
+    action: string;
+    limit: string;
+  };
 
   @ApiProperty()
   @IsString()
@@ -885,20 +902,26 @@ export class CreateCMVRDto {
   @Type(() => FundDto)
   finalMineRehabilitationAndDecommissioningFund: FundDto[];
 
-  @ApiProperty({ type: ExecutiveSummaryOfComplianceDto })
+  @ApiProperty({ type: ExecutiveSummaryOfComplianceDto, required: false })
+  @IsOptional()
   @ValidateNested()
   @Type(() => ExecutiveSummaryOfComplianceDto)
-  executiveSummaryOfCompliance: ExecutiveSummaryOfComplianceDto;
+  executiveSummaryOfCompliance?: ExecutiveSummaryOfComplianceDto;
 
-  @ApiProperty({ type: ProcessDocumentationOfActivitiesUndertakenDto })
+  @ApiProperty({
+    type: ProcessDocumentationOfActivitiesUndertakenDto,
+    required: false,
+  })
+  @IsOptional()
   @ValidateNested()
   @Type(() => ProcessDocumentationOfActivitiesUndertakenDto)
-  processDocumentationOfActivitiesUndertaken: ProcessDocumentationOfActivitiesUndertakenDto;
+  processDocumentationOfActivitiesUndertaken?: ProcessDocumentationOfActivitiesUndertakenDto;
 
-  @ApiProperty({ type: ComplianceMonitoringReportDto })
+  @ApiProperty({ type: ComplianceMonitoringReportDto, required: false })
+  @IsOptional()
   @ValidateNested()
   @Type(() => ComplianceMonitoringReportDto)
-  complianceMonitoringReport: ComplianceMonitoringReportDto;
+  complianceMonitoringReport?: ComplianceMonitoringReportDto;
 
   @ApiProperty({ required: false })
   @IsOptional()
