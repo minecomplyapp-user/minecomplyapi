@@ -1,0 +1,217 @@
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
+import { AttendancePdfGeneratorService } from './pdf-generator.service';
+import { AttendanceDocxGeneratorService } from './docx-generator.service';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
+
+@Injectable()
+export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdfGenerator: AttendancePdfGeneratorService,
+    private readonly docxGenerator: AttendanceDocxGeneratorService,
+    private readonly storageService: SupabaseStorageService,
+  ) {}
+
+  async create(createAttendanceRecordDto: CreateAttendanceRecordDto) {
+    return this.prisma.attendanceRecord.create({
+      data: {
+        fileName: createAttendanceRecordDto.fileName,
+        title: createAttendanceRecordDto.title,
+        description: createAttendanceRecordDto.description,
+        meetingDate: createAttendanceRecordDto.meetingDate
+          ? new Date(createAttendanceRecordDto.meetingDate)
+          : null,
+        location: createAttendanceRecordDto.location,
+        reportId: createAttendanceRecordDto.reportId,
+        createdById: createAttendanceRecordDto.createdById,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        attendees: createAttendanceRecordDto.attendees as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        attachments: (createAttendanceRecordDto.attachments ?? []) as any,
+      },
+    });
+  }
+
+  async findAll(reportId?: string) {
+    const where = reportId ? { reportId } : {};
+    return this.prisma.attendanceRecord.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async findOne(id: string) {
+    const attendanceRecord = await this.prisma.attendanceRecord.findUnique({
+      where: { id },
+    });
+
+    if (!attendanceRecord) {
+      throw new NotFoundException(`Attendance record with ID ${id} not found`);
+    }
+
+    return attendanceRecord;
+  }
+
+  async update(
+    id: string,
+    updateAttendanceRecordDto: UpdateAttendanceRecordDto,
+  ) {
+    await this.findOne(id); // Ensure record exists
+
+    return this.prisma.attendanceRecord.update({
+      where: { id },
+      data: {
+        fileName: updateAttendanceRecordDto.fileName,
+        title: updateAttendanceRecordDto.title,
+        description: updateAttendanceRecordDto.description,
+        meetingDate: updateAttendanceRecordDto.meetingDate
+          ? new Date(updateAttendanceRecordDto.meetingDate)
+          : undefined,
+        location: updateAttendanceRecordDto.location,
+        reportId: updateAttendanceRecordDto.reportId,
+        createdById: updateAttendanceRecordDto.createdById,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        attendees: updateAttendanceRecordDto.attendees as any,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        attachments: updateAttendanceRecordDto.attachments as any,
+      },
+    });
+  }
+
+  async remove(id: string) {
+    const record = await this.findOne(id); // Ensure record exists
+
+    // Delete attachments from Supabase Storage if they exist
+    if (record.attachments && Array.isArray(record.attachments)) {
+      this.logger.log(
+        `Deleting ${record.attachments.length} attachment(s) for attendance record ${id}`,
+      );
+
+      for (const attachment of record.attachments) {
+        try {
+          // Handle both old format (string) and new format ({ path, caption })
+          let path: string | null = null;
+          if (typeof attachment === 'string') {
+            path = attachment;
+          } else if (attachment && typeof attachment === 'object') {
+            path = (attachment as { path?: string }).path ?? null;
+          }
+
+          if (path) {
+            await this.storageService.remove(path);
+            this.logger.log(`Deleted attachment: ${path}`);
+          }
+        } catch (error) {
+          // Log error but don't fail the entire delete operation
+          this.logger.error(
+            `Failed to delete attachment: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+    }
+
+    return this.prisma.attendanceRecord.delete({
+      where: { id },
+    });
+  }
+
+  async findByReport(reportId: string) {
+    return this.prisma.attendanceRecord.findMany({
+      where: { reportId },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async generateDocx(id: string): Promise<Buffer> {
+    const attendanceRecord = await this.findOne(id);
+    return this.docxGenerator.generateAttendanceDocx(attendanceRecord);
+  }
+
+  // Keep PDF generation for backward compatibility if needed
+  async generatePdf(id: string): Promise<Buffer> {
+    const attendanceRecord = await this.findOne(id);
+    return this.pdfGenerator.generateAttendancePdf(attendanceRecord);
+  }
+
+  /**
+   * Upload a signature image to Supabase Storage in the signatures/ folder
+   */
+  async uploadSignature(file: Express.Multer.File) {
+    const filename = file.originalname;
+    const buffer = file.buffer;
+
+    // Create signed upload URL with signatures folder
+    const signedUpload = await this.storageService.createSignedUploadUrl(
+      filename,
+      { folder: 'signatures' },
+    );
+
+    // Upload the file to Supabase using the signed URL
+    const uploadResponse = await fetch(signedUpload.url, {
+      method: 'PUT',
+      body: buffer as unknown as BodyInit,
+      headers: {
+        'Content-Type': file.mimetype,
+        'x-upsert': 'false', // Don't overwrite existing files
+      },
+    });
+
+    if (!uploadResponse.ok) {
+      this.logger.error(
+        `Failed to upload signature: ${uploadResponse.statusText}`,
+      );
+      throw new Error('Failed to upload signature to storage');
+    }
+
+    this.logger.log(`Signature uploaded successfully: ${signedUpload.path}`);
+
+    return {
+      path: signedUpload.path,
+      url: this.storageService.getPublicUrl(signedUpload.path),
+    };
+  }
+
+  /**
+   * Upload an attachment image to Supabase Storage in the uploads/ folder
+   */
+  async uploadAttachment(file: Express.Multer.File) {
+    const filename = file.originalname;
+    const buffer = file.buffer;
+
+    // Create signed upload URL (uses default uploads prefix)
+    const signedUpload =
+      await this.storageService.createSignedUploadUrl(filename);
+
+    // Upload the file to Supabase using the signed URL
+    const uploadResponse = await fetch(signedUpload.url, {
+      method: 'PUT',
+      body: buffer as unknown as BodyInit,
+      headers: {
+        'Content-Type': file.mimetype,
+        'x-upsert': 'false',
+      },
+    });
+
+    if (!uploadResponse.ok) {
+      this.logger.error(
+        `Failed to upload attachment: ${uploadResponse.statusText}`,
+      );
+      throw new Error('Failed to upload attachment to storage');
+    }
+
+    this.logger.log(`Attachment uploaded successfully: ${signedUpload.path}`);
+
+    return {
+      path: signedUpload.path,
+      url: this.storageService.getPublicUrl(signedUpload.path),
+    };
+  }
+}
