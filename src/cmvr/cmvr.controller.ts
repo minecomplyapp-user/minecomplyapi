@@ -22,6 +22,7 @@ import { CmvrService } from './cmvr.service';
 import { CMVRPdfGeneratorService } from './cmvr-pdf-generator.service';
 import { CMVRDocxGeneratorService } from './cmvr-docx-generator.service';
 import { CreateCMVRDto } from './dto/create-cmvr.dto';
+import { stat } from 'node:fs';
 
 // Mock data for quick preview
 const cmvrReport = {
@@ -1140,8 +1141,119 @@ const cmvrReport = {
         total: "33.5 kg (4 bags)"
       }
     ],
-    port: "All port waste is general solid waste (non-hazardous), collected daily by a contracted service. Segregation compliance was observed and adequate." // Using simple string for port
+    port: [
+      {
+        typeOfWaste: "Used Lead-Acid Batteries (I101)",
+        eccEpepCommitments: {
+          handling: "Insulated and kept upright; no stacking.",
+          storage: "Stored on non-permeable floor, covered.",
+          disposal: true
+        },
+        adequate: {
+          y: true,
+          n: false
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: "15 pieces", 
+        q2_2025_Generated_HW: "5 pieces",
+        total: "20 pieces"
+      }]
+  },
+  complianceWithGoodPracticeInChemicalSafetyManagement: {
+  chemicalsInPclAndCoo: true,
+  riskManagement: true,
+  training: true,
+  handling: true,
+  emergencyPreparedness: true,
+  remarks: "All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully."
+},
+complaintsVerificationAndManagement: [
+  {
+    dateFiled: "2025-07-05",
+    denr: false,
+    company: true,
+    mmt: false,
+    otherSpecify: "",
+    natureOfComplaint: "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.",
+    resulotionMade: "Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08."
+  },
+  {
+    dateFiled: "2025-08-10",
+    denr: true,
+    company: false,
+    mmt: false,
+    otherSpecify: "",
+    natureOfComplaint: "Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.",
+    resulotionMade: "DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed."
+  },
+  {
+    dateFiled: "2025-09-01",
+    denr: false,
+    company: false,
+    mmt: true,
+    otherSpecify: "Local NGO, Green Watch",
+    natureOfComplaint: "Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).",
+    resulotionMade: "Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15."
   }
+],
+
+recommendationFromPrevQuarter:{
+  quarter: 2,
+  year: 2025,
+  plant:[{
+    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongoing'
+  },{
+    recommendation: 'dasdasdnce.',
+    commitment: 'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongdsdsdsdoing'
+  }
+
+  ],
+  quarry: [{
+      recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongoing'
+  }
+  ],
+  port: [{
+    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongoing'
+  }
+]
+},
+recommendationForNextQuarter:{
+    quarter: 3,
+  year: 2025,
+
+   plant:[{
+    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongoing'
+  },{
+    recommendation: 'dasdasdnce.',
+    commitment: 'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongdsdsdsdoing'
+  }
+
+  ],
+  quarry: [{
+      recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongoing'
+  }
+  ],
+  port: [{
+    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+    status: 'Ongoing'
+  }
+]
+}
+
+
 };
 
 export { cmvrReport };

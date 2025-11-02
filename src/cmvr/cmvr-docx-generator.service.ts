@@ -26,6 +26,9 @@ import {
   createISAGTable,
 } from './cmvr-sections/basic-info.helper';
 import {
+  createRecommendationTable,
+  createComplaintsVerificationAndManagement,
+  complianceWithGoodPracticeInChemicalSafetyManagement,
   createComplianceToProjectLocationTable,
   createComplianceToImpactManagementCommitmentsTables,
   createAirQualitySection,
@@ -595,12 +598,127 @@ export class CMVRDocxGeneratorService {
       }),
     );
     if (info.complianceWithGoodPracticeInSolidAndHazardousWasteManagement) {
+
       children.push(
         ...createSolidAndHazardousWasteSection(
           info.complianceWithGoodPracticeInSolidAndHazardousWasteManagement,
         ),
       );
     }
+
+    if( info.complianceWithGoodPracticeInChemicalSafetyManagement){
+      
+      children.push(
+          new Paragraph({
+            children: [
+              createText(
+                '4.	Compliance with Good Practice in Chemical Safety Management',
+                true,
+              ),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 200 },
+          })
+        );
+      children.push(
+        ...complianceWithGoodPracticeInChemicalSafetyManagement(
+          info.complianceWithGoodPracticeInChemicalSafetyManagement,
+        ),
+      );
+    }
+
+
+
+    // 5.	Compliance with Health and Safety Program Commitments
+    children.push(
+          new Paragraph({
+            children: [
+              createText(
+                '5.	Compliance with Health and Safety Program Commitments',
+                true,
+              ),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 200 },
+          })
+        );
+    // 6.	Compliance with Social Development Plan Targets
+   children.push(
+          new Paragraph({
+            children: [
+              createText(
+                '6.	Compliance with Social Development Plan Targets',
+                true,
+              ),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 200 },
+          })
+        );
+
+      //7.	Complaints Verification and Management
+       children.push(
+          new Paragraph({
+            children: [
+              createText(
+                '7.	Complaints Verification and Management',
+                true,
+              ),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 200 },
+          })
+        );
+        console.log('info.complaintsVerificationAndManagement', info.complaintsVerificationAndManagement);
+        if(info.complaintsVerificationAndManagement){
+          children.push(
+    ...createComplaintsVerificationAndManagement(  info.complaintsVerificationAndManagement)
+          );
+        }
+
+
+        children.push(
+          new Paragraph({
+            children: [
+              createText(
+                `II.	PREVIOUS RECOMMENDATIONS (${info.recommendationFromPrevQuarter?.quarter} QUARTER ${info.recommendationFromPrevQuarter?.year} MONITORING)`,
+                true,
+              ),
+            ],
+            alignment: AlignmentType.LEFT,
+            spacing: { before: 100, after: 200 },
+          })
+        );
+
+        if(info.recommendationFromPrevQuarter){
+          children.push(
+            ...createRecommendationTable(
+              info.recommendationFromPrevQuarter,
+             
+            ),
+          );
+        }
+
+         children.push(
+          new Paragraph({
+            children: [
+              createText(
+                `III.	RECOMMENDATIONS FOR THE ${info.recommendationForNextQuarter?.quarter} QUARTER ${info.recommendationForNextQuarter?.year}`,
+                true,
+              ),
+            ],
+            alignment: AlignmentType.LEFT,
+            spacing: { before: 100, after: 200 },
+          })
+        );
+        if(info.recommendationForNextQuarter){
+          children.push(
+            ...createRecommendationTable(
+              info.recommendationForNextQuarter,
+             
+            ),
+          );
+        }
 
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
     // Page size remains 21.59 cm x 33.02 cm
