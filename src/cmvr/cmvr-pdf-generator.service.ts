@@ -163,6 +163,7 @@ export interface CMVRGeneralInfo {
       remarks?: string | Record<string, string | undefined>;
     }>;
     otherComponents?: Array<{
+      name?: string;
       specification?: string;
       withinSpecs?: boolean;
       remarks?: string;
@@ -374,6 +375,68 @@ export interface CMVRGeneralInfo {
           total?: string | Record<string, number>;
         }>;
   };
+
+
+  complianceWithGoodPracticeInChemicalSafetyManagement?:{
+    chemicalsInPclAndCoo?: boolean;
+    riskManagement?: boolean;
+    training?: boolean;
+    handling?: boolean;
+    emergencyPreparedness?: boolean;
+    remarks?: string;
+
+  }
+
+  complaintsVerificationAndManagement?: Array< {
+
+    dateFiled?: string;
+    denr?: boolean;
+    company?: boolean;
+    mmt?: boolean;
+    otherSpecify?: string;
+    natureOfComplaint?: string;
+    resulotionMade?: string;
+  }>
+
+recommendationFromPrevQuarter?: {
+    quarter?: number;
+    year?: number;
+    plant?: Array<{
+      recommendation: string
+      commitment: string
+      status:string
+    }>
+    quarry?: Array<{
+      recommendation: string
+      commitment: string
+      status:string
+    }>
+    port?: Array<{
+      recommendation: string
+      commitment: string
+      status:string
+    }>
+}
+recommendationForNextQuarter?: {
+    quarter?: number;
+    year?: number;
+    plant?: Array<{
+      recommendation: string
+      commitment: string
+      status:string
+    }>
+    quarry?: Array<{
+      recommendation: string
+      commitment: string
+      status:string
+    }>
+    port?: Array<{
+      recommendation: string
+      commitment: string
+      status:string
+    }>
+}
+  
 }
 
 @Injectable()

@@ -130,6 +130,20 @@ const createJwtFromRequestExtractor = (): JwtFromRequestFunction<unknown> => {
       return null;
     }
 
+    // First check query parameter for token (for browser downloads)
+    const query = (request as { query?: unknown }).query;
+    if (query && typeof query === 'object') {
+      const tokenFromQuery = (query as Record<string, unknown>).token;
+      if (
+        typeof tokenFromQuery === 'string' &&
+        tokenFromQuery.trim().length > 0
+      ) {
+        setAuthToken(tokenFromQuery);
+        return tokenFromQuery;
+      }
+    }
+
+    // Fall back to Authorization header
     const headers = (request as { headers?: unknown }).headers;
     if (!headers || typeof headers !== 'object') {
       return null;

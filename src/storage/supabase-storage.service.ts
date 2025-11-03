@@ -40,13 +40,47 @@ export class SupabaseStorageService {
         autoRefreshToken: false,
       },
     });
+
+    // Log resolved Supabase project and storage configuration once for diagnostics
+    try {
+      const host = new URL(url).host;
+      this.logger.log(`Supabase project host: ${host}`);
+      this.logger.log(`Supabase storage bucket: ${this.bucket}`);
+      this.logger.log(`Supabase uploads prefix: '${this.uploadsPrefix}'`);
+    } catch (e) {
+      this.logger.warn(`Unable to parse Supabase URL for logging: ${e}`);
+    }
+
+    // At startup, list available buckets to help detect bucket name mismatches across environments
+    void (async () => {
+      try {
+        const { data, error } = await this.client.storage.listBuckets();
+        if (error) {
+          this.logger.warn(`Could not list storage buckets: ${error.message}`);
+          return;
+        }
+        const names = (data ?? []).map((b) => b.name);
+        this.logger.log(
+          `Supabase storage buckets available: [${names.join(', ')}]`,
+        );
+        if (!names.includes(this.bucket)) {
+          this.logger.warn(
+            `Configured bucket '${this.bucket}' is not in this project. Uploads will fail with 404 until this is fixed.`,
+          );
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Failed to retrieve storage buckets for diagnostics: ${String(err)}`,
+        );
+      }
+    })();
   }
 
   async createSignedUploadUrl(
     originalFilename: string,
-    options?: { upsert?: boolean },
+    options?: { upsert?: boolean; folder?: string },
   ): Promise<SignedUploadUrl> {
-    const objectPath = this.buildObjectPath(originalFilename);
+    const objectPath = this.buildObjectPath(originalFilename, options?.folder);
 
     this.logger.log(`Creating signed upload URL for path: ${objectPath}`);
     this.logger.log(`Options: ${JSON.stringify(options)}`);
@@ -73,6 +107,18 @@ export class SupabaseStorageService {
           : 'NONE'
       }`,
     );
+
+    // Also log the storage API host encoded in the signed URL to avoid project mix-ups
+    try {
+      if (data?.signedUrl) {
+        const uploadHost = new URL(data.signedUrl).host;
+        this.logger.log(
+          `Signed upload URL host: ${uploadHost} (bucket: ${this.bucket})`,
+        );
+      }
+    } catch {
+      this.logger.debug('Could not parse signed upload URL for host logging');
+    }
 
     if (error || !data?.signedUrl) {
       this.logger.error(
@@ -119,16 +165,56 @@ export class SupabaseStorageService {
     }
   }
 
-  private buildObjectPath(filename: string): string {
+  async deleteFiles(
+    paths: string[],
+  ): Promise<{ data: any[] | null; error: any | null }> {
+    if (!paths || paths.length === 0) {
+      this.logger.warn('Delete files request received with no paths.');
+      return { data: [], error: null };
+    }
+
+    this.logger.log(
+      `Attempting to delete ${paths.length} files from Supabase.`,
+    );
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .remove(paths);
+
+    if (error) {
+      this.logger.error(
+        `Supabase storage error while deleting files: ${error.message}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        `Failed to delete one or more files: ${error.message}`,
+      );
+    }
+
+    this.logger.log(
+      `Successfully processed deletion for ${paths.length} files.`,
+    );
+    return { data, error };
+  }
+
+  private buildObjectPath(filename: string, folder?: string): string {
     const safeName = sanitizeFilename(filename);
     const unique = randomUUID();
+
+    // If a specific folder is provided, use it
+    if (folder) {
+      const normalizedFolder = normalizePrefix(folder);
+      return normalizedFolder
+        ? `${normalizedFolder}/${unique}-${safeName}`
+        : `${unique}-${safeName}`;
+    }
+
+    // Otherwise use the default uploads prefix
     if (!this.uploadsPrefix) {
       return `${unique}-${safeName}`;
     }
     return `${this.uploadsPrefix}/${unique}-${safeName}`;
   }
 }
-
 const sanitizeFilename = (filename: string): string => {
   if (!filename) {
     return 'file';
