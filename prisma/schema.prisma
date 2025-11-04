@@ -1,13 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
   relationMode = "prisma"
-  schemas      = ["auth", "public"]
 }
 
 model User {
@@ -23,8 +21,6 @@ model User {
   createdCMVRReports CMVRReport[]        @relation("UserCreatedCMVRReports")
   validations        ValidationSession[] @relation("ValidationReviewer")
   attendanceRecords  AttendanceRecord[]  @relation("UserAttendanceRecords")
-
-  @@schema("public")
 }
 
 model ECCReport {
@@ -42,7 +38,6 @@ model ECCReport {
   createdBy       User?    @relation("UserCreatedECCReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_ecc_report_creator")
-  @@schema("public")
 }
 
 model CMVRReport {
@@ -57,7 +52,6 @@ model CMVRReport {
   createdBy                    User?    @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_cmvr_report_creator")
-  @@schema("public")
 }
 
 model ValidationSession {
@@ -75,7 +69,6 @@ model ValidationSession {
 
   @@index([submissionId], map: "idx_validation_submission")
   @@index([reviewerId], map: "idx_validation_reviewer")
-  @@schema("public")
 }
 
 model ValidationEntry {
@@ -92,7 +85,6 @@ model ValidationEntry {
   validation     ValidationSession @relation(fields: [validationId], references: [id])
 
   @@index([validationId], map: "idx_validation_entry_session")
-  @@schema("public")
 }
 
 model AttendanceRecord {
@@ -104,7 +96,6 @@ model AttendanceRecord {
   meetingDate DateTime?
   location    String?
   attendees   Json
-  attachments Json      @default("[]")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdById String?
@@ -112,16 +103,17 @@ model AttendanceRecord {
 
   @@index([reportId], map: "idx_attendance_record_report")
   @@index([createdById], map: "idx_attendance_record_creator")
-  @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ECCCondition {
-  id               BigInt   @id @default(autoincrement())
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  condition        String?  @db.VarChar
-  status           String?  @db.VarChar
+  id               BigInt    @id @default(autoincrement())
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamp(6)
+  condition        String?
+  status           String?   @db.VarChar
   remarks          String?
+<<<<<<< HEAD
   ECCReportID      String?  @db.VarChar
   nested_to        Int?
   condition_number Int?
@@ -503,6 +495,13 @@ model profiles {
   qr_public_url   String?
 
   @@schema("public")
+=======
+  ECCReportID      String?   @db.VarChar
+  nested_to        String?   @db.VarChar
+  condition_number Int?
+  remark_list      String[]
+  section          Int       @db.SmallInt
+>>>>>>> 29645605d2cd10b6706e5df0b24bac106e515f7b
 }
 
 enum UserRole {
@@ -510,8 +509,55 @@ enum UserRole {
   MMT
   REGULATOR
   ADMIN
+}
 
-  @@schema("public")
+enum OrganizationType {
+  PROPONENT
+  MMT
+  REGULATOR
+  GOVERNMENT
+  OTHER
+}
+
+enum OrganizationMembershipRole {
+  OWNER
+  MANAGER
+  CONTRIBUTOR
+  REVIEWER
+  OBSERVER
+}
+
+enum ProjectAssignmentRole {
+  PROPONENT_EDITOR
+  MMT_REVIEWER
+  REGULATOR_VIEWER
+}
+
+enum ConditionType {
+  ECC
+  EPEP
+  OTHER
+}
+
+enum ComplianceCategory {
+  AIR
+  WATER
+  NOISE
+  HAZARDOUS_WASTE
+  FINANCIAL
+  SOCIAL
+  INFRASTRUCTURE
+  BIODIVERSITY
+  OTHER
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REVISIONS_REQUIRED
+  ARCHIVED
 }
 
 enum ValidationStatus {
@@ -519,8 +565,6 @@ enum ValidationStatus {
   IN_PROGRESS
   COMPLETED
   NEEDS_INFORMATION
-
-  @@schema("public")
 }
 
 enum ValidationOutcome {
@@ -529,76 +573,26 @@ enum ValidationOutcome {
   REQUIRES_CORRECTION
   REJECTED
   NOT_APPLICABLE
-
-  @@schema("public")
 }
 
-enum aal_level {
-  aal1
-  aal2
-  aal3
-
-  @@schema("auth")
+enum ReportType {
+  CMR
+  CMVR
+  SUMMARY
+  OTHER
 }
 
-enum code_challenge_method {
-  s256
-  plain
-
-  @@schema("auth")
+enum EvidenceType {
+  PHOTO
+  VIDEO
+  DOCUMENT
+  AUDIO
+  DATASET
+  OTHER
 }
 
-enum factor_status {
-  unverified
-  verified
-
-  @@schema("auth")
-}
-
-enum factor_type {
-  totp
-  webauthn
-  phone
-
-  @@schema("auth")
-}
-
-enum oauth_authorization_status {
-  pending
-  approved
-  denied
-  expired
-
-  @@schema("auth")
-}
-
-enum oauth_client_type {
-  public
-  confidential
-
-  @@schema("auth")
-}
-
-enum oauth_registration_type {
-  dynamic
-  manual
-
-  @@schema("auth")
-}
-
-enum oauth_response_type {
-  code
-
-  @@schema("auth")
-}
-
-enum one_time_token_type {
-  confirmation_token
-  reauthentication_token
-  recovery_token
-  email_change_token_new
-  email_change_token_current
-  phone_change_token
-
-  @@schema("auth")
+enum AttendanceStatus {
+  IN_PERSON
+  ONLINE
+  ABSENT
 }
