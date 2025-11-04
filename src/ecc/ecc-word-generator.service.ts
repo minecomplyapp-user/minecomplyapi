@@ -38,12 +38,25 @@ export class ECCWordGeneratorService {
 
     const columnWidths = [1474, 3088, 601, 601, 601, 2706]; // 6 columns (DXA)
     if (hasConditions) {
+        children.push(
+            new Paragraph({
+              alignment: AlignmentType.LEFT,
+              children: [
+                new TextRun({
+                  text: eccReport.generalInfo.company_name || 'Company Name',
+                  font: 'Times New Roman',
+                  size: 24, // 12pt
+                }),
+              ],
+            }),
+            new Paragraph({ text: '' }), // spacing below company name
+          );
       for (const [
         sectionIndex,
         conditionRows,
       ] of conditionsBySection.entries()) {
         let permitHolderRow;
-        if (sectionIndex > 1) {
+    
           permitHolderRow = new TableRow({
             children: [
               new TableCell({
@@ -62,21 +75,7 @@ export class ECCWordGeneratorService {
               }),
             ],
           });
-        } else {
-          children.push(
-            new Paragraph({
-              alignment: AlignmentType.LEFT,
-              children: [
-                new TextRun({
-                  text: eccReport.generalInfo.company_name || 'Company Name',
-                  font: 'Times New Roman',
-                  size: 24, // 12pt
-                }),
-              ],
-            }),
-            new Paragraph({ text: '' }), // spacing below company name
-          );
-        }
+      
         const dataRows = conditionRows.map(
           (row) =>
             new TableRow({
@@ -101,17 +100,13 @@ export class ECCWordGeneratorService {
             }),
         );
         let table;
-        if (sectionIndex > 1) {
+ 
+       
           table = new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [permitHolderRow, ...dataRows],
           });
-        } else {
-          table = new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [...dataRows],
-          });
-        }
+       
 
         children.push(table, new Paragraph({ text: '' }));
       }

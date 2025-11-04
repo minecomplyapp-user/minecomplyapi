@@ -36,9 +36,7 @@ export class CreateEccReportDto {
   @IsObject()
   generalInfo: object;
 
-  @ApiProperty({
-    description: 'Details about the Multi-Partite Monitoring Team',
-  })
+  
   @IsObject()
   mmtInfo: object;
 
@@ -46,7 +44,14 @@ export class CreateEccReportDto {
     description: 'Details about the Multi-Partite Monitoring Team',
   })
   @IsObject()
+
   remarks_list?: object;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  recommendations?: string[];
+
 
   @ApiProperty({ description: 'ID of the user who created the report' })
   @IsString()
