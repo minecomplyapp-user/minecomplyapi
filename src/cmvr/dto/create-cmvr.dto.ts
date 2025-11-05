@@ -6,6 +6,7 @@ import {
   IsOptional,
   ValidateNested,
   IsBoolean,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -376,6 +377,8 @@ class AirQualityParameterDto {
   name: string;
 
   @ApiProperty({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
   results: {
     inSMR: {
       current: string;
@@ -388,6 +391,8 @@ class AirQualityParameterDto {
   };
 
   @ApiProperty({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
   eqpl: {
     redFlag: string;
     action: string;
@@ -790,51 +795,149 @@ class ComplianceWithGoodPracticeInChemicalSafetyManagementDto {
   @IsOptional()
   emergencyPreparedness?: boolean;
 
-
   @ApiProperty({ required: false })
   @IsOptional()
-  remarks?: string
-
-  
+  remarks?: string;
 }
 
-
-
-class complaintsVerificationAndManagementDto {
-  @ApiProperty({ description: 'Date the complaint was officially filed.', example: '2025-06-15', required: false })
+class ComplaintsVerificationAndManagementDto {
+  @ApiProperty({
+    description: 'Date the complaint was officially filed.',
+    example: '2025-06-15',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   dateFiled?: string;
 
-  @ApiProperty({ description: 'Indicates if the complaint was filed through DENR.', example: true, required: false })
+  @ApiProperty({
+    description: 'Indicates if the complaint was filed through DENR.',
+    example: true,
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   denr?: boolean;
 
-  @ApiProperty({ description: 'Indicates if the complaint was filed directly to the Company.', example: false, required: false })
+  @ApiProperty({
+    description:
+      'Indicates if the complaint was filed directly to the Company.',
+    example: false,
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   company?: boolean;
 
-  @ApiProperty({ description: 'Indicates if the complaint was filed through the MMT (Multi-partite Monitoring Team).', example: true, required: false })
+  @ApiProperty({
+    description:
+      'Indicates if the complaint was filed through the MMT (Multi-partite Monitoring Team).',
+    example: true,
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   mmt?: boolean;
 
-  @ApiProperty({ description: 'If the complaint source is other than DENR, Company, or MMT, specify here.', example: 'Local Barangay Council', required: false })
+  @ApiProperty({
+    description:
+      'If the complaint source is other than DENR, Company, or MMT, specify here.',
+    example: 'Local Barangay Council',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   otherSpecify?: string;
 
-  @ApiProperty({ description: 'Description of the nature of the complaint (e.g., Dust emission, Noise Pollution).', example: 'Excessive noise levels near monitoring station B3.', required: false })
+  @ApiProperty({
+    description:
+      'Description of the nature of the complaint (e.g., Dust emission, Noise Pollution).',
+    example: 'Excessive noise levels near monitoring station B3.',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   natureOfComplaint?: string;
 
-  @ApiProperty({ description: 'Detailed resolution or action taken to address the complaint.', example: 'Noise barrier height increased by 1 meter; operations scheduled adjusted.', required: false })
+  @ApiProperty({
+    description:
+      'Detailed resolution or action taken to address the complaint.',
+    example:
+      'Noise barrier height increased by 1 meter; operations scheduled adjusted.',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   resulotionMade?: string; // Note: Assuming 'resulotionMade' is the intended field name
+}
+
+class RecommendationItemDto {
+  @ApiProperty({ description: 'The recommendation text', required: false })
+  @IsOptional()
+  @IsString()
+  recommendation?: string;
+
+  @ApiProperty({
+    description: 'The commitment or action plan',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  commitment?: string;
+
+  @ApiProperty({
+    description:
+      'Status of the recommendation (e.g., Ongoing, Completed, In Progress)',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+}
+
+class RecommendationsSectionDto {
+  @ApiProperty({ description: 'Quarter number (1, 2, 3, 4)', required: false })
+  @IsOptional()
+  @IsNumber()
+  quarter?: number;
+
+  @ApiProperty({ description: 'Year', required: false })
+  @IsOptional()
+  @IsNumber()
+  year?: number;
+
+  @ApiProperty({
+    type: [RecommendationItemDto],
+    description: 'Plant recommendations',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RecommendationItemDto)
+  plant?: RecommendationItemDto[];
+
+  @ApiProperty({
+    type: [RecommendationItemDto],
+    description: 'Quarry recommendations',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RecommendationItemDto)
+  quarry?: RecommendationItemDto[];
+
+  @ApiProperty({
+    type: [RecommendationItemDto],
+    description: 'Port recommendations',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RecommendationItemDto)
+  port?: RecommendationItemDto[];
 }
 
 class ComplianceMonitoringReportDto {
@@ -873,16 +976,36 @@ class ComplianceMonitoringReportDto {
   @Type(() => ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto)
   complianceWithGoodPracticeInSolidAndHazardousWasteManagement?: ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto;
 
+  @ApiProperty({
+    type: ComplianceWithGoodPracticeInChemicalSafetyManagementDto,
+    required: false,
+  })
   @IsOptional()
   @ValidateNested()
   @Type(() => ComplianceWithGoodPracticeInChemicalSafetyManagementDto)
-  complianceWithGoodPracticeInChemicalSafetyManagement: ComplianceWithGoodPracticeInChemicalSafetyManagementDto;
+  complianceWithGoodPracticeInChemicalSafetyManagement?: ComplianceWithGoodPracticeInChemicalSafetyManagementDto;
 
+  @ApiProperty({
+    type: [ComplaintsVerificationAndManagementDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ComplaintsVerificationAndManagementDto)
+  complaintsVerificationAndManagement?: ComplaintsVerificationAndManagementDto[];
+
+  @ApiProperty({ type: RecommendationsSectionDto, required: false })
   @IsOptional()
   @ValidateNested()
-  @IsArray()
-  @Type(() => ComplianceWithGoodPracticeInChemicalSafetyManagementDto)
-  complaintsVerificationAndManagementDto: complaintsVerificationAndManagementDto;
+  @Type(() => RecommendationsSectionDto)
+  recommendationFromPrevQuarter?: RecommendationsSectionDto;
+
+  @ApiProperty({ type: RecommendationsSectionDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RecommendationsSectionDto)
+  recommendationForNextQuarter?: RecommendationsSectionDto;
 }
 
 export class CreateCMVRDto {

@@ -230,10 +230,23 @@ export class EccService {
   async addCondition(reportId: string, createDto: CreateEccConditionDto) {
     // Use `create` to add a new condition and link it to the report
     const sectionValue = createDto.section ?? 0;
+
+    // Convert nested_to to number if it's a string
+    const nestedTo = createDto.nested_to
+      ? typeof createDto.nested_to === 'string'
+        ? parseInt(createDto.nested_to, 10)
+        : createDto.nested_to
+      : undefined;
+
     return this.prisma.eCCCondition.create({
       data: {
-        ...createDto,
+        condition: createDto.condition,
+        status: createDto.status,
+        remarks: createDto.remarks,
+        remark_list: createDto.remark_list,
+        condition_number: createDto.condition_number,
         section: sectionValue,
+        nested_to: nestedTo,
         // Link the new condition to the existing ECCReport
         ECCReportID: String(reportId),
       },

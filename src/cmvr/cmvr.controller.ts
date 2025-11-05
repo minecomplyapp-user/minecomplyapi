@@ -8,6 +8,10 @@ import {
   NotFoundException,
   HttpStatus,
   StreamableFile,
+  Delete,
+  HttpCode,
+  Patch,
+  Query,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -20,9 +24,10 @@ import {
 } from '@nestjs/swagger';
 import { CmvrService } from './cmvr.service';
 import { CMVRPdfGeneratorService } from './cmvr-pdf-generator.service';
+import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
 import { CMVRDocxGeneratorService } from './cmvr-docx-generator.service';
 import { CreateCMVRDto } from './dto/create-cmvr.dto';
-import { stat } from 'node:fs';
+// import { stat } from 'node:fs';
 
 // Mock data for quick preview
 const cmvrReport = {
@@ -1019,241 +1024,274 @@ const cmvrReport = {
     explanationForConfirmatorySampling: 'N/A',
     overallAssessment: 'Within the DENR Standard',
   },
-  noiseQualityImpactAssessment :{
- 
+  noiseQualityImpactAssessment: {
     parameters: [
       {
-        name: "Noise Level at Boundary (dB)",
+        name: 'Noise Level at Boundary (dB)',
         results: {
           inSMR: {
-            current: "65 dB",
-            previous: "62 dB",
+            current: '65 dB',
+            previous: '62 dB',
           },
           mmtConfirmatorySampling: {
-            current: "64 dB",
-            previous: "63 dB",
+            current: '64 dB',
+            previous: '63 dB',
           },
         },
         eqpl: {
-          redFlag: "None",
-          action: "Continue regular monitoring",
-          denrStandard: "75 dB (Daytime)",
+          redFlag: 'None',
+          action: 'Continue regular monitoring',
+          denrStandard: '75 dB (Daytime)',
         },
-        remarks: "Within permissible limits.",
+        remarks: 'Within permissible limits.',
       },
       {
-        name: "Noise Level at Residential Area (dB)",
+        name: 'Noise Level at Residential Area (dB)',
         results: {
           inSMR: {
-            current: "55 dB",
-            previous: "53 dB",
+            current: '55 dB',
+            previous: '53 dB',
           },
           mmtConfirmatorySampling: {
-            current: "54 dB",
-            previous: "52 dB",
+            current: '54 dB',
+            previous: '52 dB',
           },
         },
         eqpl: {
-          redFlag: "Slight increase observed",
-          action: "Recommend noise source identification",
-          denrStandard: "65 dB (Daytime)",
+          redFlag: 'Slight increase observed',
+          action: 'Recommend noise source identification',
+          denrStandard: '65 dB (Daytime)',
         },
-        remarks: "Slightly higher but still within standards.",
+        remarks: 'Slightly higher but still within standards.',
       },
     ],
-    samplingDate: "2025-09-15",
-    weatherAndWind: "Sunny, light breeze (NNE, 5 km/h)",
-      explanationForConfirmatorySampling:
-      "Confirmatory sampling was conducted due to observed increase in residential area noise levels.",
+    samplingDate: '2025-09-15',
+    weatherAndWind: 'Sunny, light breeze (NNE, 5 km/h)',
+    explanationForConfirmatorySampling:
+      'Confirmatory sampling was conducted due to observed increase in residential area noise levels.',
     overallAssessment: {
       firstQuarter: {
-        year: "2025",
-        assessment: "Noise levels within DENR limits.",
+        year: '2025',
+        assessment: 'Noise levels within DENR limits.',
       },
       secondQuarter: {
-        year: "2025",
-        assessment: "Minor fluctuations, still compliant.",
+        year: '2025',
+        assessment: 'Minor fluctuations, still compliant.',
       },
       thirdQuarter: {
-        year: "2025",
-        assessment: "Stable readings, no significant changes.",
+        year: '2025',
+        assessment: 'Stable readings, no significant changes.',
       },
       fourthQuarter: {
-        year: "2025",
-        assessment: "Compliant throughout the year.",
+        year: '2025',
+        assessment: 'Compliant throughout the year.',
       },
     },
-  
-
-
-
   },
   complianceWithGoodPracticeInSolidAndHazardousWasteManagement: {
     quarry: [
       {
-        typeOfWaste: "Waste Oil (H501)",
+        typeOfWaste: 'Waste Oil (H501)',
         eccEpepCommitments: {
-          handling: "Properly labeled and placed in leak-proof drums.",
-          storage: "Stored in dedicated, covered, and bunded area.",
-          disposal: true
+          handling: 'Properly labeled and placed in leak-proof drums.',
+          storage: 'Stored in dedicated, covered, and bunded area.',
+          disposal: true,
         },
         adequate: {
           y: true,
-          n: false
+          n: false,
         },
         // *** FIXED: Now using strings for compatibility ***
-        previousRecord: "150.5 Liters", 
-        q2_2025_Generated_HW: "25.0 Liters",
-        total: "175.5 Liters"
+        previousRecord: '150.5 Liters',
+        q2_2025_Generated_HW: '25.0 Liters',
+        total: '175.5 Liters',
       },
       {
-        typeOfWaste: "Used Lead-Acid Batteries (I101)",
+        typeOfWaste: 'Used Lead-Acid Batteries (I101)',
         eccEpepCommitments: {
-          handling: "Insulated and kept upright; no stacking.",
-          storage: "Stored on non-permeable floor, covered.",
-          disposal: true
+          handling: 'Insulated and kept upright; no stacking.',
+          storage: 'Stored on non-permeable floor, covered.',
+          disposal: true,
         },
         adequate: {
           y: true,
-          n: false
+          n: false,
         },
         // *** FIXED: Now using strings for compatibility ***
-        previousRecord: "15 pieces", 
-        q2_2025_Generated_HW: "5 pieces",
-        total: "20 pieces"
-      }
+        previousRecord: '15 pieces',
+        q2_2025_Generated_HW: '5 pieces',
+        total: '20 pieces',
+      },
     ],
     plant: [
       {
-        typeOfWaste: "Infectious Waste (A101)",
+        typeOfWaste: 'Infectious Waste (A101)',
         eccEpepCommitments: {
-          handling: "Segregated and placed in yellow bags/containers.",
-          storage: "Stored in cold room for less than 48 hours.",
-          disposal: true
+          handling: 'Segregated and placed in yellow bags/containers.',
+          storage: 'Stored in cold room for less than 48 hours.',
+          disposal: true,
         },
         adequate: {
           y: false, // Indicates a non-compliance issue
-          n: true
+          n: true,
         },
         // *** FIXED: Now using strings for compatibility ***
-        previousRecord: "25 kg (3 bags)",
-        q2_2025_Generated_HW: "8.5 kg (1 bag)",
-        total: "33.5 kg (4 bags)"
-      }
+        previousRecord: '25 kg (3 bags)',
+        q2_2025_Generated_HW: '8.5 kg (1 bag)',
+        total: '33.5 kg (4 bags)',
+      },
     ],
     port: [
       {
-        typeOfWaste: "Used Lead-Acid Batteries (I101)",
+        typeOfWaste: 'Used Lead-Acid Batteries (I101)',
         eccEpepCommitments: {
-          handling: "Insulated and kept upright; no stacking.",
-          storage: "Stored on non-permeable floor, covered.",
-          disposal: true
+          handling: 'Insulated and kept upright; no stacking.',
+          storage: 'Stored on non-permeable floor, covered.',
+          disposal: true,
         },
         adequate: {
           y: true,
-          n: false
+          n: false,
         },
         // *** FIXED: Now using strings for compatibility ***
-        previousRecord: "15 pieces", 
-        q2_2025_Generated_HW: "5 pieces",
-        total: "20 pieces"
-      }]
+        previousRecord: '15 pieces',
+        q2_2025_Generated_HW: '5 pieces',
+        total: '20 pieces',
+      },
+    ],
   },
   complianceWithGoodPracticeInChemicalSafetyManagement: {
-  chemicalsInPclAndCoo: true,
-  riskManagement: true,
-  training: true,
-  handling: true,
-  emergencyPreparedness: true,
-  remarks: "All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully."
-},
-complaintsVerificationAndManagement: [
-  {
-    dateFiled: "2025-07-05",
-    denr: false,
-    company: true,
-    mmt: false,
-    otherSpecify: "",
-    natureOfComplaint: "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.",
-    resulotionMade: "Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08."
+    chemicalsInPclAndCoo: true,
+    riskManagement: true,
+    training: true,
+    handling: true,
+    emergencyPreparedness: true,
+    remarks:
+      'All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully.',
   },
-  {
-    dateFiled: "2025-08-10",
-    denr: true,
-    company: false,
-    mmt: false,
-    otherSpecify: "",
-    natureOfComplaint: "Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.",
-    resulotionMade: "DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed."
+  complaintsVerificationAndManagement: [
+    {
+      dateFiled: '2025-07-05',
+      denr: false,
+      company: true,
+      mmt: false,
+      otherSpecify: '',
+      natureOfComplaint:
+        "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.",
+      resulotionMade:
+        'Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08.',
+    },
+    {
+      dateFiled: '2025-08-10',
+      denr: true,
+      company: false,
+      mmt: false,
+      otherSpecify: '',
+      natureOfComplaint:
+        'Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.',
+      resulotionMade:
+        'DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed.',
+    },
+    {
+      dateFiled: '2025-09-01',
+      denr: false,
+      company: false,
+      mmt: true,
+      otherSpecify: 'Local NGO, Green Watch',
+      natureOfComplaint:
+        'Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).',
+      resulotionMade:
+        'Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15.',
+    },
+  ],
+  recommendationFromPrevQuarter: {
+    quarter: 2,
+    year: 2025,
+    plant: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+      {
+        recommendation: 'dasdasdnce.',
+        commitment:
+          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongdsdsdsdoing',
+      },
+    ],
+    quarry: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+    port: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
   },
-  {
-    dateFiled: "2025-09-01",
-    denr: false,
-    company: false,
-    mmt: true,
-    otherSpecify: "Local NGO, Green Watch",
-    natureOfComplaint: "Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).",
-    resulotionMade: "Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15."
-  }
-],
-
-recommendationFromPrevQuarter:{
-  quarter: 2,
-  year: 2025,
-  plant:[{
-    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongoing'
-  },{
-    recommendation: 'dasdasdnce.',
-    commitment: 'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongdsdsdsdoing'
-  }
-
-  ],
-  quarry: [{
-      recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongoing'
-  }
-  ],
-  port: [{
-    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongoing'
-  }
-]
-},
-recommendationForNextQuarter:{
+  recommendationForNextQuarter: {
     quarter: 3,
-  year: 2025,
+    year: 2025,
 
-   plant:[{
-    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongoing'
-  },{
-    recommendation: 'dasdasdnce.',
-    commitment: 'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongdsdsdsdoing'
-  }
-
-  ],
-  quarry: [{
-      recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongoing'
-  }
-  ],
-  port: [{
-    recommendation: 'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-    commitment: 'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-    status: 'Ongoing'
-  }
-]
-}
-
-
+    plant: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+      {
+        recommendation: 'dasdasdnce.',
+        commitment:
+          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongdsdsdsdoing',
+      },
+    ],
+    quarry: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+    port: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+  },
+  attendanceUrl: '',
+  documentation: {
+    photos: [
+      {
+        url: '',
+        caption: '',
+      },
+      {
+        url: '',
+        caption: '',
+      },
+    ],
+  },
 };
 
 export { cmvrReport };
@@ -1277,8 +1315,11 @@ export class CmvrController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid request data',
   })
-  async create(@Body() createCmvrDto: CreateCMVRDto) {
-    return this.cmvrService.create(createCmvrDto);
+  async create(
+    @Body() createCmvrDto: CreateCMVRDto,
+    @Query('fileName') fileName?: string,
+  ) {
+    return this.cmvrService.create(createCmvrDto, fileName);
   }
 
   @Get()
@@ -1289,6 +1330,17 @@ export class CmvrController {
   })
   async findAll() {
     return this.cmvrService.findAll();
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all CMVR reports created by a specific user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of CMVR reports created by the user',
+  })
+  async findByUserId(@Param('userId') userId: string) {
+    return this.cmvrService.findByUserId(userId);
   }
 
   @Get('preview/general-info')
@@ -1365,6 +1417,65 @@ export class CmvrController {
     }
   }
 
+  @Get(':id/docx')
+  @ApiOperation({ summary: 'Generate DOCX for full CMVR report by ID' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID' })
+  @ApiProduces(
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  )
+  @ApiOkResponse({
+    description: 'DOCX generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        {
+          schema: { type: 'string', format: 'binary' },
+        },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR Report not found or has no data',
+  })
+  async generateFullReportDocx(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile | void> {
+    try {
+      const record = await this.cmvrService.findOne(id);
+      if (!record?.cmvrData) {
+        throw new NotFoundException(
+          `CMVR Report with ID ${id} has no cmvrData`,
+        );
+      }
+
+      const docxBuffer = await this.docxGenerator.generateFullReportDocx(
+        // Stored payload already matches the generator's expected shape
+        record.cmvrData as unknown as CMVRGeneralInfo,
+      );
+
+      res.set({
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="cmvr-${id}.docx"`,
+        'Content-Length': docxBuffer.length,
+      });
+      return new StreamableFile(docxBuffer);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        res.status(HttpStatus.NOT_FOUND).json({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: error.message,
+        });
+      } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to generate DOCX',
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a CMVR report by ID' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID' })
@@ -1424,5 +1535,34 @@ export class CmvrController {
         });
       }
     }
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a CMVR report by ID' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Deleted' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR Report not found',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.cmvrService.remove(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a CMVR report by ID (replace cmvrData)' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Updated successfully' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR Report not found',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: CreateCMVRDto,
+    @Query('fileName') fileName?: string,
+  ) {
+    return this.cmvrService.update(id, updateDto, fileName);
   }
 }
