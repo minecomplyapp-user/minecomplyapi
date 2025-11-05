@@ -2,7 +2,6 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
-  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
@@ -15,7 +14,6 @@ import type { SupabaseAuthUser } from '../interfaces/supabase-user.interface';
 
 @Injectable()
 export class SupabaseAuthGuard extends AuthGuard('supabase-jwt') {
-  private readonly logger = new Logger(SupabaseAuthGuard.name);
   constructor(
     private readonly reflector: Reflector,
     private readonly supabaseAuthService: SupabaseAuthService,
@@ -28,12 +26,7 @@ export class SupabaseAuthGuard extends AuthGuard('supabase-jwt') {
     // Bypass all auth if DISABLE_AUTH=true in env
     const disableAuth = this.configService.get<string>('DISABLE_AUTH');
     if (disableAuth && disableAuth.toLowerCase() === 'true') {
-      this.logger.warn(
-        'DISABLE_AUTH=true: Bypassing authentication and injecting a development user. Do NOT use in production.',
-      );
-      const request = context
-        .switchToHttp()
-        .getRequest<{ user?: SupabaseAuthUser }>();
+      const request = context.switchToHttp().getRequest();
       request.user = {
         id: 'dev-user-id',
         email: 'dev@example.com',
@@ -42,7 +35,7 @@ export class SupabaseAuthGuard extends AuthGuard('supabase-jwt') {
         appMetadata: { provider: 'email', providers: ['email'] },
         userMetadata: { email: 'dev@example.com', email_verified: true },
         rawClaims: {},
-      } as unknown as SupabaseAuthUser;
+      };
       return true;
     }
 

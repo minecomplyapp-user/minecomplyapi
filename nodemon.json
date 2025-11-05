@@ -1,6 +1,0 @@
-{
-  "watch": ["src/cmvr", "src/cmvr/cmvr-sections", "scripts", "data"],
-  "ext": "ts,js,json",
-  "exec": "tsx scripts/generate-docx-preview.ts",
-  "quiet": true
-}

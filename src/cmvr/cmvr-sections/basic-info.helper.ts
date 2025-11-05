@@ -378,7 +378,7 @@ export function createECCTable(
           children: [createParagraph('ECC', true, AlignmentType.CENTER)],
           verticalAlign: VerticalAlign.CENTER,
           rowSpan: eccList.length + 1, // +1 for header row
-          width: { size: 15, type: WidthType.PERCENTAGE },
+          width: { size: 12, type: WidthType.PERCENTAGE },
         }),
         // Colon column
         new TableCell({
@@ -397,19 +397,19 @@ export function createECCTable(
             ),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 38, type: WidthType.PERCENTAGE },
+          width: { size: 40, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [createParagraph('ECC Number', true, AlignmentType.CENTER)],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 22, type: WidthType.PERCENTAGE },
+          width: { size: 20, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
             createParagraph('Date of Issuance', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 22, type: WidthType.PERCENTAGE },
+          width: { size: 25, type: WidthType.PERCENTAGE },
         }),
       ],
     }),
@@ -481,7 +481,7 @@ export function createISAGTable(
           children: [createParagraph('ISAG/MPP', true, AlignmentType.CENTER)],
           verticalAlign: VerticalAlign.CENTER,
           rowSpan: isagList.length + 1,
-          width: { size: 15, type: WidthType.PERCENTAGE },
+          width: { size: 12, type: WidthType.PERCENTAGE },
         }),
         // Colon column
         new TableCell({
@@ -499,21 +499,21 @@ export function createISAGTable(
             ),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 38, type: WidthType.PERCENTAGE },
+          width: { size: 40, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
             createParagraph('ISAG Permit Number', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 22, type: WidthType.PERCENTAGE },
+          width: { size: 20, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
             createParagraph('Date of Issuance', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 22, type: WidthType.PERCENTAGE },
+          width: { size: 25, type: WidthType.PERCENTAGE },
         }),
       ],
     }),
@@ -587,7 +587,7 @@ export function createEPEPTable(
           ],
           verticalAlign: VerticalAlign.CENTER,
           rowSpan: epepList.length + 1,
-          width: { size: 15, type: WidthType.PERCENTAGE },
+          width: { size: 12, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [createParagraph(':', true, AlignmentType.CENTER)],
@@ -604,21 +604,21 @@ export function createEPEPTable(
             ),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 38, type: WidthType.PERCENTAGE },
+          width: { size: 40, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
             createParagraph('EPEP Number', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 22, type: WidthType.PERCENTAGE },
+          width: { size: 20, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
             createParagraph('Date of Approval', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          width: { size: 22, type: WidthType.PERCENTAGE },
+          width: { size: 25, type: WidthType.PERCENTAGE },
         }),
       ],
     }),
@@ -703,11 +703,11 @@ export function createFundStatusSections(
   if (sections.length === 0) return elements;
 
   // Build a single consolidated table with a left label column.
-  const LABEL_COL_WIDTH = 25; // % - increased from 15 to 25
-  const NAME_COL = 28;
-  const ACCT_COL = 22;
-  const AMOUNT_COL = 13;
-  const DATE_COL = 12; // totals to 75% on the right side
+  const LABEL_COL_WIDTH = 15; // %
+  const NAME_COL = 30;
+  const ACCT_COL = 25;
+  const AMOUNT_COL = 15;
+  const DATE_COL = 15; // totals to 85% on the right side
 
   const rows: TableRow[] = [];
 
@@ -787,7 +787,7 @@ export function createFundStatusSections(
               ],
               verticalAlign: VerticalAlign.CENTER,
               columnSpan: 4,
-              width: { size: 75, type: WidthType.PERCENTAGE },
+              width: { size: 85, type: WidthType.PERCENTAGE },
             }),
           ],
         }),
@@ -804,7 +804,7 @@ export function createFundStatusSections(
               ],
               verticalAlign: VerticalAlign.CENTER,
               columnSpan: 4,
-              width: { size: 75, type: WidthType.PERCENTAGE },
+              width: { size: 85, type: WidthType.PERCENTAGE },
             }),
           ],
         }),

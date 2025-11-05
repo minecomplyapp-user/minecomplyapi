@@ -26,15 +26,11 @@ import {
   createISAGTable,
 } from './cmvr-sections/basic-info.helper';
 import {
-  createRecommendationTable,
-  createComplaintsVerificationAndManagement,
-  complianceWithGoodPracticeInChemicalSafetyManagement,
   createComplianceToProjectLocationTable,
   createComplianceToImpactManagementCommitmentsTables,
   createAirQualitySection,
   createWaterQualitySection,
   createNoiseQualityTable,
-  createOverallNoiseQualityTable,
   createSolidAndHazardousWasteSection,
 } from './cmvr-sections/compliance-monitoring.helper';
 import { createProcessDocumentation } from './cmvr-sections/process-documentation.helper';
@@ -43,6 +39,477 @@ import { createExecutiveSummaryTable } from './cmvr-sections/executive-summary-c
 
 @Injectable()
 export class CMVRDocxGeneratorService {
+  /**
+   * Generate CMVR General Information as DOCX
+   * Following the same structure as PDF generator
+   */
+  async generateGeneralInfoDocx(generalInfo: CMVRGeneralInfo): Promise<Buffer> {
+    try {
+      const children: (Paragraph | Table)[] = [];
+      // Key-value pairs at the top (like PDF)
+      children.push(...createGeneralInfoKeyValues(generalInfo));
+
+      // Section I: BASIC INFORMATION
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'I. BASIC INFORMATION',
+              bold: true,
+              font: 'Arial',
+              size: 22, // 11pt
+              color: '000000',
+            }),
+          ],
+          spacing: { before: 300, after: 200 },
+        }),
+      );
+
+      // ECC Table
+      if (generalInfo.ecc && generalInfo.ecc.length > 0) {
+        children.push(createECCTable(generalInfo.ecc));
+      }
+
+      // ISAG/MPP Table (connected to ECC if both exist)
+      if (generalInfo.isagMpp && generalInfo.isagMpp.length > 0) {
+        children.push(createISAGTable(generalInfo.isagMpp));
+      }
+
+      // Project info (Current Name, Status) + EPEP merged into a single 5-column table
+      const projectInfoRows: Array<[string, string]> = [];
+      if (generalInfo.projectCurrentName) {
+        projectInfoRows.push([
+          'Project Current Name',
+          generalInfo.projectCurrentName,
+        ]);
+      }
+      if (generalInfo.projectStatus) {
+        projectInfoRows.push(['Project Status', generalInfo.projectStatus]);
+      }
+
+      if (
+        projectInfoRows.length > 0 ||
+        (generalInfo.epep && generalInfo.epep.length > 0)
+      ) {
+        // Small spacing before merged table
+        children.push(new Paragraph({ text: '', spacing: { after: 100 } }));
+
+        const mergedRows: TableRow[] = [];
+
+        // Add Project Info rows (Label | ':' | Value spans 3 columns)
+        for (const [label, value] of projectInfoRows) {
+          mergedRows.push(
+            new TableRow({
+              height: { value: 400, rule: 'atLeast' },
+              children: [
+                new TableCell({
+                  children: [
+                    createParagraph(label, true, AlignmentType.CENTER),
+                  ],
+                  width: { size: 15, type: WidthType.PERCENTAGE },
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+                new TableCell({
+                  children: [createParagraph(':', true, AlignmentType.CENTER)],
+                  width: { size: 3, type: WidthType.PERCENTAGE },
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      value || 'N/A',
+                      false,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  width: { size: 82, type: WidthType.PERCENTAGE },
+                  columnSpan: 4,
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+              ],
+            }),
+          );
+        }
+
+        // Add EPEP header and rows (with label + ':' sharing vertical span)
+        const epepList = generalInfo.epep || [];
+        if (epepList.length >= 0) {
+          // Header row
+          mergedRows.push(
+            new TableRow({
+              height: { value: 600, rule: 'atLeast' },
+              children: [
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      'EPEP/FMRDP Status',
+                      true,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  rowSpan: epepList.length + 1,
+                  width: { size: 15, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [createParagraph(':', true, AlignmentType.CENTER)],
+                  verticalAlign: VerticalAlign.CENTER,
+                  rowSpan: epepList.length + 1,
+                  width: { size: 3, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      'Name of Permit Holder',
+                      true,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: 30, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph('EPEP Number', true, AlignmentType.CENTER),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: 25, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      'Date of Approval',
+                      true,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  columnSpan: 2,
+                }),
+              ],
+            }),
+          );
+
+          // Data rows
+          for (const epep of epepList) {
+            mergedRows.push(
+              new TableRow({
+                height: { value: 400, rule: 'atLeast' },
+                children: [
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        epep.permitHolderName || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        epep.epepNumber || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        epep.dateOfApproval || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    columnSpan: 2,
+                  }),
+                ],
+              }),
+            );
+          }
+        }
+
+        // Append Funds into the same merged table (single table output)
+        const rcf = generalInfo.rehabilitationCashFund || [];
+        const mtf = generalInfo.monitoringTrustFundUnified || [];
+        const fmrdf =
+          generalInfo.finalMineRehabilitationAndDecommissioningFund || [];
+        const fundSections: Array<{
+          title: string;
+          list: Array<{
+            permitHolderName?: string;
+            savingsAccountNumber?: string;
+            amountDeposited?: string;
+            dateUpdated?: string;
+          }>;
+        }> = [];
+        if (rcf.length)
+          fundSections.push({ title: 'REHABILITATION CASH FUND', list: rcf });
+        if (mtf.length)
+          fundSections.push({
+            title: 'MONITORING TRUST FUND (UNIFIED)',
+            list: mtf,
+          });
+        if (fmrdf.length)
+          fundSections.push({
+            title: 'FINAL MINE REHABILITATION AND DECOMMISSIONING FUND',
+            list: fmrdf,
+          });
+
+        const totalFundRows = fundSections.reduce(
+          (sum, s) => sum + 1 + 1 + s.list.length,
+          0,
+        ); // section header + col header + data rows
+        let placedFundLabel = false;
+        const NAME_COL = 30;
+        const ACCT_COL = 25;
+        const AMOUNT_COL = 15;
+        const DATE_COL = 12; // totals 82 with above
+
+        for (const section of fundSections) {
+          // Section title row
+          if (!placedFundLabel) {
+            mergedRows.push(
+              new TableRow({
+                height: { value: 600, rule: 'atLeast' },
+                children: [
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        'RCF/ MTF and FMRDF Status',
+                        true,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    rowSpan: totalFundRows,
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph('', false, AlignmentType.CENTER),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 3, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        section.title,
+                        true,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    columnSpan: 4,
+                  }),
+                ],
+              }),
+            );
+            placedFundLabel = true;
+          } else {
+            mergedRows.push(
+              new TableRow({
+                height: { value: 600, rule: 'atLeast' },
+                children: [
+                  new TableCell({
+                    children: [
+                      createParagraph('', false, AlignmentType.CENTER),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 3, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        section.title,
+                        true,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    columnSpan: 4,
+                  }),
+                ],
+              }),
+            );
+          }
+
+          // Column headers for funds
+          mergedRows.push(
+            new TableRow({
+              height: { value: 600, rule: 'atLeast' },
+              children: [
+                new TableCell({
+                  children: [createParagraph('', false, AlignmentType.CENTER)],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: 3, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      'Name of Permit Holder',
+                      true,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: NAME_COL, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      'Savings Account Number',
+                      true,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: ACCT_COL, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      'Amount Deposited',
+                      true,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: AMOUNT_COL, type: WidthType.PERCENTAGE },
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph('Date Updated', true, AlignmentType.CENTER),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                  width: { size: DATE_COL, type: WidthType.PERCENTAGE },
+                }),
+              ],
+            }),
+          );
+
+          for (const fund of section.list) {
+            mergedRows.push(
+              new TableRow({
+                height: { value: 400, rule: 'atLeast' },
+                children: [
+                  new TableCell({
+                    children: [
+                      createParagraph('', false, AlignmentType.CENTER),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 3, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        fund.permitHolderName || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: NAME_COL, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        fund.savingsAccountNumber || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: ACCT_COL, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        fund.amountDeposited || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: AMOUNT_COL, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        fund.dateUpdated || 'N/A',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: DATE_COL, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+            );
+          }
+        }
+
+        // Push single merged table
+        children.push(
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: createTableBorders(),
+            rows: mergedRows,
+          }),
+        );
+      }
+
+      // Fund Status Section (Rehabilitation Cash Fund, MTF, FMRDF)
+      // Fund sections are now merged into the EPEP table above
+
+      // Additional Information (Geographical Coordinates, Proponent, MMT)
+      const additionalInfo = createAdditionalInfo(generalInfo);
+      if (additionalInfo.length > 0) {
+        children.push(
+          new Paragraph({ text: '', spacing: { after: 200 } }), // Spacing
+        );
+        children.push(...additionalInfo);
+      }
+
+      // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
+      // Page size remains 21.59 cm x 33.02 cm
+      const doc = new Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                size: {
+                  width: 12240, // 21.59 cm in twips
+                  height: 18720, // 33.02 cm in twips
+                },
+                margin: {
+                  top: 1134, // 2 cm
+                  left: 1134, // 2 cm
+                  bottom: 1418, // 2.5 cm
+                  right: 1021, // 1.8 cm
+                },
+              },
+            },
+            children,
+          },
+        ],
+      });
+
+      const buffer = await Packer.toBuffer(doc);
+      return buffer;
+    } catch (error) {
+      throw new Error(
+        `Failed to generate DOCX: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
   /**
    * Generate the FULL CMVR report as DOCX using cmvrReport mock shape
    * Mirrors PDF sections: General Info, Executive Summary, Process Documentation,
@@ -86,7 +553,7 @@ export class CMVRDocxGeneratorService {
             children: [
               new TableCell({
                 children: [createParagraph(label, true, AlignmentType.CENTER)],
-                width: { size: 25, type: WidthType.PERCENTAGE },
+                width: { size: 15, type: WidthType.PERCENTAGE },
                 verticalAlign: VerticalAlign.CENTER,
               }),
               new TableCell({
@@ -98,7 +565,7 @@ export class CMVRDocxGeneratorService {
                 children: [
                   createParagraph(value || 'N/A', false, AlignmentType.CENTER),
                 ],
-                width: { size: 72, type: WidthType.PERCENTAGE },
+                width: { size: 82, type: WidthType.PERCENTAGE },
                 columnSpan: 4,
                 verticalAlign: VerticalAlign.CENTER,
               }),
@@ -123,7 +590,7 @@ export class CMVRDocxGeneratorService {
               ],
               verticalAlign: VerticalAlign.CENTER,
               rowSpan: epepList.length + 1,
-              width: { size: 25, type: WidthType.PERCENTAGE },
+              width: { size: 15, type: WidthType.PERCENTAGE },
             }),
             new TableCell({
               children: [createParagraph(':', true, AlignmentType.CENTER)],
@@ -140,21 +607,20 @@ export class CMVRDocxGeneratorService {
                 ),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 28, type: WidthType.PERCENTAGE },
+              width: { size: 30, type: WidthType.PERCENTAGE },
             }),
             new TableCell({
               children: [
                 createParagraph('EPEP Number', true, AlignmentType.CENTER),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 22, type: WidthType.PERCENTAGE },
+              width: { size: 25, type: WidthType.PERCENTAGE },
             }),
             new TableCell({
               children: [
                 createParagraph('Date of Approval', true, AlignmentType.CENTER),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 27, type: WidthType.PERCENTAGE },
               columnSpan: 2,
             }),
           ],
@@ -174,7 +640,6 @@ export class CMVRDocxGeneratorService {
                     AlignmentType.CENTER,
                   ),
                 ],
-                width: { size: 30, type: WidthType.PERCENTAGE },
                 verticalAlign: VerticalAlign.CENTER,
               }),
               new TableCell({
@@ -185,7 +650,6 @@ export class CMVRDocxGeneratorService {
                     AlignmentType.CENTER,
                   ),
                 ],
-                width: { size: 25, type: WidthType.PERCENTAGE },
                 verticalAlign: VerticalAlign.CENTER,
               }),
               new TableCell({
@@ -196,7 +660,6 @@ export class CMVRDocxGeneratorService {
                     AlignmentType.CENTER,
                   ),
                 ],
-                width: { size: 27, type: WidthType.PERCENTAGE },
                 verticalAlign: VerticalAlign.CENTER,
                 columnSpan: 2,
               }),
@@ -236,10 +699,10 @@ export class CMVRDocxGeneratorService {
         0,
       );
       let placedFundLabel = false;
-      const NAME_COL = 22;
+      const NAME_COL = 30;
       const ACCT_COL = 25;
       const AMOUNT_COL = 15;
-      const DATE_COL = 20;
+      const DATE_COL = 12;
 
       for (const section of fundSections) {
         if (!placedFundLabel) {
@@ -269,7 +732,6 @@ export class CMVRDocxGeneratorService {
                     createParagraph(section.title, true, AlignmentType.CENTER),
                   ],
                   verticalAlign: VerticalAlign.CENTER,
-                  width: { size: 82, type: WidthType.PERCENTAGE },
                   columnSpan: 4,
                 }),
               ],
@@ -291,7 +753,6 @@ export class CMVRDocxGeneratorService {
                     createParagraph(section.title, true, AlignmentType.CENTER),
                   ],
                   verticalAlign: VerticalAlign.CENTER,
-                  width: { size: 82, type: WidthType.PERCENTAGE },
                   columnSpan: 4,
                 }),
               ],
@@ -572,16 +1033,6 @@ export class CMVRDocxGeneratorService {
     );
     if (info.noiseQualityImpactAssessment) {
       children.push(createNoiseQualityTable(info.noiseQualityImpactAssessment));
-
-      if( info.noiseQualityImpactAssessment.overallAssessment){
-        children.push(
-          new Paragraph({
-           
-          })
-        );
-      
-        children.push(createOverallNoiseQualityTable(info.noiseQualityImpactAssessment));
-              }
     }
 
     // 3. Solid and Hazardous Waste Management
@@ -598,127 +1049,12 @@ export class CMVRDocxGeneratorService {
       }),
     );
     if (info.complianceWithGoodPracticeInSolidAndHazardousWasteManagement) {
-
       children.push(
         ...createSolidAndHazardousWasteSection(
           info.complianceWithGoodPracticeInSolidAndHazardousWasteManagement,
         ),
       );
     }
-
-    if( info.complianceWithGoodPracticeInChemicalSafetyManagement){
-      
-      children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '4.	Compliance with Good Practice in Chemical Safety Management',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-      children.push(
-        ...complianceWithGoodPracticeInChemicalSafetyManagement(
-          info.complianceWithGoodPracticeInChemicalSafetyManagement,
-        ),
-      );
-    }
-
-
-
-    // 5.	Compliance with Health and Safety Program Commitments
-    children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '5.	Compliance with Health and Safety Program Commitments',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-    // 6.	Compliance with Social Development Plan Targets
-   children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '6.	Compliance with Social Development Plan Targets',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-
-      //7.	Complaints Verification and Management
-       children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '7.	Complaints Verification and Management',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-        console.log('info.complaintsVerificationAndManagement', info.complaintsVerificationAndManagement);
-        if(info.complaintsVerificationAndManagement){
-          children.push(
-    ...createComplaintsVerificationAndManagement(  info.complaintsVerificationAndManagement)
-          );
-        }
-
-
-        children.push(
-          new Paragraph({
-            children: [
-              createText(
-                `II.	PREVIOUS RECOMMENDATIONS (${info.recommendationFromPrevQuarter?.quarter} QUARTER ${info.recommendationFromPrevQuarter?.year} MONITORING)`,
-                true,
-              ),
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-
-        if(info.recommendationFromPrevQuarter){
-          children.push(
-            ...createRecommendationTable(
-              info.recommendationFromPrevQuarter,
-             
-            ),
-          );
-        }
-
-         children.push(
-          new Paragraph({
-            children: [
-              createText(
-                `III.	RECOMMENDATIONS FOR THE ${info.recommendationForNextQuarter?.quarter} QUARTER ${info.recommendationForNextQuarter?.year}`,
-                true,
-              ),
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-        if(info.recommendationForNextQuarter){
-          children.push(
-            ...createRecommendationTable(
-              info.recommendationForNextQuarter,
-             
-            ),
-          );
-        }
 
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
     // Page size remains 21.59 cm x 33.02 cm

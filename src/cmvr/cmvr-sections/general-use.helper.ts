@@ -172,57 +172,9 @@ export function createParagraph(
   return new Paragraph({
     children: [createText(text, bold)],
     alignment,
-    indent: { left: 100, right: 100 }, // Add padding to all text cells
   });
 }
 
-/**
- * Helper to create a paragraph with formatted member name (bold) and role (not bold, on new line)
- * Example: "John Doe - MMT Head" becomes "John Doe\n- MMT Head" with "John Doe" bold
- */
-export function createFormattedMemberParagraph(
-  memberText: string,
-  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType],
-): Paragraph {
-  const parts = memberText.split(' - ');
-
-  if (parts.length > 1) {
-    // Name is bold, role is not bold and on new line
-    return new Paragraph({
-      children: [
-        createText(parts[0], true), // Name in bold
-        new TextRun({ break: 1, font: 'Arial', size: 22 }), // Line break
-        createText(`- ${parts.slice(1).join(' - ')}`, false), // Role not bold
-      ],
-      alignment,
-      spacing: {
-        before: 100, // Add top padding (100 twips ≈ 2mm)
-      },
-      indent:
-        alignment === AlignmentType.LEFT
-          ? { left: 100, right: 100 }
-          : alignment === AlignmentType.RIGHT
-            ? { right: 100 }
-            : undefined,
-    });
-  }
-
-  // No dash found, just return normal paragraph with top padding
-  return new Paragraph({
-    children: [createText(memberText, false)],
-    alignment,
-    spacing: {
-      before: 100, // Add top padding
-      after: 100,
-    },
-    indent:
-      alignment === AlignmentType.LEFT
-        ? { left: 100, right: 100 }
-        : alignment === AlignmentType.RIGHT
-          ? { right: 100 }
-          : undefined,
-  });
-}
 export function createKeyValueTable(rows: Array<[string, string]>): Table {
   const tableRows: TableRow[] = rows.map(
     ([key, value]) =>
@@ -230,22 +182,16 @@ export function createKeyValueTable(rows: Array<[string, string]>): Table {
         height: { value: 400, rule: 'atLeast' },
         children: [
           new TableCell({
-            children: [createParagraph(key, true, AlignmentType.CENTER)],
+            children: [createParagraph(`${key}:`, true, AlignmentType.CENTER)],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 25, type: WidthType.PERCENTAGE },
-          }),
-          new TableCell({
-            children: [createParagraph(':', true, AlignmentType.CENTER)],
-            verticalAlign: VerticalAlign.CENTER,
-            width: { size: 3, type: WidthType.PERCENTAGE },
+            width: { size: 40, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
               createParagraph(value || 'N/A', false, AlignmentType.CENTER),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 72, type: WidthType.PERCENTAGE },
-            columnSpan: 4,
+            width: { size: 60, type: WidthType.PERCENTAGE },
           }),
         ],
       }),
