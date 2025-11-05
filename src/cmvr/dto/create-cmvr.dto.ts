@@ -768,6 +768,104 @@ class ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto {
   @IsOptional()
   port?: string | WasteItemDto[];
 }
+
+class ChemicalSafetyDataDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isNA?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  riskManagement?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  training?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  handling?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  emergencyPreparedness?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  remarks?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  chemicalCategory?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  othersSpecify?: string;
+}
+
+class ComplianceWithGoodPracticeInChemicalSafetyManagementDto {
+  @ApiProperty({ type: ChemicalSafetyDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ChemicalSafetyDataDto)
+  chemicalSafety?: ChemicalSafetyDataDto;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  healthSafetyChecked?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  socialDevChecked?: boolean;
+}
+
+class ComplaintsVerificationAndManagementDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isNA?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  dateFiled?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  filedLocation?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  othersSpecify?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  nature?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  resolutions?: string;
+}
+
 class RecommendationItemDto {
   @ApiProperty({ description: 'The recommendation text', required: false })
   @IsOptional()
