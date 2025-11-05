@@ -43,9 +43,15 @@ export class CreateEccReportDto {
   @ApiProperty({
     description: 'Details about the Multi-Partite Monitoring Team',
   })
+  
   @IsObject()
-
   remarks_list?: object;
+
+
+
+  @IsObject()
+  permit_holder_with_conditions?: object;
+
 
   @IsOptional()
   @IsArray()
