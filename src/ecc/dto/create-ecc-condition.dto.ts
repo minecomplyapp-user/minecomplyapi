@@ -37,8 +37,8 @@ export class CreateEccConditionDto {
     description: 'ID of the parent condition this entry is nested under',
   })
   @IsOptional()
-  @IsUUID() // <-- Use IsUUID for stricter ID format checking
-  nested_to?: string;
+  // @IsUUID() // <-- Use IsUUID for stricter ID format checking
+  nested_to?: number;
 
   @ApiPropertyOptional({ description: 'The number identifying the condition' })
   @IsInt()

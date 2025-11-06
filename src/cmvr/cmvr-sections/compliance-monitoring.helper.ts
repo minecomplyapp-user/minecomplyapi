@@ -6,7 +6,6 @@ import {
   TableCell,
   WidthType,
   VerticalAlign,
-  TextRun,
 } from 'docx';
 import type { CMVRGeneralInfo } from '../cmvr-pdf-generator.service';
 import {
@@ -21,8 +20,6 @@ export function createComplianceToProjectLocationTable(
   >,
 ): Table {
   const rows: TableRow[] = [];
-
-  // Header row 1 - Main headers
   rows.push(
     new TableRow({
       height: { value: 600, rule: 'atLeast' },
@@ -30,55 +27,22 @@ export function createComplianceToProjectLocationTable(
         new TableCell({
           children: [createParagraph('Parameter', true, AlignmentType.CENTER)],
           verticalAlign: VerticalAlign.CENTER,
-          rowSpan: 2,
-          width: { size: 25, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
             createParagraph('Specification', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          rowSpan: 2,
-          width: { size: 35, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
           children: [
-            createParagraph('w/ in specs?', true, AlignmentType.CENTER),
+            createParagraph('Within Specs', true, AlignmentType.CENTER),
           ],
           verticalAlign: VerticalAlign.CENTER,
-          columnSpan: 2,
-          width: { size: 14, type: WidthType.PERCENTAGE },
         }),
         new TableCell({
-          children: [
-            createParagraph(
-              'Remarks – Description of Actual Implementation',
-              true,
-              AlignmentType.CENTER,
-            ),
-          ],
+          children: [createParagraph('Remarks', true, AlignmentType.CENTER)],
           verticalAlign: VerticalAlign.CENTER,
-          rowSpan: 2,
-          width: { size: 26, type: WidthType.PERCENTAGE },
-        }),
-      ],
-    }),
-  );
-
-  // Header row 2 - Y and N sub-headers
-  rows.push(
-    new TableRow({
-      height: { value: 400, rule: 'atLeast' },
-      children: [
-        new TableCell({
-          children: [createParagraph('Y', true, AlignmentType.CENTER)],
-          verticalAlign: VerticalAlign.CENTER,
-          width: { size: 7, type: WidthType.PERCENTAGE },
-        }),
-        new TableCell({
-          children: [createParagraph('N', true, AlignmentType.CENTER)],
-          verticalAlign: VerticalAlign.CENTER,
-          width: { size: 7, type: WidthType.PERCENTAGE },
         }),
       ],
     }),
@@ -107,52 +71,6 @@ export function createComplianceToProjectLocationTable(
     return '-';
   };
 
-  // Function to create formatted paragraph with bold labels for nested objects
-  const createFormattedSpecification = (v: unknown): Paragraph => {
-    if (typeof v === 'string') {
-      return createParagraph(v, false, AlignmentType.LEFT);
-    }
-    if (v && typeof v === 'object') {
-      const entries = Object.entries(v as Record<string, unknown>);
-      if (entries.length === 0) {
-        return createParagraph('-', false, AlignmentType.LEFT);
-      }
-
-      const children: TextRun[] = [];
-      entries.forEach(([key, val], index) => {
-        // Add line break before each entry except the first
-        if (index > 0) {
-          children.push(new TextRun({ break: 1, font: 'Arial', size: 22 }));
-        }
-
-        // Capitalize and format the key (e.g., "plant" -> "Plant:")
-        const formattedKey =
-          key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-        children.push(createText(`${formattedKey}:`, true));
-        children.push(new TextRun({ text: ' ', font: 'Arial', size: 22 }));
-
-        // Add the value
-        const valStr =
-          val == null
-            ? '-'
-            : typeof val === 'object'
-              ? JSON.stringify(val)
-              : `${val as string | number | boolean}`;
-        children.push(createText(valStr, false));
-      });
-
-      return new Paragraph({
-        children,
-        alignment: AlignmentType.LEFT,
-        indent: { left: 100, right: 100 },
-      });
-    }
-    return createParagraph('-', false, AlignmentType.LEFT);
-  };
-
-  const yCol = (v: boolean | undefined) => (v === true ? '✓' : '');
-  const nCol = (v: boolean | undefined) => (v === false ? '✓' : '');
-
   section.parameters?.forEach((p) => {
     rows.push(
       new TableRow({
@@ -160,36 +78,35 @@ export function createComplianceToProjectLocationTable(
         children: [
           new TableCell({
             children: [
-              createParagraph(p.name || '-', false, AlignmentType.LEFT),
+              createParagraph(p.name || '-', false, AlignmentType.CENTER),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 25, type: WidthType.PERCENTAGE },
-          }),
-          new TableCell({
-            children: [createFormattedSpecification(p.specification)],
-            verticalAlign: VerticalAlign.CENTER,
-            width: { size: 35, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(yCol(p.withinSpecs), false, AlignmentType.CENTER),
+              createParagraph(
+                toStr(p.specification),
+                false,
+                AlignmentType.CENTER,
+              ),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 7, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(nCol(p.withinSpecs), false, AlignmentType.CENTER),
+              createParagraph(
+                p.withinSpecs ? 'Yes' : p.withinSpecs === false ? 'No' : '-',
+                false,
+                AlignmentType.CENTER,
+              ),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 7, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(toStr(p.remarks), false, AlignmentType.LEFT),
+              createParagraph(toStr(p.remarks), false, AlignmentType.CENTER),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 26, type: WidthType.PERCENTAGE },
           }),
         ],
       }),
@@ -212,37 +129,36 @@ export function createComplianceToProjectLocationTable(
               createParagraph(
                 c.name || 'Other Components',
                 false,
-                AlignmentType.LEFT,
+                AlignmentType.CENTER,
               ),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 25, type: WidthType.PERCENTAGE },
-          }),
-          new TableCell({
-            children: [createFormattedSpecification(c.specification)],
-            verticalAlign: VerticalAlign.CENTER,
-            width: { size: 35, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(yCol(c.withinSpecs), false, AlignmentType.CENTER),
+              createParagraph(
+                toStr(c.specification),
+                false,
+                AlignmentType.CENTER,
+              ),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 7, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(nCol(c.withinSpecs), false, AlignmentType.CENTER),
+              createParagraph(
+                c.withinSpecs ? 'Yes' : c.withinSpecs === false ? 'No' : '-',
+                false,
+                AlignmentType.CENTER,
+              ),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 7, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(toStr(c.remarks), false, AlignmentType.LEFT),
+              createParagraph(toStr(c.remarks), false, AlignmentType.CENTER),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 26, type: WidthType.PERCENTAGE },
           }),
         ],
       }),
@@ -1128,4 +1044,489 @@ export function createSolidAndHazardousWasteSection(
   build('Plant', section.plant);
   build('Port', section.port);
   return out;
+}
+
+export function createComplaintsVerificationAndManagement(
+  nq: NonNullable<CMVRGeneralInfo['complaintsVerificationAndManagement']>,
+): (Paragraph | Table)[] {
+  const rows: TableRow[] = [];
+  
+  // Header Row 1
+  rows.push(
+    new TableRow({
+      height: { value: 600, rule: 'atLeast' },
+      children: [
+        new TableCell({
+          rowSpan: 2,
+          // Changed the first cell to display 'Date Filed' for better context (original code was using p.dateFiled in this cell's row, but the header didn't reflect it)
+          children: [createParagraph('Date Filed', true, AlignmentType.CENTER)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          columnSpan: 4,
+          children: [
+            createParagraph('Filed Where?', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          rowSpan: 2,
+          children: [
+            createParagraph('Nature of Complaint', true, AlignmentType.CENTER), // Typo fixed in function
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          rowSpan: 2,
+          children: [
+            createParagraph('Resolutions made', true, AlignmentType.CENTER), // Typo fixed
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        })
+      ],
+    }),
+  );
+
+  // Header Row 2
+  rows.push(
+    new TableRow({
+      height: { value: 600, rule: 'atLeast' },
+      children: [
+        new TableCell({
+          children: [createParagraph('DENR', true, AlignmentType.CENTER)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('Company', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('MMT', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('Others, Specify', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        })
+      ],
+    }),
+  );
+
+  // Data Rows
+  nq.forEach((p) => {
+    // Logic to check the single filedLocation string against columns
+    const isDenr = p.filedLocation?.toLowerCase() === 'denr';
+    const isCompany = p.filedLocation?.toLowerCase() === 'company';
+    const isMmt = p.filedLocation?.toLowerCase() === 'mmt';
+
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            // Data row is not bolded (false)
+            children: [createParagraph(p.dateFiled || 'N/A', false, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(isDenr ? 'Y' : '', false, AlignmentType.CENTER), // Fixed: check filedLocation
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(isCompany ? 'Y' : '', false, AlignmentType.CENTER), // Fixed: check filedLocation
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(isMmt ? 'Y' : '', false, AlignmentType.CENTER), // Fixed: check filedLocation
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(p.othersSpecify || '', false, AlignmentType.CENTER), // Fixed property name
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(p.nature || '', false, AlignmentType.LEFT), // Fixed property name to 'nature'
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(p.resolutions || '', false, AlignmentType.LEFT), // Fixed property name to 'resolutions'
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          })
+        ],
+      }),
+    );
+  });
+
+  return [new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: createTableBorders(),
+    rows,
+  })]
+}
+
+
+export function createRecommendationTable(
+  nq: NonNullable<CMVRGeneralInfo['recommendationFromPrevQuarter']> | NonNullable<CMVRGeneralInfo['recommendationForNextQuarter']>,
+): (Paragraph | Table)[] {
+  const rows: TableRow[] = [];
+  rows.push(
+    new TableRow({
+      height: { value: 600, rule: 'atLeast' },
+      children: [
+        new TableCell({
+          children: [createParagraph('Recommendations', true, AlignmentType.CENTER)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('Commitment', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+
+          children: [
+            createParagraph('Status', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        })
+      ],
+    }),
+  );
+  if (nq.plant && nq.plant.length > 0) {
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            columnSpan: 3,
+            children: [createParagraph('Plant', true, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          })
+        ],
+      }),
+    );
+
+
+    nq.plant?.forEach((p) => {
+
+
+      rows.push(
+        new TableRow({
+          height: { value: 600, rule: 'atLeast' },
+          children: [
+            new TableCell({
+
+              children: [createParagraph(p.recommendation || 'N/A', false, AlignmentType.LEFT)], verticalAlign: VerticalAlign.CENTER, // Alignment to LEFT for better readability
+            }),
+            new TableCell({
+
+              children: [
+                createParagraph(p.commitment ?? '', false, AlignmentType.LEFT), // Alignment to LEFT for better readability
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+            }),
+            new TableCell({
+
+              children: [
+                createParagraph(p.status ?? '', false, AlignmentType.CENTER),
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+            })
+          ],
+        }),
+      );
+    });
+
+  }
+  if (nq.quarry && nq.quarry.length > 0) {
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            columnSpan: 3,
+            children: [createParagraph('Quarry', true, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          })
+        ],
+      }),
+    );
+
+
+    nq.quarry?.forEach((p) => {
+
+
+      rows.push(
+        new TableRow({
+          height: { value: 600, rule: 'atLeast' },
+          children: [
+            new TableCell({
+
+              children: [createParagraph(p.recommendation || 'N/A', false, AlignmentType.LEFT)], verticalAlign: VerticalAlign.CENTER, // Alignment to LEFT for better readability
+            }),
+            new TableCell({
+
+              children: [
+                createParagraph(p.commitment ?? '', false, AlignmentType.LEFT), // Alignment to LEFT for better readability
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+            }),
+            new TableCell({
+
+              children: [
+                createParagraph(p.status ?? '', false, AlignmentType.CENTER),
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+            })
+          ],
+        }),
+      );
+    });
+  }
+
+  if (nq.port && nq.port.length > 0) {
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            columnSpan: 3,
+
+            children: [createParagraph('PORT', true, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          })
+        ],
+      }),
+    );
+
+
+    nq.port?.forEach((p) => {
+
+
+      rows.push(
+        new TableRow({
+          height: { value: 600, rule: 'atLeast' },
+          children: [
+            new TableCell({
+
+              children: [createParagraph(p.recommendation || 'N/A', false, AlignmentType.LEFT)], verticalAlign: VerticalAlign.CENTER, // Alignment to LEFT for better readability
+            }),
+            new TableCell({
+
+              children: [
+                createParagraph(p.commitment ?? '', false, AlignmentType.LEFT), // Alignment to LEFT for better readability
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+            }),
+            new TableCell({
+
+              children: [
+                createParagraph(p.status ?? '', false, AlignmentType.CENTER),
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+            })
+          ],
+        }),
+      );
+    });
+  }
+
+
+  return [new Table({
+
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: createTableBorders(),
+
+    rows,
+  })]
+}
+
+export function complianceWithGoodPracticeInChemicalSafetyManagement(
+  nq: NonNullable<CMVRGeneralInfo['complianceWithGoodPracticeInChemicalSafetyManagement']>,
+): (Paragraph | Table)[] {
+  const rows: TableRow[] = [];
+  
+  // Header Rows (Unchanged)
+  rows.push(
+    new TableRow({
+      height: { value: 600, rule: 'atLeast' },
+      children: [
+        new TableCell({
+          rowSpan: 2,
+          children: [createParagraph('Chemicals in PCL and COO', true, AlignmentType.CENTER)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          columnSpan: 4,
+          children: [
+            createParagraph('Adequate?', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          rowSpan: 2,
+          children: [
+            createParagraph('Remarks', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        })
+      ],
+    }),
+  );
+
+  rows.push(
+    new TableRow({
+      height: { value: 600, rule: 'atLeast' },
+      children: [
+        new TableCell({
+          children: [createParagraph('Risk Management', true, AlignmentType.CENTER)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('Training', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('Handling', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            createParagraph('Emergency Preparedness', true, AlignmentType.CENTER),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        })
+      ],
+    }),
+  );
+
+  const cs = nq.chemicalSafety; // Access the nested chemicalSafety object
+  
+  // Data Row
+  if (cs) {
+    const chemicalText = cs.chemicalCategory || cs.othersSpecify || 'N/A';
+    
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            // Use the chemical category for the first cell
+            children: [createParagraph(chemicalText, false, AlignmentType.LEFT)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(
+                cs.riskManagement ? 'Y' : 'N', // Check for existence of the string value
+                false,
+                AlignmentType.CENTER,
+              ),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(
+                cs.training ? 'Y' : 'N',
+                false,
+                AlignmentType.CENTER,
+              ),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(
+                cs.handling ? 'Y' : 'N',
+                false,
+                AlignmentType.CENTER,
+              ),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(
+                cs.emergencyPreparedness ? 'Y' : 'N',
+                false,
+                AlignmentType.CENTER,
+              ),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [
+              createParagraph(
+                cs.remarks || '-',
+                false,
+                AlignmentType.LEFT,
+              ),
+            ]
+          }),
+        ]
+      })
+    );
+  } else {
+    // If no chemical safety data is present, push an empty row
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            children: [createParagraph('N/A', false, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [createParagraph('', false, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [createParagraph('', false, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [createParagraph('', false, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [createParagraph('', false, AlignmentType.CENTER)],
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+          new TableCell({
+            children: [createParagraph('', false, AlignmentType.LEFT)],
+          }),
+        ]
+      })
+    );
+  }
+
+  return [new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: createTableBorders(),
+    rows,
+  })]
 }

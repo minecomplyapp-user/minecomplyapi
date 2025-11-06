@@ -1734,38 +1734,38 @@ export function drawProcessDocumentationOfActivitiesUndertaken(
     remarksMode?: 'activity' | 'perMember' | 'none';
   }> = [];
 
-  if (activities?.complianceWithEccConditionsCommitments) {
-    const activity = activities.complianceWithEccConditionsCommitments;
-    activityRows.push({
-      name: 'Compliance with ECC Conditions/ Commitments',
-      date: useSameDate ? globalDate : activity.dateConducted || globalDate,
-      members: activity.mmtMembersInvolved || [],
-      remarks: activity.remarks || '',
-      remarksMode: 'none',
-    });
-  }
+  // if (activities?.complianceWithEccConditionsCommitments) {
+  //   const activity = activities.complianceWithEccConditionsCommitments;
+  //   activityRows.push({
+  //     name: 'Compliance with ECC Conditions/ Commitments',
+  //     date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+  //     members: activity.mmtMembersInvolved || [],
+  //     remarks: activity.remarks || '',
+  //     remarksMode: 'none',
+  //   });
+  // }
 
-  if (activities?.complianceWithEpepAepepConditions) {
-    const activity = activities.complianceWithEpepAepepConditions;
-    activityRows.push({
-      name: 'Compliance with EPEP/ AEPEP Conditions',
-      date: useSameDate ? globalDate : activity.dateConducted || globalDate,
-      members: activity.mmtMembersInvolved || [],
-      remarks: activity.remarks || '',
-      remarksMode: 'none',
-    });
-  }
+  // if (activities?.complianceWithEpepAepepConditions) {
+  //   const activity = activities.complianceWithEpepAepepConditions;
+  //   activityRows.push({
+  //     name: 'Compliance with EPEP/ AEPEP Conditions',
+  //     date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+  //     members: activity.mmtMembersInvolved || [],
+  //     remarks: activity.remarks || '',
+  //     remarksMode: 'none',
+  //   });
+  // }
 
-  if (activities?.siteOcularValidation) {
-    const activity = activities.siteOcularValidation;
-    activityRows.push({
-      name: 'Site Ocular/ Validation',
-      date: useSameDate ? globalDate : activity.dateConducted || globalDate,
-      members: activity.mmtMembersInvolved || [],
-      remarks: activity.remarks || '',
-      remarksMode: 'none',
-    });
-  }
+  // if (activities?.siteOcularValidation) {
+  //   const activity = activities.siteOcularValidation;
+  //   activityRows.push({
+  //     name: 'Site Ocular/ Validation',
+  //     date: useSameDate ? globalDate : activity.dateConducted || globalDate,
+  //     members: activity.mmtMembersInvolved || [],
+  //     remarks: activity.remarks || '',
+  //     remarksMode: 'none',
+  //   });
+  // }
 
   if (activities?.siteValidationConfirmatorySampling) {
     const activity = activities.siteValidationConfirmatorySampling;

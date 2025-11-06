@@ -49,17 +49,6 @@ export class AttendeeDto {
   attendanceStatus: AttendanceStatus;
 }
 
-export class AttachmentDto {
-  @ApiProperty({ description: 'Storage path of the attachment' })
-  @IsString()
-  path: string;
-
-  @ApiPropertyOptional({ description: 'Caption for the attachment' })
-  @IsOptional()
-  @IsString()
-  caption?: string;
-}
-
 export class CreateAttendanceRecordDto {
   @ApiPropertyOptional({ description: 'ID of the associated report' })
   @IsOptional()
@@ -105,14 +94,4 @@ export class CreateAttendanceRecordDto {
   @ValidateNested({ each: true })
   @Type(() => AttendeeDto)
   attendees: AttendeeDto[];
-
-  @ApiPropertyOptional({
-    description: 'Attachment storage paths with optional captions',
-    type: [AttachmentDto],
-  })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AttachmentDto)
-  attachments?: AttachmentDto[];
 }

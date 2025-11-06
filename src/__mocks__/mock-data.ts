@@ -4,7 +4,7 @@ export const mockAttendanceRecord = {
   id: 'mock-attendance-1',
   reportId: 'mock-report-1',
   createdById: 'mock-user-1',
-  fileName: 'oct_2025.pdf',
+  fileName: 'attendance_oct_2025.pdf',
   title: 'October 2025 Meeting Attendance',
   description: 'Attendance for the October 2025 meeting.',
   meetingDate: new Date('2025-10-13T09:00:00Z'),

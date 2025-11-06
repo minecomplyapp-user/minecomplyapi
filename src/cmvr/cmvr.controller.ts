@@ -8,6 +8,10 @@ import {
   NotFoundException,
   HttpStatus,
   StreamableFile,
+  Delete,
+  HttpCode,
+  Patch,
+  Query,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -20,8 +24,11 @@ import {
 } from '@nestjs/swagger';
 import { CmvrService } from './cmvr.service';
 import { CMVRPdfGeneratorService } from './cmvr-pdf-generator.service';
+import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
 import { CMVRDocxGeneratorService } from './cmvr-docx-generator.service';
 import { CreateCMVRDto } from './dto/create-cmvr.dto';
+import { AttendanceService } from '../attendance/attendance.service';
+// import { stat } from 'node:fs';
 
 // Mock data for quick preview
 const cmvrReport = {
@@ -34,313 +41,6 @@ const cmvrReport = {
   monitoringPeriodCovered: '2025-07-01 to 2025-09-30',
   dateOfCmrSubmission: '2025-10-10',
   ecc: [
-    {
-      permitHolderName: 'Flor T. Lagang',
-      eccNumber: 'ECC No. 010607050100-1103',
-      dateOfIssuance: 'Jul. 05, 2006',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      eccNumber: 'ECC No. 010607060102-1103',
-      dateOfIssuance: 'Jul. 06, 2006',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      eccNumber: 'ECC No. 010607050099-1103',
-      dateOfIssuance: 'Jul. 05, 2006',
-    },
-    {
-      permitHolderName: 'Efren Pungtilan',
-      eccNumber: 'ECC No. 010611200186-1103',
-      dateOfIssuance: 'Nov. 20, 2006',
-    },
-    {
-      permitHolderName: 'Mae Ann C. Aurelio',
-      eccNumber: 'ECC No. 010607060102-1103 (2nd amendment)',
-      dateOfIssuance: 'Aug. 25, 2022',
-    },
-    {
-      permitHolderName: 'Erna C. Tiu',
-      eccNumber: 'ECC No. 010609190135-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Edison C. Tiu',
-      eccNumber: 'ECC No. 010609190133-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Maechellenie C.Cabanilla',
-      eccNumber: 'ECC No. 010609190137-1103 (1st amendment)',
-      dateOfIssuance: 'Aug. 26, 2022',
-    },
-    {
-      permitHolderName: 'Judy C. Tan',
-      eccNumber: 'ECC No. RO11404-0076',
-      dateOfIssuance: 'Apr. 15, 2014',
-    },
-    {
-      permitHolderName: 'Joan P. Suriaga',
-      eccNumber: 'ECC No. 010609190138-1103 (1st amendment)',
-      dateOfIssuance: 'Aug. 23, 2022',
-    },
-    {
-      permitHolderName: 'Edmundo Mendones',
-      eccNumber: 'ECC No. RO11404-0075',
-      dateOfIssuance: 'Apr. 15, 2014',
-    },
-    {
-      permitHolderName: 'Betty N. Chua',
-      eccNumber: 'ECC No. 010609150132-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Alice L. Chua',
-      eccNumber: 'ECC No. 010609150131-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Antonio L. Kho',
-      eccNumber: 'ECC No. 010611200185-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Omnico Natural Resources, Inc. (Plant)',
-      eccNumber: 'ECC No. R1-0940070-3722',
-      dateOfIssuance: 'Jun. 09, 2025',
-    },
-  ],
-  isagMpp: [
-    {
-      permitHolderName: 'Flor T. Lagang',
-      isagPermitNumber: '06-004',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      isagPermitNumber: '06-005',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      isagPermitNumber: '06-007',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Efren Pungtilan',
-      isagPermitNumber: '06-025',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Mae Ann C. Aurelio',
-      isagPermitNumber: '06-008',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Erna C. Tiu',
-      isagPermitNumber: '06-010',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Edison C. Tiu',
-      isagPermitNumber: '06-011',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Maechellenie C. Cabanilla',
-      isagPermitNumber: '06-012',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Judy C. Tan',
-      isagPermitNumber: '017-002',
-      dateOfIssuance: 'Sep. 06, 2022 (1st renewal)',
-    },
-    {
-      permitHolderName: 'Joan P. Suriaga',
-      isagPermitNumber: '06-013',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Edmundo Mendones',
-      isagPermitNumber: '017-001',
-      dateOfIssuance: 'Sep. 06, 2022 (1st renewal)',
-    },
-    {
-      permitHolderName: 'Betty N. Chua',
-      isagPermitNumber: '06-015',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Alice L. Chua',
-      isagPermitNumber: '06-017',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Antonio L. Kho',
-      isagPermitNumber: '06-023',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Omnico Natural Resources, Inc. (MPP)',
-      isagPermitNumber: '03-2023-I',
-      dateOfIssuance: 'Jun. 29, 2023',
-    },
-  ],
-  projectCurrentName: 'OMNICO NATURAL RESOURCES, INC. (ONRI)',
-  projectNameInEcc: 'OMNICO NATURAL RESOURCES, INC. ',
-  projectStatus: 'Active',
-  projectGeographicalCoordinates: 'Refer to attached ONRI Quarry Tenement Map',
-  proponent: {
-    contactPersonAndPosition: 'ALMA L. KHO, SVP & General Manager',
-    mailingAddress: 'Brgy. 18 – San Isidro, Sarrat, Ilocos Norte',
-    telephoneFax: '(077) 676-0014, (077) 676-0410',
-    emailAddress: 'onri.admdivision@gmail.com',
-  },
-  mmt: {
-    contactPersonAndPosition: 'Engr. Angelica D. De Vera, MMT Head',
-    mailingAddress: 'DENR Bldg., Brgy. Sevilla, City of San Fernando, La Union',
-    telephoneFax: '0977-116-4572',
-    emailAddress: 'angelicadevera815@gmail.com',
-  },
-  epepFmrdpStatus: 'Approved',
-  epep: [
-    {
-      permitHolderName: 'Acme Mining Corporation',
-      epepNumber: 'EPEP-2019-0001',
-      dateOfApproval: '2019-12-01',
-    },
-    {
-      permitHolderName: 'Acme Mining Corporation',
-      epepNumber: 'EPEP-2023-0003',
-      dateOfApproval: '2023-06-15',
-    },
-  ],
-  rehabilitationCashFund: [
-    {
-      permitHolderName: 'ONRI',
-      savingsAccountNumber: 'DBP 00-0-01347-545-9',
-      amountDeposited: '830,328.90',
-      dateUpdated: 'June 30, 2025',
-    },
-    {
-      permitHolderName: 'Flor T. Lagang',
-      savingsAccountNumber: 'LBP 4051-0027-71',
-      amountDeposited: '45,115.50',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      savingsAccountNumber: 'LBP 4051-0022-16',
-      amountDeposited: '67,995.39',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      savingsAccountNumber: 'LBP 4051-0053-63',
-      amountDeposited: '35,361.58',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Efren Pungtilan',
-      savingsAccountNumber: 'LBP 4051-0023-21',
-      amountDeposited: '25,993.11',
-      dateUpdated: 'June 30, 2025',
-    },
-    {
-      permitHolderName: 'Mae Ann C. Aurelio',
-      savingsAccountNumber: 'LBP 4051-0023-72',
-      amountDeposited: '35,320.16',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Erna C. Tiu',
-      savingsAccountNumber: 'LBP 4051-0022-32',
-      amountDeposited: '35,420.96',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Edison C. Tiu',
-      savingsAccountNumber: 'LBP 4051-0022-59',
-      amountDeposited: '35,420.96',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Maechellenie C.Cabanilla',
-      savingsAccountNumber: 'LBP 4051-0023-64',
-      amountDeposited: '45,226.72',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Judy C. Tan',
-      savingsAccountNumber: 'LBP 4051-0022-40',
-      amountDeposited: '35,420.96',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Joan P. Suriaga',
-      savingsAccountNumber: 'LBP 4051-0023-30',
-      amountDeposited: '45,226.86',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Edmundo Mendones',
-      savingsAccountNumber: 'LBP 4051-0033-28',
-      amountDeposited: '45,105.30',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Betty N. Chua',
-      savingsAccountNumber: 'LBP 4051-0027-63',
-      amountDeposited: '35,309.04',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Alice L. Chua',
-      savingsAccountNumber: 'LBP 4051-0022-75',
-      amountDeposited: '35,321.04',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Antonio L. Kho',
-      savingsAccountNumber: 'LBP 4051-0022-08',
-      amountDeposited: '35,420.90',
-      dateUpdated: 'July 11, 2025',
-    },
-  ],
-  monitoringTrustFundUnified: [
-    {
-      permitHolderName: 'Omnico NaturalResources, Inc.',
-      savingsAccountNumber: '0545-012835-030',
-      amountDeposited: '2,250,401.06',
-      dateUpdated: 'June 30, 2025',
-    },
-  ],
-  finalMineRehabilitationAndDecommissioningFund: [
-    {
-      permitHolderName: 'ONRI',
-      savingsAccountNumber: '4051-0020-03',
-      amountDeposited: '1,110,559.91',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Flor T. Lagang',
-      savingsAccountNumber: '1821-2200-73',
-      amountDeposited: '10,006.59',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      savingsAccountNumber: '5081-0179-40',
-      amountDeposited: '10,006.58',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      savingsAccountNumber: '4051-0078-46',
-      amountDeposited: '10,012.31',
-      dateUpdated: 'July 11, 2025',
-    },
     {
       permitHolderName: 'Efren Pungtilan',
       savingsAccountNumber: '4051-0078-54',
@@ -1018,6 +718,269 @@ const cmvrReport = {
     explanationForConfirmatorySampling: 'N/A',
     overallAssessment: 'Within the DENR Standard',
   },
+  noiseQualityImpactAssessment: {
+    parameters: [
+      {
+        name: 'Noise Level at Boundary (dB)',
+        results: {
+          inSMR: {
+            current: '65 dB',
+            previous: '62 dB',
+          },
+          mmtConfirmatorySampling: {
+            current: '64 dB',
+            previous: '63 dB',
+          },
+        },
+        eqpl: {
+          redFlag: 'None',
+          action: 'Continue regular monitoring',
+          denrStandard: '75 dB (Daytime)',
+        },
+        remarks: 'Within permissible limits.',
+      },
+      {
+        name: 'Noise Level at Residential Area (dB)',
+        results: {
+          inSMR: {
+            current: '55 dB',
+            previous: '53 dB',
+          },
+          mmtConfirmatorySampling: {
+            current: '54 dB',
+            previous: '52 dB',
+          },
+        },
+        eqpl: {
+          redFlag: 'Slight increase observed',
+          action: 'Recommend noise source identification',
+          denrStandard: '65 dB (Daytime)',
+        },
+        remarks: 'Slightly higher but still within standards.',
+      },
+    ],
+    samplingDate: '2025-09-15',
+    weatherAndWind: 'Sunny, light breeze (NNE, 5 km/h)',
+    explanationForConfirmatorySampling:
+      'Confirmatory sampling was conducted due to observed increase in residential area noise levels.',
+    overallAssessment: {
+      firstQuarter: {
+        year: '2025',
+        assessment: 'Noise levels within DENR limits.',
+      },
+      secondQuarter: {
+        year: '2025',
+        assessment: 'Minor fluctuations, still compliant.',
+      },
+      thirdQuarter: {
+        year: '2025',
+        assessment: 'Stable readings, no significant changes.',
+      },
+      fourthQuarter: {
+        year: '2025',
+        assessment: 'Compliant throughout the year.',
+      },
+    },
+  },
+  complianceWithGoodPracticeInSolidAndHazardousWasteManagement: {
+    quarry: [
+      {
+        typeOfWaste: 'Waste Oil (H501)',
+        eccEpepCommitments: {
+          handling: 'Properly labeled and placed in leak-proof drums.',
+          storage: 'Stored in dedicated, covered, and bunded area.',
+          disposal: true,
+        },
+        adequate: {
+          y: true,
+          n: false,
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: '150.5 Liters',
+        q2_2025_Generated_HW: '25.0 Liters',
+        total: '175.5 Liters',
+      },
+      {
+        typeOfWaste: 'Used Lead-Acid Batteries (I101)',
+        eccEpepCommitments: {
+          handling: 'Insulated and kept upright; no stacking.',
+          storage: 'Stored on non-permeable floor, covered.',
+          disposal: true,
+        },
+        adequate: {
+          y: true,
+          n: false,
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: '15 pieces',
+        q2_2025_Generated_HW: '5 pieces',
+        total: '20 pieces',
+      },
+    ],
+    plant: [
+      {
+        typeOfWaste: 'Infectious Waste (A101)',
+        eccEpepCommitments: {
+          handling: 'Segregated and placed in yellow bags/containers.',
+          storage: 'Stored in cold room for less than 48 hours.',
+          disposal: true,
+        },
+        adequate: {
+          y: false, // Indicates a non-compliance issue
+          n: true,
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: '25 kg (3 bags)',
+        q2_2025_Generated_HW: '8.5 kg (1 bag)',
+        total: '33.5 kg (4 bags)',
+      },
+    ],
+    port: [
+      {
+        typeOfWaste: 'Used Lead-Acid Batteries (I101)',
+        eccEpepCommitments: {
+          handling: 'Insulated and kept upright; no stacking.',
+          storage: 'Stored on non-permeable floor, covered.',
+          disposal: true,
+        },
+        adequate: {
+          y: true,
+          n: false,
+        },
+        // *** FIXED: Now using strings for compatibility ***
+        previousRecord: '15 pieces',
+        q2_2025_Generated_HW: '5 pieces',
+        total: '20 pieces',
+      },
+    ],
+  },
+
+  // --- SECTION I: Compliance Monitoring Report and Discussions (Partial) ---
+  complianceWithGoodPracticeInChemicalSafetyManagement: {
+    chemicalSafety: {
+      // The old boolean fields are now nested under 'chemicalSafety'.
+      // They are stored as strings in the DTO, so 'true' is used to indicate compliance/existence.
+      riskManagement: 'true',
+      training: 'true',
+      handling: 'true',
+      emergencyPreparedness: 'true',
+      remarks:
+        'All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully.',
+      // Adding empty strings for other DTO fields not provided in the original data
+      chemicalCategory: '',
+      othersSpecify: '',
+    },
+  },
+
+  // --- Complaints Verification and Management ---
+  complaintsVerificationAndManagement: [
+    {
+      dateFiled: '2025-07-05',
+      // Old boolean flags (denr, company, mmt) are mapped to the single 'filedLocation' string.
+      filedLocation: 'company',
+      othersSpecify: '',
+      nature:
+        "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.", // Renamed from 'natureOfComplaint'
+      resolutions:
+        'Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08.', // Renamed from 'resulotionMade'
+    },
+    {
+      dateFiled: '2025-08-10',
+      filedLocation: 'denr',
+      othersSpecify: '',
+      nature:
+        'Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.',
+      resolutions:
+        'DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed.',
+    },
+    {
+      dateFiled: '2025-09-01',
+      filedLocation: 'mmt',
+      othersSpecify: 'Local NGO, Green Watch',
+      nature:
+        'Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).',
+      resolutions:
+        'Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15.',
+    },
+  ],
+
+  // --- Recommendations (Structure is correct) ---
+  recommendationFromPrevQuarter: {
+    quarter: 2,
+    year: 2025,
+    plant: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+      {
+        recommendation: 'dasdasdnce.',
+        commitment:
+          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongdsdsdsdoing',
+      },
+    ],
+    quarry: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+    port: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+  },
+  recommendationForNextQuarter: {
+    quarter: 3,
+    year: 2025,
+    plant: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+      {
+        recommendation: 'dasdasdnce.',
+        commitment:
+          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongdsdsdsdoing',
+      },
+    ],
+    quarry: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+    port: [
+      {
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
+  },
+
+  attendanceUrl: '',
 };
 
 export { cmvrReport };
@@ -1029,6 +992,7 @@ export class CmvrController {
     private readonly cmvrService: CmvrService,
     private readonly pdfGenerator: CMVRPdfGeneratorService,
     private readonly docxGenerator: CMVRDocxGeneratorService,
+    private readonly attendanceService: AttendanceService,
   ) {}
 
   @Post()
@@ -1041,8 +1005,11 @@ export class CmvrController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid request data',
   })
-  async create(@Body() createCmvrDto: CreateCMVRDto) {
-    return this.cmvrService.create(createCmvrDto);
+  async create(
+    @Body() createCmvrDto: CreateCMVRDto,
+    @Query('fileName') fileName?: string,
+  ) {
+    return this.cmvrService.create(createCmvrDto, fileName);
   }
 
   @Get()
@@ -1053,6 +1020,17 @@ export class CmvrController {
   })
   async findAll() {
     return this.cmvrService.findAll();
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all CMVR reports created by a specific user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of CMVR reports created by the user',
+  })
+  async findByUserId(@Param('userId') userId: string) {
+    return this.cmvrService.findByUserId(userId);
   }
 
   @Get('preview/general-info')
@@ -1129,6 +1107,96 @@ export class CmvrController {
     }
   }
 
+  @Get(':id/docx')
+  @ApiOperation({ summary: 'Generate DOCX for full CMVR report by ID' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID' })
+  @ApiProduces(
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  )
+  @ApiOkResponse({
+    description: 'DOCX generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        {
+          schema: { type: 'string', format: 'binary' },
+        },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR Report not found or has no data',
+  })
+  async generateFullReportDocx(
+    @Param('id') id: string,
+    @Query('token') queryToken: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile | void> {
+    // If query token is provided, validate it (simple approach for now)
+    // In production, you'd want to implement proper token validation
+    if (queryToken) {
+      // For now, accept any non-empty token when coming from query param
+      // This allows direct browser downloads
+      // TODO: Implement proper temporary token generation and validation
+      console.log('Download via query token (browser download)');
+    }
+
+    try {
+      const record = await this.cmvrService.findOne(id);
+      if (!record?.cmvrData) {
+        throw new NotFoundException(
+          `CMVR Report with ID ${id} has no cmvrData`,
+        );
+      }
+
+      // Fetch attendance data if attendanceId is present in cmvrData
+      let attendanceData: any = null;
+      const cmvrDataObj = record.cmvrData as any;
+      if (cmvrDataObj?.attendanceId) {
+        try {
+          attendanceData = await this.attendanceService.findOne(
+            cmvrDataObj.attendanceId,
+          );
+        } catch (error) {
+          console.warn(
+            `Could not fetch attendance data for ID ${cmvrDataObj.attendanceId}:`,
+            error,
+          );
+        }
+      }
+
+      const docxBuffer = await this.docxGenerator.generateFullReportDocx(
+        record.cmvrData as unknown as CMVRGeneralInfo,
+        attendanceData,
+      );
+
+      // Use the fileName from the record, fallback to cmvr-{id} if not available
+      const fileName = record.fileName
+        ? `${record.fileName.replace(/[^a-zA-Z0-9-_\.]/g, '_')}.docx`
+        : `cmvr-${id}.docx`;
+
+      res.set({
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': docxBuffer.length,
+      });
+      return new StreamableFile(docxBuffer);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        res.status(HttpStatus.NOT_FOUND).json({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: error.message,
+        });
+      } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to generate DOCX',
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a CMVR report by ID' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID' })
@@ -1188,5 +1256,34 @@ export class CmvrController {
         });
       }
     }
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a CMVR report by ID' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Deleted' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR Report not found',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.cmvrService.remove(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a CMVR report by ID (replace cmvrData)' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Updated successfully' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR Report not found',
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: CreateCMVRDto,
+    @Query('fileName') fileName?: string,
+  ) {
+    return this.cmvrService.update(id, updateDto, fileName);
   }
 }

@@ -6,6 +6,7 @@ import {
   IsOptional,
   ValidateNested,
   IsBoolean,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -371,11 +372,26 @@ class AirQualityParameterDto {
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   @IsOptional()
-  results: any;
+  @IsObject()
+  results: {
+    inSMR: {
+      current: string;
+      previous: string;
+    };
+    mmtConfirmatorySampling: {
+      current: string;
+      previous: string;
+    };
+  };
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   @IsOptional()
-  eqpl: any;
+  @IsObject()
+  eqpl: {
+    redFlag: string;
+    action: string;
+    limit: string;
+  };
 
   @ApiProperty()
   @IsString()
@@ -753,6 +769,172 @@ class ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto {
   port?: string | WasteItemDto[];
 }
 
+class ChemicalSafetyDataDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isNA?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  riskManagement?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  training?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  handling?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  emergencyPreparedness?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  remarks?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  chemicalCategory?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  othersSpecify?: string;
+}
+
+class ComplianceWithGoodPracticeInChemicalSafetyManagementDto {
+  @ApiProperty({ type: ChemicalSafetyDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ChemicalSafetyDataDto)
+  chemicalSafety?: ChemicalSafetyDataDto;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  healthSafetyChecked?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  socialDevChecked?: boolean;
+}
+
+class ComplaintsVerificationAndManagementDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isNA?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  dateFiled?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  filedLocation?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  othersSpecify?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  nature?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  resolutions?: string;
+}
+
+class RecommendationItemDto {
+  @ApiProperty({ description: 'The recommendation text', required: false })
+  @IsOptional()
+  @IsString()
+  recommendation?: string;
+
+  @ApiProperty({
+    description: 'The commitment or action plan',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  commitment?: string;
+
+  @ApiProperty({
+    description:
+      'Status of the recommendation (e.g., Ongoing, Completed, In Progress)',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
+}
+
+class RecommendationsSectionDto {
+  @ApiProperty({ description: 'Quarter number (1, 2, 3, 4)', required: false })
+  @IsOptional()
+  @IsNumber()
+  quarter?: number;
+
+  @ApiProperty({ description: 'Year', required: false })
+  @IsOptional()
+  @IsNumber()
+  year?: number;
+
+  @ApiProperty({
+    type: [RecommendationItemDto],
+    description: 'Plant recommendations',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RecommendationItemDto)
+  plant?: RecommendationItemDto[];
+
+  @ApiProperty({
+    type: [RecommendationItemDto],
+    description: 'Quarry recommendations',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RecommendationItemDto)
+  quarry?: RecommendationItemDto[];
+
+  @ApiProperty({
+    type: [RecommendationItemDto],
+    description: 'Port recommendations',
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RecommendationItemDto)
+  port?: RecommendationItemDto[];
+}
+
 class ComplianceMonitoringReportDto {
   @ApiProperty({ type: ComplianceToProjectLocationAndCoverageLimitsDto })
   @ValidateNested()
@@ -788,6 +970,37 @@ class ComplianceMonitoringReportDto {
   @ValidateNested()
   @Type(() => ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto)
   complianceWithGoodPracticeInSolidAndHazardousWasteManagement?: ComplianceWithGoodPracticeInSolidAndHazardousWasteManagementDto;
+
+  @ApiProperty({
+    type: ComplianceWithGoodPracticeInChemicalSafetyManagementDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ComplianceWithGoodPracticeInChemicalSafetyManagementDto)
+  complianceWithGoodPracticeInChemicalSafetyManagement?: ComplianceWithGoodPracticeInChemicalSafetyManagementDto;
+
+  @ApiProperty({
+    type: [ComplaintsVerificationAndManagementDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ComplaintsVerificationAndManagementDto)
+  complaintsVerificationAndManagement?: ComplaintsVerificationAndManagementDto[];
+
+  @ApiProperty({ type: RecommendationsSectionDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RecommendationsSectionDto)
+  recommendationFromPrevQuarter?: RecommendationsSectionDto;
+
+  @ApiProperty({ type: RecommendationsSectionDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RecommendationsSectionDto)
+  recommendationForNextQuarter?: RecommendationsSectionDto;
 }
 
 export class CreateCMVRDto {
@@ -904,4 +1117,12 @@ export class CreateCMVRDto {
   @IsOptional()
   @IsString()
   createdById?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Attendance record ID to attach',
+  })
+  @IsOptional()
+  @IsString()
+  attendanceId?: string;
 }

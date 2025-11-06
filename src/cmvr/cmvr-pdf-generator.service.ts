@@ -131,18 +131,12 @@ export interface CMVRGeneralInfo {
     activities?: {
       complianceWithEccConditionsCommitments?: {
         mmtMembersInvolved?: string[];
-        dateConducted?: string;
-        remarks?: string;
       };
       complianceWithEpepAepepConditions?: {
         mmtMembersInvolved?: string[];
-        dateConducted?: string;
-        remarks?: string;
       };
       siteOcularValidation?: {
         mmtMembersInvolved?: string[];
-        dateConducted?: string;
-        remarks?: string;
       };
       siteValidationConfirmatorySampling?: {
         applicable?: boolean;
@@ -154,16 +148,16 @@ export interface CMVRGeneralInfo {
     };
   };
 
-  // Section I: Compliance Monitoring Report and Discussions
+  // Section I: Compliance Monitoring Report and Discussions (CMVRDto's inner properties)
   complianceToProjectLocationAndCoverageLimits?: {
     parameters?: Array<{
       name?: string;
-      specification?: string | Record<string, string | undefined>;
+      specification?: any; // Maps to 'object' in DTO
       withinSpecs?: boolean;
-      remarks?: string | Record<string, string | undefined>;
+      remarks?: string;
     }>;
     otherComponents?: Array<{
-      name?: string;
+      name?: string; // Added from DTO
       specification?: string;
       withinSpecs?: boolean;
       remarks?: string;
@@ -176,7 +170,7 @@ export interface CMVRGeneralInfo {
       commitments?: Array<{
         plannedMeasure?: string;
         actualObservation?: string;
-        isEffective?: boolean | null;
+        isEffective?: boolean;
         recommendations?: string;
       }>;
     }>;
@@ -185,7 +179,7 @@ export interface CMVRGeneralInfo {
       commitments?: Array<{
         plannedMeasure?: string;
         actualObservation?: string;
-        isEffective?: boolean | null;
+        isEffective?: boolean;
         recommendations?: string;
       }>;
     }>;
@@ -375,6 +369,72 @@ export interface CMVRGeneralInfo {
           total?: string | Record<string, number>;
         }>;
   };
+
+  complianceWithGoodPracticeInChemicalSafetyManagement?: {
+    chemicalSafety?: {
+      isNA?: boolean;
+      riskManagement?: string;
+      training?: string;
+      handling?: string;
+      emergencyPreparedness?: string;
+      remarks?: string;
+      chemicalCategory?: string;
+      othersSpecify?: string;
+    };
+    healthSafetyChecked?: boolean;
+    socialDevChecked?: boolean;
+  };
+
+  complaintsVerificationAndManagement?: Array<{
+    id?: string;
+    isNA?: boolean;
+    dateFiled?: string;
+    filedLocation?: string;
+    othersSpecify?: string;
+    nature?: string;
+    resolutions?: string;
+  }>;
+
+  recommendationFromPrevQuarter?: {
+    quarter?: number;
+    year?: number;
+    plant?: Array<{
+      recommendation?: string;
+      commitment?: string;
+      status?: string;
+    }>;
+    quarry?: Array<{
+      recommendation?: string;
+      commitment?: string;
+      status?: string;
+    }>;
+    port?: Array<{
+      recommendation?: string;
+      commitment?: string;
+      status?: string;
+    }>;
+  };
+
+  recommendationForNextQuarter?: {
+    quarter?: number;
+    year?: number;
+    plant?: Array<{
+      recommendation?: string;
+      commitment?: string;
+      status?: string;
+    }>;
+    quarry?: Array<{
+      recommendation?: string;
+      commitment?: string;
+      status?: string;
+    }>;
+    port?: Array<{
+      recommendation?: string;
+      commitment?: string;
+      status?: string;
+    }>;
+  };
+  createdById?: string; // Added from CreateCMVRDto
 }
 
 @Injectable()

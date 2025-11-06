@@ -3,7 +3,6 @@ import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
 import { SupabaseStorageService } from './supabase-storage.service';
 import { CreateSignedUploadUrlDto } from './dto/create-upload-url.dto';
 import { CreateSignedDownloadUrlDto } from './dto/create-download-url.dto';
-import { DeleteFilesDto } from './dto/delete-files.dto';
 
 @Controller('storage')
 @UseGuards(SupabaseAuthGuard)
@@ -59,24 +58,6 @@ export class StorageController {
       dto.expiresIn ?? 60,
     );
     return { url };
-  }
-
-  @Post('delete-files')
-  async deleteFiles(@Body() dto: DeleteFilesDto) {
-    this.logger.log(
-      `Received request to delete files: ${dto.paths.join(', ')}`,
-    );
-    try {
-      const result = await this.storageService.deleteFiles(dto.paths);
-      this.logger.log(`Successfully deleted files.`);
-      return { success: true, ...result };
-    } catch (error) {
-      this.logger.error(
-        `Failed to delete files: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
   }
 
   @Post('test-auth')

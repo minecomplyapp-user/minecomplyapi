@@ -7,6 +7,7 @@ import { UpdateConditionDto } from './dto/update-ecc-condition.dto';
 import { ECCPdfGeneratorService } from './ecc-pdf-generator.service';
 
 import { ECCWordGeneratorService } from './ecc-word-generator.service';
+import { Console } from 'console';
 
 @Injectable()
 export class EccService {
@@ -17,23 +18,40 @@ export class EccService {
   ) {}
 
   async findOne(id: string) {
-    const cmvrReport = await this.prisma.eCCReport.findUnique({
+    const eccReport = await this.prisma.eCCReport.findUnique({
       where: { id },
     });
 
-    if (!cmvrReport) {
-      throw new NotFoundException(`CMVR Report with ID ${id} not found`);
+    if (!eccReport) {
+      throw new NotFoundException(`ECC Report with ID ${id} not found`);
     }
 
-    return cmvrReport;
+    return eccReport;
   }
 
   async findAll() {
-    return this.prisma.eCCReport.findMany({
+    const rawReports = await this.prisma.eCCReport.findMany({
+      select: {
+        id: true, // Select the top-level ID
+        generalInfo: true, // Select the entire generalInfo JSON object
+        createdAt: true, // Select createdAt for sorting, though not needed in final output
+        filename: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    // Map the results to the desired structure
+    return rawReports.map((report) => ({
+      id: report.id,
+      // Extract properties from the generalInfo object
+      title: report.filename,
+      date: (report.generalInfo as any)?.date,
+      attendees: 0,
+      type: 'ecc',
+      // Note: You must ensure these properties exist on generalInfo before accessing them
+    }));
   }
   async getEccReportById(reportId: string) {
     // 1. AWAIT the report data immediately
@@ -45,16 +63,56 @@ export class EccService {
     if (!reportData) {
       throw new NotFoundException(`ECC Report with ID ${reportId} not found.`);
     }
+    const data = reportData;
+    let permit_holder_with_conditions = (reportData as any)
+      .permit_holder_with_conditions;
 
-    // 2. AWAIT the grouped conditions
-    const groupedConditions =
-      await this.getGroupedEccConditionsByReportId(reportId);
+    // If the value is a string, parse it into an object
+    if (typeof permit_holder_with_conditions === 'string') {
+      permit_holder_with_conditions = JSON.parse(permit_holder_with_conditions);
+    }
 
+    // Now TypeScript still thinks it's unknown — so cast it:
+    const permitHolders = (permit_holder_with_conditions as any)
+      ?.permit_holders;
+
+    reportData.generalInfo;
+    const formattedPermitHolders = permitHolders.map((holder) => {
+      const conditions = holder.monitoringState?.formatted?.conditions ?? [];
+
+      const monitoringState = conditions.map((cond) => ({
+        id: String(cond.condition_number),
+        title: cond.condition,
+        descriptions: {
+          complied: cond.remark_list?.[0] ?? '',
+          partial: cond.remark_list?.[1] ?? '',
+          not: cond.remark_list?.[2] ?? '',
+        },
+        isDefault: true,
+        nested_to: cond.nested_to ? String(cond.nested_to) : null,
+      }));
+
+      const asd = {
+        id: holder.id,
+        name: holder.name,
+        type: holder.type,
+        monitoringState,
+      };
+      console.log('asdadadasdsd' + asd);
+
+      return {
+        id: holder.id,
+        name: holder.name,
+        type: holder.type,
+        monitoringState,
+      };
+    });
+    console.log('FORMATTEDDDD', formattedPermitHolders);
     // 3. Construct and return the final combined object
     return {
-      ...reportData,
-      // Using a new field name like 'groupedConditions' is safer and clearer
-      conditions: groupedConditions,
+      generalInfo: data.generalInfo,
+      mmtInfo: data.mmtInfo,
+      permit_holders: formattedPermitHolders,
     };
   }
 
@@ -133,60 +191,66 @@ export class EccService {
     return this.wordGenerator.generateECCreportWord(eccReport, eCCConditions);
   }
 
+  // C:\Users\Nico\Documents\COMMI\2\minecomplyapi\src\ecc\ecc.service.ts
+
   async createEccReport(createEccReportDto: CreateEccReportDto) {
     // 1. Destructure DTO: Separate relation IDs, the nested array, and the rest of the data.
     const {
-      // createdById,
+      // createdById, // Assuming this is commented out in your actual code
       conditions,
       ...otherReportData
     } = createEccReportDto;
 
     // Prepare the scalar data for the main report creation.
-    // We explicitly map permitHolder/permit_holder here due to the known casing mismatch.
     const eccReportData: Prisma.ECCReportUncheckedCreateInput = {
       ...(otherReportData as Prisma.ECCReportUncheckedCreateInput),
 
-      // FIX: Explicitly map the camelCase DTO field to the snake_case DB field
-      //      This assumes the DB column is 'permit_holder' (snake_case)
+      // FIX: Explicitly map the permit_holders field
       permit_holders: (otherReportData as any).permit_holders,
-
-      // Use the relation syntax for the User creator
-      // createdBy: createdById
-      //     ? { connect: { id: createdById } }
-      //     : undefined,
     };
 
     // 2. Start a transaction to ensure all writes succeed or none do.
-    const result = await this.prisma.$transaction(async (prisma) => {
-      // 3. Create the parent ECC Report record.
-      const newEccReport = await prisma.eCCReport.create({
-        data: eccReportData,
-      });
-      console.log('Created ECC Report:', newEccReport);
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        // 3. Create the parent ECC Report record.
+        const newEccReport = await tx.eCCReport.create({
+          data: eccReportData,
+        });
+        console.log('Created ECC Report:', newEccReport);
 
-      const newConditions: ECCCondition[] = [];
-      if (conditions && conditions.length > 0) {
-        // 4. Loop and create child ECCCondition records individually.
-        for (const conditionDto of conditions) {
-          const newCondition = await prisma.eCCCondition.create({
-            data: {
-              // Set the foreign key using the newly created report's ID
-              ECCReportID: newEccReport.id,
+        let newConditions: ECCCondition[] = [];
 
-              // Spread all condition data from the DTO
-              ...(conditionDto as Prisma.ECCConditionUncheckedCreateInput),
-            },
+        if (conditions && conditions.length > 0) {
+          // 4. OPTIMIZATION: Use Promise.all to run all creation promises concurrently.
+          //    This is significantly faster than a sequential 'for' loop with 'await'.
+
+          const conditionCreationPromises = conditions.map((conditionDto) => {
+            return tx.eCCCondition.create({
+              data: {
+                // Set the foreign key using the newly created report's ID
+                ECCReportID: newEccReport.id,
+
+                // Spread all condition data from the DTO
+                ...(conditionDto as Prisma.ECCConditionUncheckedCreateInput),
+              },
+            });
           });
-          newConditions.push(newCondition);
-        }
-      }
 
-      // 5. Return both the parent report and the created conditions.
-      return {
-        ...newEccReport,
-        conditions: newConditions,
-      };
-    });
+          // Wait for all conditions to be created concurrently within the transaction
+          newConditions = await Promise.all(conditionCreationPromises);
+        }
+
+        // 5. Return both the parent report and the created conditions.
+        return {
+          ...newEccReport,
+
+          conditions: newConditions,
+        };
+      },
+      {
+        timeout: 150000,
+      },
+    );
 
     return result;
   }
@@ -230,10 +294,23 @@ export class EccService {
   async addCondition(reportId: string, createDto: CreateEccConditionDto) {
     // Use `create` to add a new condition and link it to the report
     const sectionValue = createDto.section ?? 0;
+
+    // Convert nested_to to number if it's a string
+    const nestedTo = createDto.nested_to
+      ? typeof createDto.nested_to === 'string'
+        ? parseInt(createDto.nested_to, 10)
+        : createDto.nested_to
+      : undefined;
+
     return this.prisma.eCCCondition.create({
       data: {
-        ...createDto,
+        condition: createDto.condition,
+        status: createDto.status,
+        remarks: createDto.remarks,
+        remark_list: createDto.remark_list,
+        condition_number: createDto.condition_number,
         section: sectionValue,
+        nested_to: nestedTo,
         // Link the new condition to the existing ECCReport
         ECCReportID: String(reportId),
       },
@@ -253,5 +330,20 @@ export class EccService {
       }
       throw error;
     }
+  }
+
+  async createEccAndGenerateDocs(
+    createEccReportDto: CreateEccReportDto,
+  ): Promise<{ fileName: string; buffer: Buffer }> {
+    // 1. Create the report and all nested conditions.
+    // The result contains the parent report object (including its ID) and the conditions array.
+    const createdReport = await this.createEccReport(createEccReportDto);
+
+    // 2. Safely extract the ID of the newly created report.
+    const reportId = createdReport.id;
+
+    // 3. Generate the Word document using the ID.
+    // Assuming generateWordReport is responsible for fetching data and creating the file.
+    return await this.generateWordReport(reportId);
   }
 }
