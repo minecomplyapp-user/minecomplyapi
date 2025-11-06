@@ -1110,8 +1110,18 @@ export class CmvrController {
   })
   async generateFullReportDocx(
     @Param('id') id: string,
+    @Query('token') queryToken: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile | void> {
+    // If query token is provided, validate it (simple approach for now)
+    // In production, you'd want to implement proper token validation
+    if (queryToken) {
+      // For now, accept any non-empty token when coming from query param
+      // This allows direct browser downloads
+      // TODO: Implement proper temporary token generation and validation
+      console.log('Download via query token (browser download)');
+    }
+    
     try {
       const record = await this.cmvrService.findOne(id);
       if (!record?.cmvrData) {
