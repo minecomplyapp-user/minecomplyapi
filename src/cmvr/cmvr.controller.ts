@@ -40,313 +40,7 @@ const cmvrReport = {
   monitoringPeriodCovered: '2025-07-01 to 2025-09-30',
   dateOfCmrSubmission: '2025-10-10',
   ecc: [
-    {
-      permitHolderName: 'Flor T. Lagang',
-      eccNumber: 'ECC No. 010607050100-1103',
-      dateOfIssuance: 'Jul. 05, 2006',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      eccNumber: 'ECC No. 010607060102-1103',
-      dateOfIssuance: 'Jul. 06, 2006',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      eccNumber: 'ECC No. 010607050099-1103',
-      dateOfIssuance: 'Jul. 05, 2006',
-    },
-    {
-      permitHolderName: 'Efren Pungtilan',
-      eccNumber: 'ECC No. 010611200186-1103',
-      dateOfIssuance: 'Nov. 20, 2006',
-    },
-    {
-      permitHolderName: 'Mae Ann C. Aurelio',
-      eccNumber: 'ECC No. 010607060102-1103 (2nd amendment)',
-      dateOfIssuance: 'Aug. 25, 2022',
-    },
-    {
-      permitHolderName: 'Erna C. Tiu',
-      eccNumber: 'ECC No. 010609190135-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Edison C. Tiu',
-      eccNumber: 'ECC No. 010609190133-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Maechellenie C.Cabanilla',
-      eccNumber: 'ECC No. 010609190137-1103 (1st amendment)',
-      dateOfIssuance: 'Aug. 26, 2022',
-    },
-    {
-      permitHolderName: 'Judy C. Tan',
-      eccNumber: 'ECC No. RO11404-0076',
-      dateOfIssuance: 'Apr. 15, 2014',
-    },
-    {
-      permitHolderName: 'Joan P. Suriaga',
-      eccNumber: 'ECC No. 010609190138-1103 (1st amendment)',
-      dateOfIssuance: 'Aug. 23, 2022',
-    },
-    {
-      permitHolderName: 'Edmundo Mendones',
-      eccNumber: 'ECC No. RO11404-0075',
-      dateOfIssuance: 'Apr. 15, 2014',
-    },
-    {
-      permitHolderName: 'Betty N. Chua',
-      eccNumber: 'ECC No. 010609150132-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Alice L. Chua',
-      eccNumber: 'ECC No. 010609150131-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Antonio L. Kho',
-      eccNumber: 'ECC No. 010611200185-1103',
-      dateOfIssuance: 'Apr. 30, 2012',
-    },
-    {
-      permitHolderName: 'Omnico Natural Resources, Inc. (Plant)',
-      eccNumber: 'ECC No. R1-0940070-3722',
-      dateOfIssuance: 'Jun. 09, 2025',
-    },
-  ],
-  isagMpp: [
-    {
-      permitHolderName: 'Flor T. Lagang',
-      isagPermitNumber: '06-004',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      isagPermitNumber: '06-005',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      isagPermitNumber: '06-007',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Efren Pungtilan',
-      isagPermitNumber: '06-025',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Mae Ann C. Aurelio',
-      isagPermitNumber: '06-008',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Erna C. Tiu',
-      isagPermitNumber: '06-010',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Edison C. Tiu',
-      isagPermitNumber: '06-011',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Maechellenie C. Cabanilla',
-      isagPermitNumber: '06-012',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Judy C. Tan',
-      isagPermitNumber: '017-002',
-      dateOfIssuance: 'Sep. 06, 2022 (1st renewal)',
-    },
-    {
-      permitHolderName: 'Joan P. Suriaga',
-      isagPermitNumber: '06-013',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Edmundo Mendones',
-      isagPermitNumber: '017-001',
-      dateOfIssuance: 'Sep. 06, 2022 (1st renewal)',
-    },
-    {
-      permitHolderName: 'Betty N. Chua',
-      isagPermitNumber: '06-015',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Alice L. Chua',
-      isagPermitNumber: '06-017',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Antonio L. Kho',
-      isagPermitNumber: '06-023',
-      dateOfIssuance: 'Sep. 06, 2022 (3rd renewal)',
-    },
-    {
-      permitHolderName: 'Omnico Natural Resources, Inc. (MPP)',
-      isagPermitNumber: '03-2023-I',
-      dateOfIssuance: 'Jun. 29, 2023',
-    },
-  ],
-  projectCurrentName: 'OMNICO NATURAL RESOURCES, INC. (ONRI)',
-  projectNameInEcc: 'OMNICO NATURAL RESOURCES, INC. ',
-  projectStatus: 'Active',
-  projectGeographicalCoordinates: 'Refer to attached ONRI Quarry Tenement Map',
-  proponent: {
-    contactPersonAndPosition: 'ALMA L. KHO, SVP & General Manager',
-    mailingAddress: 'Brgy. 18 – San Isidro, Sarrat, Ilocos Norte',
-    telephoneFax: '(077) 676-0014, (077) 676-0410',
-    emailAddress: 'onri.admdivision@gmail.com',
-  },
-  mmt: {
-    contactPersonAndPosition: 'Engr. Angelica D. De Vera, MMT Head',
-    mailingAddress: 'DENR Bldg., Brgy. Sevilla, City of San Fernando, La Union',
-    telephoneFax: '0977-116-4572',
-    emailAddress: 'angelicadevera815@gmail.com',
-  },
-  epepFmrdpStatus: 'Approved',
-  epep: [
-    {
-      permitHolderName: 'Acme Mining Corporation',
-      epepNumber: 'EPEP-2019-0001',
-      dateOfApproval: '2019-12-01',
-    },
-    {
-      permitHolderName: 'Acme Mining Corporation',
-      epepNumber: 'EPEP-2023-0003',
-      dateOfApproval: '2023-06-15',
-    },
-  ],
-  rehabilitationCashFund: [
-    {
-      permitHolderName: 'ONRI',
-      savingsAccountNumber: 'DBP 00-0-01347-545-9',
-      amountDeposited: '830,328.90',
-      dateUpdated: 'June 30, 2025',
-    },
-    {
-      permitHolderName: 'Flor T. Lagang',
-      savingsAccountNumber: 'LBP 4051-0027-71',
-      amountDeposited: '45,115.50',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      savingsAccountNumber: 'LBP 4051-0022-16',
-      amountDeposited: '67,995.39',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      savingsAccountNumber: 'LBP 4051-0053-63',
-      amountDeposited: '35,361.58',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Efren Pungtilan',
-      savingsAccountNumber: 'LBP 4051-0023-21',
-      amountDeposited: '25,993.11',
-      dateUpdated: 'June 30, 2025',
-    },
-    {
-      permitHolderName: 'Mae Ann C. Aurelio',
-      savingsAccountNumber: 'LBP 4051-0023-72',
-      amountDeposited: '35,320.16',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Erna C. Tiu',
-      savingsAccountNumber: 'LBP 4051-0022-32',
-      amountDeposited: '35,420.96',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Edison C. Tiu',
-      savingsAccountNumber: 'LBP 4051-0022-59',
-      amountDeposited: '35,420.96',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Maechellenie C.Cabanilla',
-      savingsAccountNumber: 'LBP 4051-0023-64',
-      amountDeposited: '45,226.72',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Judy C. Tan',
-      savingsAccountNumber: 'LBP 4051-0022-40',
-      amountDeposited: '35,420.96',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Joan P. Suriaga',
-      savingsAccountNumber: 'LBP 4051-0023-30',
-      amountDeposited: '45,226.86',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Edmundo Mendones',
-      savingsAccountNumber: 'LBP 4051-0033-28',
-      amountDeposited: '45,105.30',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Betty N. Chua',
-      savingsAccountNumber: 'LBP 4051-0027-63',
-      amountDeposited: '35,309.04',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Alice L. Chua',
-      savingsAccountNumber: 'LBP 4051-0022-75',
-      amountDeposited: '35,321.04',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Antonio L. Kho',
-      savingsAccountNumber: 'LBP 4051-0022-08',
-      amountDeposited: '35,420.90',
-      dateUpdated: 'July 11, 2025',
-    },
-  ],
-  monitoringTrustFundUnified: [
-    {
-      permitHolderName: 'Omnico NaturalResources, Inc.',
-      savingsAccountNumber: '0545-012835-030',
-      amountDeposited: '2,250,401.06',
-      dateUpdated: 'June 30, 2025',
-    },
-  ],
-  finalMineRehabilitationAndDecommissioningFund: [
-    {
-      permitHolderName: 'ONRI',
-      savingsAccountNumber: '4051-0020-03',
-      amountDeposited: '1,110,559.91',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Flor T. Lagang',
-      savingsAccountNumber: '1821-2200-73',
-      amountDeposited: '10,006.59',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Joseph L. Chua',
-      savingsAccountNumber: '5081-0179-40',
-      amountDeposited: '10,006.58',
-      dateUpdated: 'July 11, 2025',
-    },
-    {
-      permitHolderName: 'Aireen Carriedo',
-      savingsAccountNumber: '4051-0078-46',
-      amountDeposited: '10,012.31',
-      dateUpdated: 'July 11, 2025',
-    },
+  
     {
       permitHolderName: 'Efren Pungtilan',
       savingsAccountNumber: '4051-0078-54',
@@ -1160,138 +854,116 @@ const cmvrReport = {
       },
     ],
   },
+ 
+ 
+  // --- SECTION I: Compliance Monitoring Report and Discussions (Partial) ---
   complianceWithGoodPracticeInChemicalSafetyManagement: {
-    chemicalsInPclAndCoo: true,
-    riskManagement: true,
-    training: true,
-    handling: true,
-    emergencyPreparedness: true,
-    remarks:
-      'All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully.',
+    chemicalSafety: {
+      // The old boolean fields are now nested under 'chemicalSafety'.
+      // They are stored as strings in the DTO, so 'true' is used to indicate compliance/existence.
+      riskManagement: "true",
+      training: "true",
+      handling: "true",
+      emergencyPreparedness: "true",
+      remarks: "All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully.",
+      // Adding empty strings for other DTO fields not provided in the original data
+      chemicalCategory: "",
+      othersSpecify: ""
+    }
   },
+
+  // --- Complaints Verification and Management ---
   complaintsVerificationAndManagement: [
     {
-      dateFiled: '2025-07-05',
-      denr: false,
-      company: true,
-      mmt: false,
-      otherSpecify: '',
-      natureOfComplaint:
-        "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.",
-      resulotionMade:
-        'Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08.',
+      dateFiled: "2025-07-05",
+      // Old boolean flags (denr, company, mmt) are mapped to the single 'filedLocation' string.
+      filedLocation: "company",
+      othersSpecify: "",
+      nature: "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.", // Renamed from 'natureOfComplaint'
+      resolutions: "Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08." // Renamed from 'resulotionMade'
     },
     {
-      dateFiled: '2025-08-10',
-      denr: true,
-      company: false,
-      mmt: false,
-      otherSpecify: '',
-      natureOfComplaint:
-        'Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.',
-      resulotionMade:
-        'DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed.',
+      dateFiled: "2025-08-10",
+      filedLocation: "denr",
+      othersSpecify: "",
+      nature: "Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.",
+      resolutions: "DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed."
     },
     {
-      dateFiled: '2025-09-01',
-      denr: false,
-      company: false,
-      mmt: true,
-      otherSpecify: 'Local NGO, Green Watch',
-      natureOfComplaint:
-        'Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).',
-      resulotionMade:
-        'Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15.',
-    },
+      dateFiled: "2025-09-01",
+      filedLocation: "mmt",
+      othersSpecify: "Local NGO, Green Watch",
+      nature: "Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).",
+      resolutions: "Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15."
+    }
   ],
+
+  // --- Recommendations (Structure is correct) ---
   recommendationFromPrevQuarter: {
     quarter: 2,
     year: 2025,
     plant: [
       {
-        recommendation:
-          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-        commitment:
-          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongoing',
+        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
+        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongoing"
       },
       {
-        recommendation: 'dasdasdnce.',
-        commitment:
-          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongdsdsdsdoing',
-      },
+        recommendation: "dasdasdnce.",
+        commitment: "Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongdsdsdsdoing"
+      }
     ],
     quarry: [
       {
-        recommendation:
-          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-        commitment:
-          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongoing',
-      },
+        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
+        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongoing"
+      }
     ],
     port: [
       {
-        recommendation:
-          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-        commitment:
-          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongoing',
-      },
-    ],
+        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
+        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongoing"
+      }
+    ]
   },
   recommendationForNextQuarter: {
     quarter: 3,
     year: 2025,
-
     plant: [
       {
-        recommendation:
-          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-        commitment:
-          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongoing',
+        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
+        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongoing"
       },
       {
-        recommendation: 'dasdasdnce.',
-        commitment:
-          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongdsdsdsdoing',
-      },
+        recommendation: "dasdasdnce.",
+        commitment: "Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongdsdsdsdoing"
+      }
     ],
     quarry: [
       {
-        recommendation:
-          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-        commitment:
-          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongoing',
-      },
+        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
+        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongoing"
+      }
     ],
     port: [
       {
-        recommendation:
-          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
-        commitment:
-          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
-        status: 'Ongoing',
-      },
-    ],
+        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
+        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
+        status: "Ongoing"
+      }
+    ]
   },
+
+  
+
   attendanceUrl: '',
-  documentation: {
-    photos: [
-      {
-        url: '',
-        caption: '',
-      },
-      {
-        url: '',
-        caption: '',
-      },
-    ],
-  },
+
 };
 
 export { cmvrReport };
