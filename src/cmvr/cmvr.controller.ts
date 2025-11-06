@@ -27,6 +27,7 @@ import { CMVRPdfGeneratorService } from './cmvr-pdf-generator.service';
 import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
 import { CMVRDocxGeneratorService } from './cmvr-docx-generator.service';
 import { CreateCMVRDto } from './dto/create-cmvr.dto';
+import { AttendanceService } from '../attendance/attendance.service';
 // import { stat } from 'node:fs';
 
 // Mock data for quick preview
@@ -40,7 +41,6 @@ const cmvrReport = {
   monitoringPeriodCovered: '2025-07-01 to 2025-09-30',
   dateOfCmrSubmission: '2025-10-10',
   ecc: [
-  
     {
       permitHolderName: 'Efren Pungtilan',
       savingsAccountNumber: '4051-0078-54',
@@ -854,48 +854,54 @@ const cmvrReport = {
       },
     ],
   },
- 
- 
+
   // --- SECTION I: Compliance Monitoring Report and Discussions (Partial) ---
   complianceWithGoodPracticeInChemicalSafetyManagement: {
     chemicalSafety: {
       // The old boolean fields are now nested under 'chemicalSafety'.
       // They are stored as strings in the DTO, so 'true' is used to indicate compliance/existence.
-      riskManagement: "true",
-      training: "true",
-      handling: "true",
-      emergencyPreparedness: "true",
-      remarks: "All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully.",
+      riskManagement: 'true',
+      training: 'true',
+      handling: 'true',
+      emergencyPreparedness: 'true',
+      remarks:
+        'All operational chemicals are properly inventoried and covered by a comprehensive risk management plan. Quarterly training sessions were conducted for all personnel involved in chemical handling and emergency response drills were executed successfully.',
       // Adding empty strings for other DTO fields not provided in the original data
-      chemicalCategory: "",
-      othersSpecify: ""
-    }
+      chemicalCategory: '',
+      othersSpecify: '',
+    },
   },
 
   // --- Complaints Verification and Management ---
   complaintsVerificationAndManagement: [
     {
-      dateFiled: "2025-07-05",
+      dateFiled: '2025-07-05',
       // Old boolean flags (denr, company, mmt) are mapped to the single 'filedLocation' string.
-      filedLocation: "company",
-      othersSpecify: "",
-      nature: "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.", // Renamed from 'natureOfComplaint'
-      resolutions: "Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08." // Renamed from 'resulotionMade'
+      filedLocation: 'company',
+      othersSpecify: '',
+      nature:
+        "Dust emission from the crushing area affecting nearby residential community 'Phase 2'.", // Renamed from 'natureOfComplaint'
+      resolutions:
+        'Immediately increased water spraying frequency on crushers and haul roads from twice hourly to every 15 minutes. Installed a temporary dust screen netting along the boundary. Resolution confirmed satisfactory by complainant on 2025-07-08.', // Renamed from 'resulotionMade'
     },
     {
-      dateFiled: "2025-08-10",
-      filedLocation: "denr",
-      othersSpecify: "",
-      nature: "Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.",
-      resolutions: "DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed."
+      dateFiled: '2025-08-10',
+      filedLocation: 'denr',
+      othersSpecify: '',
+      nature:
+        'Report of potential hydrocarbon spill near the equipment fueling station affecting a drainage culvert.',
+      resolutions:
+        'DENR inspection conducted on 2025-08-11. No evidence of a fresh spill found. The source was identified as residual staining from prior operations. Fueling protocols were re-reviewed with staff, and containment booms were placed as a preventative measure. Complaint closed.',
     },
     {
-      dateFiled: "2025-09-01",
-      filedLocation: "mmt",
-      othersSpecify: "Local NGO, Green Watch",
-      nature: "Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).",
-      resolutions: "Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15."
-    }
+      dateFiled: '2025-09-01',
+      filedLocation: 'mmt',
+      othersSpecify: 'Local NGO, Green Watch',
+      nature:
+        'Noise pollution exceeding nighttime limits at the South Boundary Monitoring Station (MMT site B).',
+      resolutions:
+        'Operations audit confirmed that heavy equipment was running past the 10:00 PM cutoff time. Corrective Action: All heavy equipment is now grounded at 9:45 PM, and night shift security patrols are authorized to enforce this cutoff. MMT verified compliance during the follow-up meeting on 2025-09-15.',
+    },
   ],
 
   // --- Recommendations (Structure is correct) ---
@@ -904,66 +910,77 @@ const cmvrReport = {
     year: 2025,
     plant: [
       {
-        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
-        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongoing"
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
       },
       {
-        recommendation: "dasdasdnce.",
-        commitment: "Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongdsdsdsdoing"
-      }
+        recommendation: 'dasdasdnce.',
+        commitment:
+          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongdsdsdsdoing',
+      },
     ],
     quarry: [
       {
-        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
-        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongoing"
-      }
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
     ],
     port: [
       {
-        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
-        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongoing"
-      }
-    ]
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
   },
   recommendationForNextQuarter: {
     quarter: 3,
     year: 2025,
     plant: [
       {
-        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
-        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongoing"
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
       },
       {
-        recommendation: "dasdasdnce.",
-        commitment: "Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongdsdsdsdoing"
-      }
+        recommendation: 'dasdasdnce.',
+        commitment:
+          'Maintenance dsdsdsteam to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongdsdsdsdoing',
+      },
     ],
     quarry: [
       {
-        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
-        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongoing"
-      }
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
     ],
     port: [
       {
-        recommendation: "Continue regular maintenance of water sprinkling system to ensure optimal performance.",
-        commitment: "Maintenance team to conduct weekly checks and immediate repairs as needed.",
-        status: "Ongoing"
-      }
-    ]
+        recommendation:
+          'Continue regular maintenance of water sprinkling system to ensure optimal performance.',
+        commitment:
+          'Maintenance team to conduct weekly checks and immediate repairs as needed.',
+        status: 'Ongoing',
+      },
+    ],
   },
 
-  
-
   attendanceUrl: '',
-
 };
 
 export { cmvrReport };
@@ -975,6 +992,7 @@ export class CmvrController {
     private readonly cmvrService: CmvrService,
     private readonly pdfGenerator: CMVRPdfGeneratorService,
     private readonly docxGenerator: CMVRDocxGeneratorService,
+    private readonly attendanceService: AttendanceService,
   ) {}
 
   @Post()
@@ -1121,7 +1139,7 @@ export class CmvrController {
       // TODO: Implement proper temporary token generation and validation
       console.log('Download via query token (browser download)');
     }
-    
+
     try {
       const record = await this.cmvrService.findOne(id);
       if (!record?.cmvrData) {
@@ -1130,14 +1148,36 @@ export class CmvrController {
         );
       }
 
+      // Fetch attendance data if attendanceId is present in cmvrData
+      let attendanceData: any = null;
+      const cmvrDataObj = record.cmvrData as any;
+      if (cmvrDataObj?.attendanceId) {
+        try {
+          attendanceData = await this.attendanceService.findOne(
+            cmvrDataObj.attendanceId,
+          );
+        } catch (error) {
+          console.warn(
+            `Could not fetch attendance data for ID ${cmvrDataObj.attendanceId}:`,
+            error,
+          );
+        }
+      }
+
       const docxBuffer = await this.docxGenerator.generateFullReportDocx(
         record.cmvrData as unknown as CMVRGeneralInfo,
+        attendanceData,
       );
+
+      // Use the fileName from the record, fallback to cmvr-{id} if not available
+      const fileName = record.fileName
+        ? `${record.fileName.replace(/[^a-zA-Z0-9-_\.]/g, '_')}.docx`
+        : `cmvr-${id}.docx`;
 
       res.set({
         'Content-Type':
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'Content-Disposition': `attachment; filename="cmvr-${id}.docx"`,
+        'Content-Disposition': `attachment; filename="${fileName}"`,
         'Content-Length': docxBuffer.length,
       });
       return new StreamableFile(docxBuffer);

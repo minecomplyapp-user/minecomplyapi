@@ -1117,4 +1117,12 @@ export class CreateCMVRDto {
   @IsOptional()
   @IsString()
   createdById?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Attendance record ID to attach',
+  })
+  @IsOptional()
+  @IsString()
+  attendanceId?: string;
 }

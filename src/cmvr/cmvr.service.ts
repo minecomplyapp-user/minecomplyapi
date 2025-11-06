@@ -31,10 +31,15 @@ export class CmvrService {
   }
 
   async create(createCmvrDto: CreateCMVRDto, fileName?: string) {
-    const { createdById, ...cmvrData } = createCmvrDto;
+    const { createdById, attendanceId, ...cmvrData } = createCmvrDto;
 
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
+
+    // Add attendanceId to the cmvrData JSON if provided
+    if (attendanceId) {
+      (flattenedData as any).attendanceId = attendanceId;
+    }
 
     return this.prisma.cMVRReport.create({
       // Cast to any to allow setting fields that may be pending migration in generated types
@@ -103,10 +108,19 @@ export class CmvrService {
   async update(id: string, updateDto: CreateCMVRDto, fileName?: string) {
     // Ensure record exists and RLS ownership
     await this.findOne(id);
-    const { createdById: _ignore, ...cmvrData } = updateDto as any;
+    const {
+      createdById: _ignore,
+      attendanceId,
+      ...cmvrData
+    } = updateDto as any;
 
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
+
+    // Add attendanceId to the cmvrData JSON if provided
+    if (attendanceId) {
+      (flattenedData as any).attendanceId = attendanceId;
+    }
 
     return this.prisma.cMVRReport.update({
       where: { id },

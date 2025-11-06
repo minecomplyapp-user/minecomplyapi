@@ -10,6 +10,7 @@ import {
   TableCell,
   WidthType,
   VerticalAlign,
+  BorderStyle,
 } from 'docx';
 import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
 
@@ -518,7 +519,10 @@ export class CMVRDocxGeneratorService {
    * Mirrors PDF sections: General Info, Executive Summary, Process Documentation,
    * Compliance tables, Air/Water/Noise, Solid & Hazardous Waste
    */
-  async generateFullReportDocx(info: CMVRGeneralInfo): Promise<Buffer> {
+  async generateFullReportDocx(
+    info: CMVRGeneralInfo,
+    attendanceData?: any,
+  ): Promise<Buffer> {
     const children: (Paragraph | Table)[] = [];
 
     children.push(...createGeneralInfoKeyValues(info));
@@ -1059,22 +1063,19 @@ export class CMVRDocxGeneratorService {
       );
     }
 
-
-
-    if( info.complianceWithGoodPracticeInChemicalSafetyManagement){
-      
+    if (info.complianceWithGoodPracticeInChemicalSafetyManagement) {
       children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '4.	Compliance with Good Practice in Chemical Safety Management',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
+        new Paragraph({
+          children: [
+            createText(
+              '4.	Compliance with Good Practice in Chemical Safety Management',
+              true,
+            ),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 100, after: 200 },
+        }),
+      );
       children.push(
         ...complianceWithGoodPracticeInChemicalSafetyManagement(
           info.complianceWithGoodPracticeInChemicalSafetyManagement,
@@ -1082,100 +1083,199 @@ export class CMVRDocxGeneratorService {
       );
     }
 
-
-
     // 5.	Compliance with Health and Safety Program Commitments
     children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '5.	Compliance with Health and Safety Program Commitments',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
+      new Paragraph({
+        children: [
+          createText(
+            '5.	Compliance with Health and Safety Program Commitments',
+            true,
+          ),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 100, after: 200 },
+      }),
+    );
     // 6.	Compliance with Social Development Plan Targets
-   children.push(
-          new Paragraph({
-            children: [
-              createText(
-                '6.	Compliance with Social Development Plan Targets',
-                true,
-              ),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
+    children.push(
+      new Paragraph({
+        children: [
+          createText('6.	Compliance with Social Development Plan Targets', true),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 100, after: 200 },
+      }),
+    );
 
-      //7.	Complaints Verification and Management
-       children.push(
-          new Paragraph({
+    //7.	Complaints Verification and Management
+    children.push(
+      new Paragraph({
+        children: [
+          createText('7.	Complaints Verification and Management', true),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 100, after: 200 },
+      }),
+    );
+    console.log(
+      'info.complaintsVerificationAndManagement',
+      info.complaintsVerificationAndManagement,
+    );
+    if (info.complaintsVerificationAndManagement) {
+      children.push(
+        ...createComplaintsVerificationAndManagement(
+          info.complaintsVerificationAndManagement,
+        ),
+      );
+    }
+
+    children.push(
+      new Paragraph({
+        children: [
+          createText(
+            `II.	PREVIOUS RECOMMENDATIONS (${info.recommendationFromPrevQuarter?.quarter} QUARTER ${info.recommendationFromPrevQuarter?.year} MONITORING)`,
+            true,
+          ),
+        ],
+        alignment: AlignmentType.LEFT,
+        spacing: { before: 100, after: 200 },
+      }),
+    );
+
+    if (info.recommendationFromPrevQuarter) {
+      children.push(
+        ...createRecommendationTable(info.recommendationFromPrevQuarter),
+      );
+    }
+
+    children.push(
+      new Paragraph({
+        children: [
+          createText(
+            `III.	RECOMMENDATIONS FOR THE ${info.recommendationForNextQuarter?.quarter} QUARTER ${info.recommendationForNextQuarter?.year}`,
+            true,
+          ),
+        ],
+        alignment: AlignmentType.LEFT,
+        spacing: { before: 100, after: 200 },
+      }),
+    );
+    if (info.recommendationForNextQuarter) {
+      children.push(
+        ...createRecommendationTable(info.recommendationForNextQuarter),
+      );
+    }
+
+    // Add attendance section if attendance data is provided
+    if (attendanceData?.attendees) {
+      children.push(
+        new Paragraph({
+          children: [createText('ATTENDANCE:', true)],
+          spacing: { before: 300, after: 200 },
+        }),
+      );
+
+      const attendees = Array.isArray(attendanceData.attendees)
+        ? attendanceData.attendees
+        : [];
+
+      if (attendees.length > 0) {
+        const attendanceRows: TableRow[] = [
+          // Header row
+          new TableRow({
+            height: { value: 500, rule: 'atLeast' },
             children: [
-              createText(
-                '7.	Complaints Verification and Management',
-                true,
-              ),
+              new TableCell({
+                children: [createParagraph('NAME', true, AlignmentType.CENTER)],
+                verticalAlign: VerticalAlign.CENTER,
+                width: { size: 40, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [
+                  createParagraph('AGENCY/ OFFICE', true, AlignmentType.CENTER),
+                ],
+                verticalAlign: VerticalAlign.CENTER,
+                width: { size: 30, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [
+                  createParagraph('POSITION', true, AlignmentType.CENTER),
+                ],
+                verticalAlign: VerticalAlign.CENTER,
+                width: { size: 20, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [
+                  createParagraph('SIGNATURE', true, AlignmentType.CENTER),
+                ],
+                verticalAlign: VerticalAlign.CENTER,
+                width: { size: 10, type: WidthType.PERCENTAGE },
+              }),
             ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-        console.log('info.complaintsVerificationAndManagement', info.complaintsVerificationAndManagement);
-        if(info.complaintsVerificationAndManagement){
-          children.push(
-    ...createComplaintsVerificationAndManagement(  info.complaintsVerificationAndManagement)
+          }),
+        ];
+
+        // Data rows with numbering
+        attendees.forEach((attendee: any, index: number) => {
+          attendanceRows.push(
+            new TableRow({
+              height: { value: 400, rule: 'atLeast' },
+              children: [
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      `${index + 1}.   ${attendee.name || ''}`,
+                      false,
+                      AlignmentType.LEFT,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      attendee.company || '',
+                      false,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+                new TableCell({
+                  children: [
+                    createParagraph(
+                      attendee.position || '',
+                      false,
+                      AlignmentType.CENTER,
+                    ),
+                  ],
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+                new TableCell({
+                  children: [createParagraph('', false, AlignmentType.CENTER)],
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+              ],
+            }),
           );
-        }
-
+        });
 
         children.push(
-          new Paragraph({
-            children: [
-              createText(
-                `II.	PREVIOUS RECOMMENDATIONS (${info.recommendationFromPrevQuarter?.quarter} QUARTER ${info.recommendationFromPrevQuarter?.year} MONITORING)`,
-                true,
-              ),
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { before: 100, after: 200 },
-          })
+          new Table({
+            rows: attendanceRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1 },
+              bottom: { style: BorderStyle.SINGLE, size: 1 },
+              left: { style: BorderStyle.SINGLE, size: 1 },
+              right: { style: BorderStyle.SINGLE, size: 1 },
+              insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+              insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+            },
+          }),
         );
-
-        if(info.recommendationFromPrevQuarter){
-          children.push(
-            ...createRecommendationTable(
-              info.recommendationFromPrevQuarter,
-             
-            ),
-          );
-        }
-
-         children.push(
-          new Paragraph({
-            children: [
-              createText(
-                `III.	RECOMMENDATIONS FOR THE ${info.recommendationForNextQuarter?.quarter} QUARTER ${info.recommendationForNextQuarter?.year}`,
-                true,
-              ),
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { before: 100, after: 200 },
-          })
-        );
-        if(info.recommendationForNextQuarter){
-          children.push(
-            ...createRecommendationTable(
-              info.recommendationForNextQuarter,
-             
-            ),
-          );
-        }
-
-
+      }
+    }
 
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
     // Page size remains 21.59 cm x 33.02 cm
