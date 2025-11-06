@@ -7,6 +7,7 @@ import { UpdateConditionDto } from './dto/update-ecc-condition.dto';
 import { ECCPdfGeneratorService } from './ecc-pdf-generator.service';
 
 import { ECCWordGeneratorService } from './ecc-word-generator.service';
+import { Console } from 'console';
 
 @Injectable()
 export class EccService {
@@ -29,13 +30,30 @@ export class EccService {
   }
 
   async findAll() {
-    return this.prisma.eCCReport.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
-  async getEccReportById(reportId: string) {
+  const rawReports = await this.prisma.eCCReport.findMany({
+    select: {
+      id: true,          // Select the top-level ID
+      generalInfo: true, // Select the entire generalInfo JSON object
+      createdAt: true,   // Select createdAt for sorting, though not needed in final output
+      filename: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  // Map the results to the desired structure
+  return rawReports.map(report => ({
+    id: report.id,
+    // Extract properties from the generalInfo object
+    title: report.filename,
+    date: (report.generalInfo as any)?.date,
+    attendees: 0,
+    type: "ecc",
+    // Note: You must ensure these properties exist on generalInfo before accessing them
+  }));
+}
+async getEccReportById(reportId: string) {
     // 1. AWAIT the report data immediately
     const reportData = await this.prisma.eCCReport.findUnique({
       where: { id: reportId },
@@ -45,17 +63,55 @@ export class EccService {
     if (!reportData) {
       throw new NotFoundException(`ECC Report with ID ${reportId} not found.`);
     }
+const data=reportData
+let permit_holder_with_conditions = reportData.permit_holder_with_conditions;
 
-    // 2. AWAIT the grouped conditions
-    const groupedConditions =
-      await this.getGroupedEccConditionsByReportId(reportId);
+// If the value is a string, parse it into an object
+if (typeof permit_holder_with_conditions === "string") {
+  permit_holder_with_conditions = JSON.parse(permit_holder_with_conditions);
+}
 
+// Now TypeScript still thinks it's unknown — so cast it:
+const permitHolders = (permit_holder_with_conditions as any)?.permit_holders;
+
+
+
+reportData.generalInfo
+const formattedPermitHolders = permitHolders.map((holder) => {
+  const conditions = holder.monitoringState?.formatted?.conditions ?? [];
+
+  const monitoringState = conditions.map((cond) => ({
+    id: String(cond.condition_number),
+    title: cond.condition,
+    descriptions: {
+      complied: cond.remark_list?.[0] ?? "",
+      partial: cond.remark_list?.[1] ?? "",
+      not: cond.remark_list?.[2] ?? "",
+    },
+    isDefault: true,
+    nested_to: cond.nested_to ? String(cond.nested_to) : null,
+  }));
+
+  const asd={   id: holder.id,
+    name: holder.name,
+    type: holder.type,
+    monitoringState,}
+      console.log("asdadadasdsd"+ asd)
+
+  return {
+    id: holder.id,
+    name: holder.name,
+    type: holder.type,
+    monitoringState,
+  };
+});
+console.log("FORMATTEDDDD",formattedPermitHolders)
     // 3. Construct and return the final combined object
-    return {
-      ...reportData,
-      // Using a new field name like 'groupedConditions' is safer and clearer
-      conditions: groupedConditions,
-    };
+   return {
+  generalInfo: data.generalInfo,
+  mmtInfo: data.mmtInfo,
+  permit_holders: formattedPermitHolders
+  };
   }
 
   async getGroupedEccConditionsByReportId(reportId: string): Promise<any[][]> {
