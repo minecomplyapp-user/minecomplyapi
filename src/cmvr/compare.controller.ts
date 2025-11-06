@@ -1,4 +1,4 @@
-const { cmvrReport } = {
+const cmvrReport = {
   companyName: 'Test Mining Company',
   location: '123 Mining Street, Test Municipality, Test Province, Region 1',
   quarter: '1st',

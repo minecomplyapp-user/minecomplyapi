@@ -64,7 +64,7 @@ async getEccReportById(reportId: string) {
       throw new NotFoundException(`ECC Report with ID ${reportId} not found.`);
     }
 const data=reportData
-let permit_holder_with_conditions = reportData.permit_holder_with_conditions;
+let permit_holder_with_conditions = (reportData as any).permit_holder_with_conditions;
 
 // If the value is a string, parse it into an object
 if (typeof permit_holder_with_conditions === "string") {
