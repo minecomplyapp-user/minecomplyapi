@@ -1449,7 +1449,6 @@ export class CmvrController {
       }
 
       const docxBuffer = await this.docxGenerator.generateFullReportDocx(
-        // Stored payload already matches the generator's expected shape
         record.cmvrData as unknown as CMVRGeneralInfo,
       );
 

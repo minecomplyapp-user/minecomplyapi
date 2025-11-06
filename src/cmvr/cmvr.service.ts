@@ -13,14 +13,34 @@ export class CmvrService {
     private readonly pdfGenerator: CMVRPdfGeneratorService,
   ) {}
 
+  /**
+   * Flatten nested complianceMonitoringReport to match the structure expected by DOCX/PDF generators.
+   * If complianceMonitoringReport exists, merge its properties into the top level.
+   */
+  private flattenComplianceMonitoringReport(data: any): any {
+    if (!data) return data;
+
+    const flattened = { ...data };
+    if (flattened.complianceMonitoringReport) {
+      // Merge all nested compliance sections into top level
+      Object.assign(flattened, flattened.complianceMonitoringReport);
+      // Remove the nested object after flattening
+      delete flattened.complianceMonitoringReport;
+    }
+    return flattened;
+  }
+
   async create(createCmvrDto: CreateCMVRDto, fileName?: string) {
     const { createdById, ...cmvrData } = createCmvrDto;
+
+    // Flatten nested structure before saving
+    const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
 
     return this.prisma.cMVRReport.create({
       // Cast to any to allow setting fields that may be pending migration in generated types
       data: {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        cmvrData: cmvrData as unknown as any,
+        cmvrData: flattenedData as unknown as any,
         createdById: createdById,
         fileName: fileName || null,
       } as any,
@@ -84,12 +104,16 @@ export class CmvrService {
     // Ensure record exists and RLS ownership
     await this.findOne(id);
     const { createdById: _ignore, ...cmvrData } = updateDto as any;
+
+    // Flatten nested structure before saving
+    const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
+
     return this.prisma.cMVRReport.update({
       where: { id },
       // Cast to any while schema/client are in flux
       data: {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        cmvrData: cmvrData as unknown as any,
+        cmvrData: flattenedData as unknown as any,
         fileName: fileName || null,
       } as any,
     });
