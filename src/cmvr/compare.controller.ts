@@ -72,7 +72,7 @@ const cmvrReport = {
       dateOfApproval: '2025-02-10',
       permitHolderName: 'Third EPEP Holder',
     },
-  ],    
+  ],
   rehabilitationCashFund: [
     {
       dateUpdated: '2025-03-01',

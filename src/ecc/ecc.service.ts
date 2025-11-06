@@ -30,30 +30,30 @@ export class EccService {
   }
 
   async findAll() {
-  const rawReports = await this.prisma.eCCReport.findMany({
-    select: {
-      id: true,          // Select the top-level ID
-      generalInfo: true, // Select the entire generalInfo JSON object
-      createdAt: true,   // Select createdAt for sorting, though not needed in final output
-      filename: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+    const rawReports = await this.prisma.eCCReport.findMany({
+      select: {
+        id: true, // Select the top-level ID
+        generalInfo: true, // Select the entire generalInfo JSON object
+        createdAt: true, // Select createdAt for sorting, though not needed in final output
+        filename: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-  // Map the results to the desired structure
-  return rawReports.map(report => ({
-    id: report.id,
-    // Extract properties from the generalInfo object
-    title: report.filename,
-    date: (report.generalInfo as any)?.date,
-    attendees: 0,
-    type: "ecc",
-    // Note: You must ensure these properties exist on generalInfo before accessing them
-  }));
-}
-async getEccReportById(reportId: string) {
+    // Map the results to the desired structure
+    return rawReports.map((report) => ({
+      id: report.id,
+      // Extract properties from the generalInfo object
+      title: report.filename,
+      date: (report.generalInfo as any)?.date,
+      attendees: 0,
+      type: 'ecc',
+      // Note: You must ensure these properties exist on generalInfo before accessing them
+    }));
+  }
+  async getEccReportById(reportId: string) {
     // 1. AWAIT the report data immediately
     const reportData = await this.prisma.eCCReport.findUnique({
       where: { id: reportId },
@@ -63,55 +63,57 @@ async getEccReportById(reportId: string) {
     if (!reportData) {
       throw new NotFoundException(`ECC Report with ID ${reportId} not found.`);
     }
-const data=reportData
-let permit_holder_with_conditions = (reportData as any).permit_holder_with_conditions;
+    const data = reportData;
+    let permit_holder_with_conditions = (reportData as any)
+      .permit_holder_with_conditions;
 
-// If the value is a string, parse it into an object
-if (typeof permit_holder_with_conditions === "string") {
-  permit_holder_with_conditions = JSON.parse(permit_holder_with_conditions);
-}
+    // If the value is a string, parse it into an object
+    if (typeof permit_holder_with_conditions === 'string') {
+      permit_holder_with_conditions = JSON.parse(permit_holder_with_conditions);
+    }
 
-// Now TypeScript still thinks it's unknown — so cast it:
-const permitHolders = (permit_holder_with_conditions as any)?.permit_holders;
+    // Now TypeScript still thinks it's unknown — so cast it:
+    const permitHolders = (permit_holder_with_conditions as any)
+      ?.permit_holders;
 
+    reportData.generalInfo;
+    const formattedPermitHolders = permitHolders.map((holder) => {
+      const conditions = holder.monitoringState?.formatted?.conditions ?? [];
 
+      const monitoringState = conditions.map((cond) => ({
+        id: String(cond.condition_number),
+        title: cond.condition,
+        descriptions: {
+          complied: cond.remark_list?.[0] ?? '',
+          partial: cond.remark_list?.[1] ?? '',
+          not: cond.remark_list?.[2] ?? '',
+        },
+        isDefault: true,
+        nested_to: cond.nested_to ? String(cond.nested_to) : null,
+      }));
 
-reportData.generalInfo
-const formattedPermitHolders = permitHolders.map((holder) => {
-  const conditions = holder.monitoringState?.formatted?.conditions ?? [];
+      const asd = {
+        id: holder.id,
+        name: holder.name,
+        type: holder.type,
+        monitoringState,
+      };
+      console.log('asdadadasdsd' + asd);
 
-  const monitoringState = conditions.map((cond) => ({
-    id: String(cond.condition_number),
-    title: cond.condition,
-    descriptions: {
-      complied: cond.remark_list?.[0] ?? "",
-      partial: cond.remark_list?.[1] ?? "",
-      not: cond.remark_list?.[2] ?? "",
-    },
-    isDefault: true,
-    nested_to: cond.nested_to ? String(cond.nested_to) : null,
-  }));
-
-  const asd={   id: holder.id,
-    name: holder.name,
-    type: holder.type,
-    monitoringState,}
-      console.log("asdadadasdsd"+ asd)
-
-  return {
-    id: holder.id,
-    name: holder.name,
-    type: holder.type,
-    monitoringState,
-  };
-});
-console.log("FORMATTEDDDD",formattedPermitHolders)
+      return {
+        id: holder.id,
+        name: holder.name,
+        type: holder.type,
+        monitoringState,
+      };
+    });
+    console.log('FORMATTEDDDD', formattedPermitHolders);
     // 3. Construct and return the final combined object
-   return {
-  generalInfo: data.generalInfo,
-  mmtInfo: data.mmtInfo,
-  permit_holders: formattedPermitHolders
-  };
+    return {
+      generalInfo: data.generalInfo,
+      mmtInfo: data.mmtInfo,
+      permit_holders: formattedPermitHolders,
+    };
   }
 
   async getGroupedEccConditionsByReportId(reportId: string): Promise<any[][]> {
@@ -189,66 +191,69 @@ console.log("FORMATTEDDDD",formattedPermitHolders)
     return this.wordGenerator.generateECCreportWord(eccReport, eCCConditions);
   }
 
-// C:\Users\Nico\Documents\COMMI\2\minecomplyapi\src\ecc\ecc.service.ts
+  // C:\Users\Nico\Documents\COMMI\2\minecomplyapi\src\ecc\ecc.service.ts
 
-async createEccReport(createEccReportDto: CreateEccReportDto) {
+  async createEccReport(createEccReportDto: CreateEccReportDto) {
     // 1. Destructure DTO: Separate relation IDs, the nested array, and the rest of the data.
     const {
-        // createdById, // Assuming this is commented out in your actual code
-        conditions,
-        ...otherReportData
+      // createdById, // Assuming this is commented out in your actual code
+      conditions,
+      ...otherReportData
     } = createEccReportDto;
 
     // Prepare the scalar data for the main report creation.
     const eccReportData: Prisma.ECCReportUncheckedCreateInput = {
-        ...(otherReportData as Prisma.ECCReportUncheckedCreateInput),
+      ...(otherReportData as Prisma.ECCReportUncheckedCreateInput),
 
-        // FIX: Explicitly map the permit_holders field
-        permit_holders: (otherReportData as any).permit_holders,
+      // FIX: Explicitly map the permit_holders field
+      permit_holders: (otherReportData as any).permit_holders,
     };
 
     // 2. Start a transaction to ensure all writes succeed or none do.
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(
+      async (tx) => {
         // 3. Create the parent ECC Report record.
         const newEccReport = await tx.eCCReport.create({
-            data: eccReportData,
+          data: eccReportData,
         });
         console.log('Created ECC Report:', newEccReport);
 
         let newConditions: ECCCondition[] = [];
-        
+
         if (conditions && conditions.length > 0) {
-            // 4. OPTIMIZATION: Use Promise.all to run all creation promises concurrently.
-            //    This is significantly faster than a sequential 'for' loop with 'await'.
+          // 4. OPTIMIZATION: Use Promise.all to run all creation promises concurrently.
+          //    This is significantly faster than a sequential 'for' loop with 'await'.
 
-            const conditionCreationPromises = conditions.map((conditionDto) => {
-                return tx.eCCCondition.create({
-                    data: {
-                        // Set the foreign key using the newly created report's ID
-                        ECCReportID: newEccReport.id,
+          const conditionCreationPromises = conditions.map((conditionDto) => {
+            return tx.eCCCondition.create({
+              data: {
+                // Set the foreign key using the newly created report's ID
+                ECCReportID: newEccReport.id,
 
-                        // Spread all condition data from the DTO
-                        ...(conditionDto as Prisma.ECCConditionUncheckedCreateInput),
-                    },
-                });
+                // Spread all condition data from the DTO
+                ...(conditionDto as Prisma.ECCConditionUncheckedCreateInput),
+              },
             });
+          });
 
-            // Wait for all conditions to be created concurrently within the transaction
-            newConditions = await Promise.all(conditionCreationPromises);
+          // Wait for all conditions to be created concurrently within the transaction
+          newConditions = await Promise.all(conditionCreationPromises);
         }
 
         // 5. Return both the parent report and the created conditions.
         return {
-            ...newEccReport,
-            
-            conditions: newConditions,
+          ...newEccReport,
+
+          conditions: newConditions,
         };
-    }, {
-        timeout: 150000, 
-    });
+      },
+      {
+        timeout: 150000,
+      },
+    );
 
     return result;
-}
+  }
 
   async updateCondition(conditionId: number, updateDto: UpdateConditionDto) {
     const status = updateDto.status ? updateDto.status.toLowerCase() : '';
@@ -327,26 +332,18 @@ async createEccReport(createEccReportDto: CreateEccReportDto) {
     }
   }
 
-
-
-
-
-
-
-
-
-
-  
-async createEccAndGenerateDocs(createEccReportDto: CreateEccReportDto): Promise<{ fileName: string; buffer: Buffer }>  {
+  async createEccAndGenerateDocs(
+    createEccReportDto: CreateEccReportDto,
+  ): Promise<{ fileName: string; buffer: Buffer }> {
     // 1. Create the report and all nested conditions.
     // The result contains the parent report object (including its ID) and the conditions array.
     const createdReport = await this.createEccReport(createEccReportDto);
-    
+
     // 2. Safely extract the ID of the newly created report.
     const reportId = createdReport.id;
 
     // 3. Generate the Word document using the ID.
     // Assuming generateWordReport is responsible for fetching data and creating the file.
     return await this.generateWordReport(reportId);
-}
+  }
 }
