@@ -9,10 +9,32 @@ import {
   TableCell,
   WidthType,
   AlignmentType,
+  Numbering,
 } from 'docx';
 
 import { toConditionRows } from './ecc-pdf.helpers';
-
+// This definition is now used correctly!
+const bulletList = new Numbering({
+  config: [
+    {
+      // Give it a unique and consistent reference ID
+      reference: "my-custom-bullet", 
+      levels: [
+        {
+          level: 0, // This is the level used in your paragraph loop
+          format: "bullet",
+          text: "•", // The character used for the bullet
+          style: {
+            // Optional: for standard Word bullet indentation
+            paragraph: {
+              indent: { left: 720, hanging: 360 },
+            },
+          },
+        },
+      ],
+    },
+  ],
+});
 export interface ECCConditionInfo {
   conditions?: Array<{
     condition_number?: string;
@@ -99,20 +121,63 @@ export class ECCWordGeneratorService {
               ),
             }),
         );
+
+        const values = eccReport.remarks_list[sectionIndex];
+        
+// Check if values is an array and not empty
+        if (Array.isArray(values) && values.length > 0) {
+          children.push(new Paragraph({ text: 'Remarks' })); // Title for the remarks section
+          values.forEach((value) => {
+            // Check if the remark is not an empty string
+            if (value && value.trim() !== '') {
+              children.push(
+                new Paragraph({
+                  // 1. Set the text content
+                  children: [new TextRun(value)],
+                  // 2. Define the numbering/list properties to make it a bullet point
+                  numbering: {
+                    reference: 'my-custom-bullet', // 👈 USE THE DEFINED CUSTOM REFERENCE
+                    level: 0, // Top-level bullet point
+                  },
+                })
+              );
+            }
+          });
+        }
         let table;
- 
-       
+    
+        
           table = new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [permitHolderRow, ...dataRows],
           });
-       
+        
 
         children.push(table, new Paragraph({ text: '' }));
       }
     }
 
     const doc = new Document({
+      // ✅ FIX: Include the numbering definition here
+      numbering: {config: [
+    {
+      // Give it a unique and consistent reference ID
+      reference: "my-custom-bullet", 
+      levels: [
+        {
+          level: 0, // This is the level used in your paragraph loop
+          format: "bullet",
+          text: "•", // The character used for the bullet
+          style: {
+            // Optional: for standard Word bullet indentation
+            paragraph: {
+              indent: { left: 720, hanging: 360 },
+            },
+          },
+        },
+      ],
+    },
+  ],}, 
       sections: [{ properties: {}, children }],
     });
 

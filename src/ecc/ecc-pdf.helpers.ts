@@ -90,13 +90,13 @@ export function toConditionRows(
       const CHECK_MARK = 'V';
       const BLANK = '';
 
-      const statusComplied = status === 'compliant' ? CHECK_MARK : BLANK;
+      const statusComplied = status === 'complied' ? CHECK_MARK : BLANK;
       const statusPartial = status.includes('partial') ? CHECK_MARK : BLANK;
-      const statusNotComplied = status.includes('non') ? CHECK_MARK : BLANK;
+      const statusNotComplied = status.includes('not') ? CHECK_MARK : BLANK;
 
       let remark: string;
       if (
-        status.includes('compliant') &&
+        status.includes('complied') &&
         e.remark_list &&
         e.remark_list.length > 0
       ) {
@@ -108,7 +108,7 @@ export function toConditionRows(
       ) {
         remark = e.remark_list[1];
       } else if (
-        status.includes('non') &&
+        status.includes('not') &&
         e.remark_list &&
         e.remark_list.length > 2
       ) {
