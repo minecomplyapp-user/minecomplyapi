@@ -116,11 +116,20 @@ export function toConditionRows(
       } else {
         remark = '';
       }
+      const conditionText = e.condition?.toString() || "";
+      const match = conditionText.match(/Condition\s+([0-9]+)\s*:/i);
+      const conditionNo = match ? match[1] : BLANK;
+      let condition
+      if(match){
+        condition= e.condition?.toString().split(":")[1]
+      }else{
+        condition =e.condition
+      }
 
       // Create the 6-column row
       const row: ConditionRow = [
-        e.condition_number?.toString() || BLANK, // Column 1: Condition No.
-        e.condition || BLANK, // Column 2: Condition Text
+        conditionNo || BLANK, // Column 1: Condition No.
+        condition || BLANK, // Column 2: Condition Text
         statusComplied, // Column 3: C
         statusPartial, // Column 4: PC
         statusNotComplied, // Column 5: NC

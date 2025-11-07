@@ -122,7 +122,18 @@ export class ECCWordGeneratorService {
             }),
         );
 
-        const values = eccReport.remarks_list[sectionIndex];
+      
+        let table;
+    
+        
+          table = new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [permitHolderRow, ...dataRows],
+          });
+        
+
+        children.push(table, new Paragraph({ text: '' }));
+          const values = eccReport.remarks_list[sectionIndex];
         
 // Check if values is an array and not empty
         if (Array.isArray(values) && values.length > 0) {
@@ -144,18 +155,39 @@ export class ECCWordGeneratorService {
             }
           });
         }
-        let table;
-    
-        
-          table = new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [permitHolderRow, ...dataRows],
-          });
-        
 
-        children.push(table, new Paragraph({ text: '' }));
+         children.push(new Paragraph({ text: '' }));
       }
     }
+
+
+ const values = eccReport.recommendations;
+
+if (Array.isArray(values) && values.length > 0) {
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: "Remarks", bold: true })],
+      spacing: { after: 200 },
+    })
+  );
+
+  values.forEach((value) => {
+    if (value && value.trim() !== "") {
+      children.push(
+        new Paragraph({
+          children: [new TextRun(value.trim())],
+          numbering: {
+            reference: "my-custom-bullet", // Must match document config
+            level: 0,
+          },
+        })
+      );
+    }
+  });
+}
+
+
+
 
     const doc = new Document({
       // ✅ FIX: Include the numbering definition here
