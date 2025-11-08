@@ -1142,28 +1142,39 @@ export class CmvrController {
 
       // Fetch attendance data if attendanceId is present in cmvrData
       let attendanceData: any = null;
-      const cmvrDataObj = record.cmvrData as any;
-      if (cmvrDataObj?.attendanceId) {
+      const cmvrDataObj = record.cmvrData as Record<string, unknown>;
+      const attendanceIdValue = cmvrDataObj?.attendanceId;
+
+      if (typeof attendanceIdValue === 'string' && attendanceIdValue) {
         try {
-          attendanceData = await this.attendanceService.findOne(
-            cmvrDataObj.attendanceId,
-          );
+          attendanceData =
+            await this.attendanceService.findOne(attendanceIdValue);
         } catch (error) {
           console.warn(
-            `Could not fetch attendance data for ID ${cmvrDataObj.attendanceId}:`,
+            `Could not fetch attendance data for ID ${attendanceIdValue}:`,
             error,
           );
         }
       }
 
+      const recordAttachments = Array.isArray(
+        (record as Record<string, unknown>).attachments,
+      )
+        ? ((record as Record<string, unknown>).attachments as Array<{
+            path: string;
+            caption?: string;
+          }>)
+        : [];
+
       const docxBuffer = await this.docxGenerator.generateFullReportDocx(
         record.cmvrData as unknown as CMVRGeneralInfo,
         attendanceData,
+        recordAttachments,
       );
 
       // Use the fileName from the record, fallback to cmvr-{id} if not available
       const fileName = record.fileName
-        ? `${record.fileName.replace(/[^a-zA-Z0-9-_\.]/g, '_')}.docx`
+        ? `${record.fileName.replace(/[^a-zA-Z0-9-_.]/g, '_')}.docx`
         : `cmvr-${id}.docx`;
 
       res.set({

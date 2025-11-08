@@ -1003,6 +1003,20 @@ class ComplianceMonitoringReportDto {
   recommendationForNextQuarter?: RecommendationsSectionDto;
 }
 
+class CMVRAttachmentDto {
+  @ApiProperty({ description: 'Storage path of the uploaded attachment' })
+  @IsString()
+  path: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Optional caption or description for the attachment',
+  })
+  @IsOptional()
+  @IsString()
+  caption?: string;
+}
+
 export class CreateCMVRDto {
   @ApiProperty()
   @IsString()
@@ -1129,16 +1143,11 @@ export class CreateCMVRDto {
   @ApiProperty({
     required: false,
     description: 'Array of attachments with path and caption',
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        path: { type: 'string' },
-        caption: { type: 'string' },
-      },
-    },
+    type: [CMVRAttachmentDto],
   })
   @IsOptional()
   @IsArray()
-  attachments?: Array<{ path: string; caption?: string }>;
+  @ValidateNested({ each: true })
+  @Type(() => CMVRAttachmentDto)
+  attachments?: CMVRAttachmentDto[];
 }

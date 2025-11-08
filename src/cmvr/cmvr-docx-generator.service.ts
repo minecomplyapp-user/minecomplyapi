@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Injectable } from '@nestjs/common';
 import {
   Document,
@@ -527,8 +531,10 @@ export class CMVRDocxGeneratorService {
   async generateFullReportDocx(
     info: CMVRGeneralInfo,
     attendanceData?: any,
+    attachments: Array<{ path: string; caption?: string }> = [],
   ): Promise<Buffer> {
     const children: (Paragraph | Table)[] = [];
+    const attachmentEntries = this.normalizeAttachments(attachments);
 
     children.push(...createGeneralInfoKeyValues(info));
     children.push(
@@ -1344,6 +1350,28 @@ export class CMVRDocxGeneratorService {
       }
     }
 
+    if (attachmentEntries.length > 0) {
+      const attachmentRows = await this.buildAttachmentRows(attachmentEntries);
+
+      if (attachmentRows.length > 0) {
+        children.push(
+          new Paragraph({
+            children: [createText('PHOTO DOCUMENTATION', true)],
+            spacing: { before: 300, after: 200 },
+            pageBreakBefore: true,
+          }),
+        );
+        children.push(
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: createTableBorders(),
+            rows: attachmentRows,
+          }),
+        );
+        children.push(createParagraph('', false, AlignmentType.CENTER));
+      }
+    }
+
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
     // Page size remains 21.59 cm x 33.02 cm
     const doc = new Document({
@@ -1360,6 +1388,139 @@ export class CMVRDocxGeneratorService {
       ],
     });
     return Packer.toBuffer(doc);
+  }
+
+  private normalizeAttachments(
+    raw: Array<{ path: string; caption?: string }> = [],
+  ): Array<{ path: string; caption?: string }> {
+    return raw.filter(
+      (item): item is { path: string; caption?: string } =>
+        !!item && typeof item.path === 'string' && item.path.trim().length > 0,
+    );
+  }
+
+  private async buildAttachmentRows(
+    attachments: Array<{ path: string; caption?: string }>,
+  ): Promise<TableRow[]> {
+    const rows: TableRow[] = [];
+
+    for (let index = 0; index < attachments.length; index += 2) {
+      const first = attachments[index];
+      const second = attachments[index + 1];
+
+      const imageCells = await Promise.all([
+        this.createAttachmentImageCell(first, index + 1),
+        this.createAttachmentImageCell(second, index + 2),
+      ]);
+
+      rows.push(
+        new TableRow({
+          height: { value: 3200, rule: 'atLeast' },
+          children: imageCells,
+        }),
+      );
+
+      rows.push(
+        new TableRow({
+          height: { value: 400, rule: 'atLeast' },
+          children: [
+            this.createAttachmentCaptionCell(first, index + 1),
+            this.createAttachmentCaptionCell(second, index + 2),
+          ],
+        }),
+      );
+    }
+
+    return rows;
+  }
+
+  private async createAttachmentImageCell(
+    attachment: { path: string; caption?: string } | undefined,
+    displayIndex: number,
+  ): Promise<TableCell> {
+    const placeholderLabel = `PHOTO ${displayIndex}`;
+
+    if (!attachment) {
+      return new TableCell({
+        children: [createParagraph('', false, AlignmentType.CENTER)],
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        verticalAlign: VerticalAlign.CENTER,
+      });
+    }
+
+    try {
+      const signedUrl = await this.storageService.createSignedDownloadUrl(
+        attachment.path,
+        120,
+      );
+      const imageBuffer = await this.fetchImageBuffer(signedUrl);
+
+      if (imageBuffer) {
+        return new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imageBuffer,
+                  transformation: {
+                    width: 360,
+                    height: 240,
+                  },
+                  type: this.resolveImageType(attachment.path),
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          verticalAlign: VerticalAlign.CENTER,
+        });
+      }
+    } catch (error) {
+      console.warn(
+        `Failed to load attachment image for ${attachment.path}:`,
+        error,
+      );
+    }
+
+    return new TableCell({
+      children: [createParagraph(placeholderLabel, true, AlignmentType.CENTER)],
+      width: { size: 50, type: WidthType.PERCENTAGE },
+      verticalAlign: VerticalAlign.CENTER,
+    });
+  }
+
+  private createAttachmentCaptionCell(
+    attachment: { path: string; caption?: string } | undefined,
+    displayIndex: number,
+  ): TableCell {
+    const captionRaw = attachment?.caption?.trim();
+    const captionText = captionRaw && captionRaw.length > 0 ? captionRaw : ``;
+
+    return new TableCell({
+      children: [createParagraph(captionText, true, AlignmentType.CENTER)],
+      width: { size: 50, type: WidthType.PERCENTAGE },
+      verticalAlign: VerticalAlign.CENTER,
+    });
+  }
+
+  private resolveImageType(path: string): 'png' | 'gif' | 'bmp' | 'jpg' {
+    const extension = path.split('.').pop()?.toLowerCase();
+
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'jpg';
+      case 'gif':
+        return 'gif';
+      case 'bmp':
+        return 'bmp';
+      case 'tif':
+      case 'tiff':
+        return 'png';
+      default:
+        return 'png';
+    }
   }
 
   /**

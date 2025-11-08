@@ -1,16 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CMVRPdfGeneratorService,
   CMVRGeneralInfo,
 } from './cmvr-pdf-generator.service';
 import { CreateCMVRDto } from './dto/create-cmvr.dto';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
 
 @Injectable()
 export class CmvrService {
+  private readonly logger = new Logger(CmvrService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfGenerator: CMVRPdfGeneratorService,
+    private readonly storageService: SupabaseStorageService,
   ) {}
 
   /**
@@ -34,6 +38,11 @@ export class CmvrService {
     const { createdById, attendanceId, attachments, ...cmvrData } =
       createCmvrDto;
 
+    console.log('=== CREATE CMVR DEBUG ===');
+    console.log('Received attachments:', JSON.stringify(attachments, null, 2));
+    console.log('Attachments type:', typeof attachments);
+    console.log('Is array:', Array.isArray(attachments));
+
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
 
@@ -42,16 +51,26 @@ export class CmvrService {
       (flattenedData as any).attendanceId = attendanceId;
     }
 
-    return this.prisma.cMVRReport.create({
-      // Cast to any to allow setting fields that may be pending migration in generated types
-      data: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        cmvrData: flattenedData as unknown as any,
-        createdById: createdById,
-        fileName: fileName || null,
-        attachments: attachments || [],
-      } as any,
+    const dataToSave = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      cmvrData: flattenedData as unknown as any,
+      createdById: createdById,
+      fileName: fileName || null,
+      attachments: attachments || [],
+    };
+
+    console.log('Data being saved to DB:', JSON.stringify(dataToSave, null, 2));
+
+    const result = await this.prisma.cMVRReport.create({
+      data: dataToSave as any,
     });
+
+    console.log(
+      'Created record attachments:',
+      JSON.stringify((result as Record<string, unknown>).attachments, null, 2),
+    );
+
+    return result;
   }
 
   async findOne(id: string) {
@@ -103,8 +122,59 @@ export class CmvrService {
 
   async remove(id: string) {
     // Ensure it exists (and respects RLS ownership if applicable)
-    await this.findOne(id);
-    return this.prisma.cMVRReport.delete({ where: { id } });
+    const record = await this.findOne(id);
+    const attachmentPaths = this.extractAttachmentPaths(
+      (record as Record<string, unknown>).attachments,
+    );
+
+    const result = await this.prisma.cMVRReport.delete({ where: { id } });
+
+    if (attachmentPaths.length > 0) {
+      const uniquePaths = Array.from(new Set(attachmentPaths));
+      this.logger.log(
+        `Deleting ${uniquePaths.length} attachment(s) for CMVR report ${id}`,
+      );
+      const deletionResults = await Promise.allSettled(
+        uniquePaths.map((path) => this.storageService.remove(path)),
+      );
+
+      const failures = deletionResults.filter(
+        (res): res is PromiseRejectedResult => res.status === 'rejected',
+      );
+
+      if (failures.length > 0) {
+        this.logger.warn(
+          `Failed to delete ${failures.length} attachment(s) for CMVR report ${id}`,
+        );
+        failures.forEach((failure) =>
+          this.logger.warn(
+            failure.reason instanceof Error
+              ? failure.reason.message
+              : String(failure.reason),
+          ),
+        );
+      }
+    }
+
+    return result;
+  }
+
+  private extractAttachmentPaths(attachments: unknown): string[] {
+    if (!Array.isArray(attachments)) {
+      return [];
+    }
+
+    return attachments
+      .map((item) => {
+        if (item && typeof item === 'object') {
+          const path = (item as { path?: unknown }).path;
+          if (typeof path === 'string' && path.trim().length > 0) {
+            return path;
+          }
+        }
+        return null;
+      })
+      .filter((path): path is string => path !== null);
   }
 
   async update(id: string, updateDto: CreateCMVRDto, fileName?: string) {
@@ -117,6 +187,11 @@ export class CmvrService {
       ...cmvrData
     } = updateDto as any;
 
+    console.log('=== UPDATE CMVR DEBUG ===');
+    console.log('Received attachments:', JSON.stringify(attachments, null, 2));
+    console.log('Attachments type:', typeof attachments);
+    console.log('Is array:', Array.isArray(attachments));
+
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
 
@@ -125,15 +200,28 @@ export class CmvrService {
       (flattenedData as any).attendanceId = attendanceId;
     }
 
-    return this.prisma.cMVRReport.update({
+    const dataToUpdate = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      cmvrData: flattenedData as unknown as any,
+      fileName: fileName || null,
+      attachments: attachments || [],
+    };
+
+    console.log(
+      'Data being updated in DB:',
+      JSON.stringify(dataToUpdate, null, 2),
+    );
+
+    const result = await this.prisma.cMVRReport.update({
       where: { id },
-      // Cast to any while schema/client are in flux
-      data: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        cmvrData: flattenedData as unknown as any,
-        fileName: fileName || null,
-        attachments: attachments || [],
-      } as any,
+      data: dataToUpdate as any,
     });
+
+    console.log(
+      'Updated record attachments:',
+      JSON.stringify((result as Record<string, unknown>).attachments, null, 2),
+    );
+
+    return result;
   }
 }
