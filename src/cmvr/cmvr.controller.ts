@@ -583,141 +583,248 @@ const cmvrReport = {
     overallComplianceAssessment: 'PARTIALLY COMPLIED',
   },
   airQualityImpactAssessment: {
-    quarry:
-      'Water Sprinkling and imposition of quarry speed limits along haulage road',
-    plant:
-      'Water Sprinkling is regularly conducted to minimize dust circulation',
-    port: 'Mitigating measures such as water sprinkling are conducted regularly to minimize dust circulation',
-    parameters: [
-      {
-        name: 'TSP',
-        results: {
-          inSMR: {
-            current: '3.56 \u00b5g/Ncm',
-            previous: '10.49 \u00b5g/Ncm',
+    quarry: {
+      locationInput:
+        'Water Sprinkling and imposition of quarry speed limits along haulage road',
+      parameters: [
+        {
+          name: 'TSP',
+          results: {
+            inSMR: {
+              current: '3.56 µg/Ncm',
+              previous: '10.49 µg/Ncm',
+            },
+            mmtConfirmatorySampling: {
+              current: '-',
+              previous: '-',
+            },
           },
-          mmtConfirmatorySampling: {
-            current: '-',
-            previous: '-',
+          eqpl: {
+            redFlag: '-',
+            action: '-',
+            limit: '35 µg/Ncm',
           },
+          remarks: 'Within limits - Quarry area',
         },
-        eqpl: {
-          redFlag: '-',
-          action: '-',
-          limit: '35 \u00b5g/Ncm',
-        },
-        remarks: 'ONRI - Badoc',
-      },
-      {
-        name: 'TSP',
-        results: {
-          inSMR: {
-            current: '3.54 \u00b5g/Ncm',
-            previous: '10.51 \u00b5g/Ncm',
+      ],
+      samplingDate: 'November 18-19, 2024 (1800H-1800H)',
+      weatherAndWind: 'Sunny, prevailing wind from North-Northwest (N-NW)',
+      explanationForConfirmatorySampling: 'N/A',
+      overallAssessment: 'Within the DENR Standard',
+    },
+    plant: {
+      locationInput:
+        'Water Sprinkling is regularly conducted to minimize dust circulation',
+      parameters: [
+        {
+          name: 'TSP',
+          results: {
+            inSMR: {
+              current: '3.54 µg/Ncm',
+              previous: '10.51 µg/Ncm',
+            },
+            mmtConfirmatorySampling: {
+              current: '-',
+              previous: '-',
+            },
           },
-          mmtConfirmatorySampling: {
-            current: '-',
-            previous: '-',
+          eqpl: {
+            redFlag: '-',
+            action: '-',
+            limit: '35 µg/Ncm',
           },
+          remarks: 'ONRI - Sarrat Plant',
         },
-        eqpl: {
-          redFlag: '-',
-          action: '-',
-          limit: '35 \u00b5g/Ncm',
+      ],
+      samplingDate: 'November 19-20, 2024 (1700H-1700H)',
+      weatherAndWind: 'Sunny, prevailing wind from North-Northwest (N-NW)',
+      explanationForConfirmatorySampling: 'N/A',
+      overallAssessment: 'Within the DENR Standard',
+    },
+    port: {
+      locationInput:
+        'Mitigating measures such as water sprinkling are conducted regularly to minimize dust circulation',
+      parameters: [
+        {
+          name: 'PM10',
+          results: {
+            inSMR: {
+              current: '28.3 µg/Ncm',
+              previous: '32.1 µg/Ncm',
+            },
+            mmtConfirmatorySampling: {
+              current: '27.8 µg/Ncm',
+              previous: '31.9 µg/Ncm',
+            },
+          },
+          eqpl: {
+            redFlag: 'None',
+            action: 'Continue monitoring',
+            limit: '60 µg/Ncm',
+          },
+          remarks: 'Port area - Good air quality',
         },
-        remarks: 'ONRI - Sarrat',
-      },
-    ],
-    samplingDate:
-      'The ambient air quality monitoring at Badoc and Sarrat was conducted on November 18-19, 2024 (1800H-1800H) and November 19-20, 2024 (1700H-1700H) respectively.',
-    weatherAndWind:
-      'The weather condition during sampling was sunny and the prevailing wind directions was coming from North-Northwest (N-NW).',
-    explanationForConfirmatorySampling: 'N/A',
-    overallAssessment: 'Within the DENR Standard',
+      ],
+      samplingDate: 'November 20-21, 2024 (0800H-0800H)',
+      weatherAndWind: 'Clear skies, light breeze from Northeast',
+      explanationForConfirmatorySampling:
+        'Confirmatory sampling conducted for validation',
+      overallAssessment: 'All parameters within DENR standards',
+    },
   },
   waterQualityImpactAssessment: {
-    quarry: 'No significant impact to the environment',
-    plant: 'No effluent discharge observed during the monitoring period',
-    parameters: [
-      {
-        name: 'TSS',
-        result: {
-          internalMonitoring: {
-            month: 'June',
-            // A nested array for the multiple readings
-            readings: [
-              {
-                label: 'TSS 01',
-                current_mgL: 18,
-                previous_mgL: 6.2,
-              },
-              {
-                label: 'TSS 02',
-                current_mgL: 15,
-                previous_mgL: 14,
-              },
-              {
-                label: 'TSS 03',
-                current_mgL: 67,
-                previous_mgL: 11,
-              },
-            ],
+    quarry: {
+      description: 'Quarry monitoring results for TSS parameters',
+      parameters: [
+        {
+          name: 'TSS',
+          result: {
+            internalMonitoring: {
+              month: 'June',
+              readings: [
+                {
+                  label: 'TSS 01',
+                  current_mgL: 18,
+                  previous_mgL: 6.2,
+                },
+                {
+                  label: 'TSS 02',
+                  current_mgL: 15,
+                  previous_mgL: 14,
+                },
+                {
+                  label: 'TSS 03',
+                  current_mgL: 67,
+                  previous_mgL: 11,
+                },
+              ],
+            },
+            mmtConfirmatorySampling: {
+              current: '-',
+              previous: '-',
+            },
           },
-          mmtConfirmatorySampling: {
-            current: '-',
-            previous: '-',
+          denrStandard: {
+            redFlag: '-',
+            action: '-',
+            limit_mgL: 150,
           },
+          remark: 'Quarry monitoring - Passed',
         },
-        denrStandard: {
-          redFlag: '-',
-          action: '-',
-          limit_mgL: 150,
-        },
-        remark: 'Passed',
-      },
-      {
-        name: 'TSS',
-        result: {
-          internalMonitoring: {
-            month: 'June',
-            // A nested array for the multiple readings
-            readings: [
-              {
-                label: 'TSS 01',
-                current_mgL: 18,
-                previous_mgL: 6.2,
-              },
-              {
-                label: 'TSS 02',
-                current_mgL: 15,
-                previous_mgL: 14,
-              },
-              {
-                label: 'TSS 03',
-                current_mgL: 67,
-                previous_mgL: 11,
-              },
-            ],
+      ],
+      samplingDate: 'June 27, 2025',
+      weatherAndWind: 'Sunny',
+      explanationForConfirmatorySampling: 'N/A',
+      overallAssessment: 'Within the DENR Standard',
+    },
+    plant: {
+      description: 'Plant monitoring results for TSS parameters',
+      parameters: [
+        {
+          name: 'TSS',
+          result: {
+            internalMonitoring: {
+              month: 'June',
+              readings: [
+                {
+                  label: 'Plant TSS 01',
+                  current_mgL: 12,
+                  previous_mgL: 8.5,
+                },
+                {
+                  label: 'Plant TSS 02',
+                  current_mgL: 10,
+                  previous_mgL: 9,
+                },
+              ],
+            },
+            mmtConfirmatorySampling: {
+              current: '-',
+              previous: '-',
+            },
           },
-          mmtConfirmatorySampling: {
-            current: '-',
-            previous: '-',
+          denrStandard: {
+            redFlag: '-',
+            action: '-',
+            limit_mgL: 150,
           },
+          remark: 'Plant monitoring - Passed',
         },
-        denrStandard: {
-          redFlag: '-',
-          action: '-',
-          limit_mgL: 150,
+      ],
+      samplingDate: 'June 28, 2025',
+      weatherAndWind: 'Partly Cloudy',
+      explanationForConfirmatorySampling: 'N/A',
+      overallAssessment: 'Within the DENR Standard',
+    },
+    plantAndQuarry: {
+      description: 'Plant and Quarry monitoring results for TSS parameters',
+      parameters: [
+        {
+          name: 'TSS',
+          result: {
+            internalMonitoring: {
+              month: 'June',
+              readings: [
+                {
+                  label: 'Plant and Quarry TSS 01',
+                  current_mgL: 25,
+                  previous_mgL: 22,
+                },
+              ],
+            },
+            mmtConfirmatorySampling: {
+              current: '-',
+              previous: '-',
+            },
+          },
+          denrStandard: {
+            redFlag: '-',
+            action: '-',
+            limit_mgL: 150,
+          },
+          remark: 'Plant and Quarry monitoring - Passed',
         },
-        remark: 'Passed',
-      },
-    ],
-
-    // Footer information
-    samplingDate: 'June 27, 2025',
-    weatherAndWind: 'Sunny',
-    explanationForConfirmatorySampling: 'N/A',
-    overallAssessment: 'Within the DENR Standard',
+      ],
+      samplingDate: 'June 28, 2025',
+      weatherAndWind: 'Partly Cloudy',
+      explanationForConfirmatorySampling: 'N/A',
+      overallAssessment: 'Within the DENR Standard',
+    },
+    port: {
+      description: 'Port monitoring results for TSS parameters',
+      parameters: [
+        {
+          name: 'TSS',
+          result: {
+            internalMonitoring: {
+              month: 'June',
+              readings: [
+                {
+                  label: 'Port TSS 01',
+                  current_mgL: 20,
+                  previous_mgL: 18,
+                },
+              ],
+            },
+            mmtConfirmatorySampling: {
+              current: '19',
+              previous: '17.5',
+            },
+          },
+          denrStandard: {
+            redFlag: '-',
+            action: '-',
+            limit_mgL: 150,
+          },
+          remark: 'Port monitoring - Passed',
+        },
+      ],
+      samplingDate: 'June 29, 2025',
+      weatherAndWind: 'Clear skies',
+      explanationForConfirmatorySampling:
+        'Confirmatory sampling conducted for validation',
+      overallAssessment: 'Within the DENR Standard',
+    },
   },
   noiseQualityImpactAssessment: {
     parameters: [

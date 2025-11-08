@@ -16,7 +16,7 @@ import {
   drawComplianceToProjectLocationTable,
   drawComplianceToImpactManagementCommitmentsTable,
   drawAirQualityImpactAssessmentTable,
-  drawWaterQualityImpactAssessmentTable,
+  drawWaterQualityLocationTable,
   drawSolidAndHazardousWasteManagementTable,
   drawNoiseQualityImpactAssessmentTable,
 } from './cmvr-pdf-rendering.helpers';
@@ -187,90 +187,229 @@ export interface CMVRGeneralInfo {
   };
 
   airQualityImpactAssessment?: {
-    quarry?: string;
-    quarryPlant?: string;
-    plant?: string;
-    port?: string;
-    parameters?: Array<{
-      name?: string;
-      results?: {
-        inSMR?: {
-          current?: string;
-          previous?: string;
+    quarry?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
         };
-        mmtConfirmatorySampling?: {
-          current?: string;
-          previous?: string;
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
         };
-      };
-      eqpl?: {
-        redFlag?: string;
-        action?: string;
-        limit?: string;
-      };
-      remarks?: string;
-    }>;
-    samplingDate?: string;
-    weatherAndWind?: string;
-    explanationForConfirmatorySampling?: string;
-    overallAssessment?: string;
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    plant?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    quarryAndPlant?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    port?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
   };
 
   waterQualityImpactAssessment?: {
-    quarry?: string;
-    quarryPlant?: string;
-    plant?: string;
-    port?: string;
-    parameters?: Array<{
-      name?: string;
-      result?: {
-        internalMonitoring?: {
-          month?: string;
-          readings?: Array<{
-            label?: string;
-            current_mgL?: number;
-            previous_mgL?: number;
-          }>;
+    quarry?: {
+      parameters?: Array<{
+        name?: string;
+        result?: {
+          internalMonitoring?: {
+            month?: string;
+            readings?: Array<{
+              label?: string;
+              current_mgL?: number;
+              previous_mgL?: number;
+            }>;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
         };
-        mmtConfirmatorySampling?: {
-          current?: string;
-          previous?: string;
+        denrStandard?: {
+          redFlag?: string;
+          action?: string;
+          limit_mgL?: number;
         };
-      };
-      denrStandard?: {
-        redFlag?: string;
-        action?: string;
-        limit_mgL?: number;
-      };
-      remark?: string;
-    }>;
-    parametersTable2?: Array<{
-      name?: string;
-      result?: {
-        internalMonitoring?: {
-          month?: string;
-          readings?: Array<{
-            label?: string;
-            current_mgL?: number;
-            previous_mgL?: number;
-          }>;
+        remark?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    plant?: {
+      parameters?: Array<{
+        name?: string;
+        result?: {
+          internalMonitoring?: {
+            month?: string;
+            readings?: Array<{
+              label?: string;
+              current_mgL?: number;
+              previous_mgL?: number;
+            }>;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
         };
-        mmtConfirmatorySampling?: {
-          current?: string;
-          previous?: string;
+        denrStandard?: {
+          redFlag?: string;
+          action?: string;
+          limit_mgL?: number;
         };
-      };
-      denrStandard?: {
-        redFlag?: string;
-        action?: string;
-        limit_mgL?: number;
-      };
-      remark?: string;
-    }>;
-    samplingDate?: string;
-    weatherAndWind?: string;
-    explanationForConfirmatorySampling?: string;
-    overallAssessment?: string;
+        remark?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    quarryAndPlant?: {
+      parameters?: Array<{
+        name?: string;
+        result?: {
+          internalMonitoring?: {
+            month?: string;
+            readings?: Array<{
+              label?: string;
+              current_mgL?: number;
+              previous_mgL?: number;
+            }>;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        denrStandard?: {
+          redFlag?: string;
+          action?: string;
+          limit_mgL?: number;
+        };
+        remark?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    port?: {
+      parameters?: Array<{
+        name?: string;
+        result?: {
+          internalMonitoring?: {
+            month?: string;
+            readings?: Array<{
+              label?: string;
+              current_mgL?: number;
+              previous_mgL?: number;
+            }>;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        denrStandard?: {
+          redFlag?: string;
+          action?: string;
+          limit_mgL?: number;
+        };
+        remark?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
   };
 
   noiseQualityImpactAssessment?: {
@@ -837,10 +976,59 @@ export class CMVRPdfGeneratorService {
 
       if (generalInfo.waterQualityImpactAssessment) {
         doc.moveDown(0.5);
-        drawWaterQualityImpactAssessmentTable(
-          doc,
-          generalInfo.waterQualityImpactAssessment,
-        );
+
+        // Render each location's table separately
+        if (generalInfo.waterQualityImpactAssessment.quarry) {
+          doc
+            .fontSize(11)
+            .font('Helvetica-Bold')
+            .text('Quarry', leftMargin, doc.y);
+          doc.moveDown(0.3);
+          drawWaterQualityLocationTable(
+            doc,
+            generalInfo.waterQualityImpactAssessment.quarry,
+          );
+          doc.moveDown(1);
+        }
+
+        if (generalInfo.waterQualityImpactAssessment.plant) {
+          doc
+            .fontSize(11)
+            .font('Helvetica-Bold')
+            .text('Plant', leftMargin, doc.y);
+          doc.moveDown(0.3);
+          drawWaterQualityLocationTable(
+            doc,
+            generalInfo.waterQualityImpactAssessment.plant,
+          );
+          doc.moveDown(1);
+        }
+
+        if (generalInfo.waterQualityImpactAssessment.quarryAndPlant) {
+          doc
+            .fontSize(11)
+            .font('Helvetica-Bold')
+            .text('Quarry/Plant', leftMargin, doc.y);
+          doc.moveDown(0.3);
+          drawWaterQualityLocationTable(
+            doc,
+            generalInfo.waterQualityImpactAssessment.quarryAndPlant,
+          );
+          doc.moveDown(1);
+        }
+
+        if (generalInfo.waterQualityImpactAssessment.port) {
+          doc
+            .fontSize(11)
+            .font('Helvetica-Bold')
+            .text('Port', leftMargin, doc.y);
+          doc.moveDown(0.3);
+          drawWaterQualityLocationTable(
+            doc,
+            generalInfo.waterQualityImpactAssessment.port,
+          );
+          doc.moveDown(1);
+        }
       }
 
       doc.moveDown(2);

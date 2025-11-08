@@ -365,56 +365,62 @@ class ComplianceToImpactManagementCommitmentsDto {
   overallComplianceAssessment: string;
 }
 
+class AirQualityResultsDto {
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  inSMR: {
+    current: string;
+    previous: string;
+  };
+
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  mmtConfirmatorySampling: {
+    current: string;
+    previous: string;
+  };
+}
+
+class AirQualityEqplDto {
+  @ApiProperty()
+  @IsString()
+  redFlag: string;
+
+  @ApiProperty()
+  @IsString()
+  action: string;
+
+  @ApiProperty()
+  @IsString()
+  limit: string;
+}
+
 class AirQualityParameterDto {
   @ApiProperty()
   @IsString()
   name: string;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
-  @IsOptional()
-  @IsObject()
-  results: {
-    inSMR: {
-      current: string;
-      previous: string;
-    };
-    mmtConfirmatorySampling: {
-      current: string;
-      previous: string;
-    };
-  };
+  @ApiProperty({ type: AirQualityResultsDto })
+  @ValidateNested()
+  @Type(() => AirQualityResultsDto)
+  results: AirQualityResultsDto;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
-  @IsOptional()
-  @IsObject()
-  eqpl: {
-    redFlag: string;
-    action: string;
-    limit: string;
-  };
+  @ApiProperty({ type: AirQualityEqplDto })
+  @ValidateNested()
+  @Type(() => AirQualityEqplDto)
+  eqpl: AirQualityEqplDto;
 
   @ApiProperty()
   @IsString()
   remarks: string;
 }
 
-class AirQualityImpactAssessmentDto {
+class AirQualityLocationDataDto {
   @ApiProperty()
   @IsString()
-  quarry: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  quarryPlant?: string;
-
-  @ApiProperty()
-  @IsString()
-  plant: string;
-
-  @ApiProperty()
-  @IsString()
-  port: string;
+  locationInput: string;
 
   @ApiProperty({ type: [AirQualityParameterDto] })
   @IsArray()
@@ -437,6 +443,32 @@ class AirQualityImpactAssessmentDto {
   @ApiProperty()
   @IsString()
   overallAssessment: string;
+}
+
+class AirQualityImpactAssessmentDto {
+  @ApiProperty({ type: AirQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AirQualityLocationDataDto)
+  quarry?: AirQualityLocationDataDto;
+
+  @ApiProperty({ type: AirQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AirQualityLocationDataDto)
+  plant?: AirQualityLocationDataDto;
+
+  @ApiProperty({ type: AirQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AirQualityLocationDataDto)
+  quarryAndPlant?: AirQualityLocationDataDto;
+
+  @ApiProperty({ type: AirQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AirQualityLocationDataDto)
+  port?: AirQualityLocationDataDto;
 }
 
 class WaterQualityReadingDto {
@@ -521,37 +553,12 @@ class WaterQualityParameterDto {
   remark: string;
 }
 
-class WaterQualityImpactAssessmentDto {
-  @ApiProperty()
-  @IsString()
-  quarry: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  quarryPlant?: string;
-
-  @ApiProperty()
-  @IsString()
-  plant: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  port?: string;
-
+class WaterQualityLocationDataDto {
   @ApiProperty({ type: [WaterQualityParameterDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => WaterQualityParameterDto)
   parameters: WaterQualityParameterDto[];
-
-  @ApiProperty({ type: [WaterQualityParameterDto], required: false })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => WaterQualityParameterDto)
-  parametersTable2?: WaterQualityParameterDto[];
 
   @ApiProperty()
   @IsString()
@@ -568,6 +575,32 @@ class WaterQualityImpactAssessmentDto {
   @ApiProperty()
   @IsString()
   overallAssessment: string;
+}
+
+class WaterQualityImpactAssessmentDto {
+  @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WaterQualityLocationDataDto)
+  quarry?: WaterQualityLocationDataDto;
+
+  @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WaterQualityLocationDataDto)
+  plant?: WaterQualityLocationDataDto;
+
+  @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WaterQualityLocationDataDto)
+  quarryAndPlant?: WaterQualityLocationDataDto;
+
+  @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => WaterQualityLocationDataDto)
+  port?: WaterQualityLocationDataDto;
 }
 
 class NoiseQualityEqplDto {
