@@ -1125,4 +1125,20 @@ export class CreateCMVRDto {
   @IsOptional()
   @IsString()
   attendanceId?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Array of attachments with path and caption',
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        path: { type: 'string' },
+        caption: { type: 'string' },
+      },
+    },
+  })
+  @IsOptional()
+  @IsArray()
+  attachments?: Array<{ path: string; caption?: string }>;
 }

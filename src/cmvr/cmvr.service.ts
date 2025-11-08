@@ -31,7 +31,8 @@ export class CmvrService {
   }
 
   async create(createCmvrDto: CreateCMVRDto, fileName?: string) {
-    const { createdById, attendanceId, ...cmvrData } = createCmvrDto;
+    const { createdById, attendanceId, attachments, ...cmvrData } =
+      createCmvrDto;
 
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
@@ -48,6 +49,7 @@ export class CmvrService {
         cmvrData: flattenedData as unknown as any,
         createdById: createdById,
         fileName: fileName || null,
+        attachments: attachments || [],
       } as any,
     });
   }
@@ -111,6 +113,7 @@ export class CmvrService {
     const {
       createdById: _ignore,
       attendanceId,
+      attachments,
       ...cmvrData
     } = updateDto as any;
 
@@ -129,6 +132,7 @@ export class CmvrService {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         cmvrData: flattenedData as unknown as any,
         fileName: fileName || null,
+        attachments: attachments || [],
       } as any,
     });
   }

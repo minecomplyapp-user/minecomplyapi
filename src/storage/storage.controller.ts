@@ -60,6 +60,31 @@ export class StorageController {
     return { url };
   }
 
+  @Post('delete-files')
+  async deleteFiles(@Body() body: { paths: string[] }) {
+    this.logger.log(`Deleting ${body.paths.length} files from storage`);
+
+    const results = await Promise.allSettled(
+      body.paths.map((path) => this.storageService.remove(path)),
+    );
+
+    const errors = results
+      .filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      )
+      .map((result) => result.reason);
+
+    if (errors.length > 0) {
+      this.logger.warn(`Failed to delete ${errors.length} files:`, errors);
+    }
+
+    return {
+      deleted: results.filter((r) => r.status === 'fulfilled').length,
+      failed: errors.length,
+    };
+  }
+
   @Post('test-auth')
   async testAuthentication(@Req() req: any) {
     this.logger.log('Testing storage authentication...');

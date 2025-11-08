@@ -11,8 +11,11 @@ import {
   WidthType,
   VerticalAlign,
   BorderStyle,
+  ImageRun,
 } from 'docx';
+import axios from 'axios';
 import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
 
 import {
   createTableBorders,
@@ -43,6 +46,8 @@ import { createExecutiveSummaryTable } from './cmvr-sections/executive-summary-c
 
 @Injectable()
 export class CMVRDocxGeneratorService {
+  constructor(private readonly storageService: SupabaseStorageService) {}
+
   /**
    * Generate CMVR General Information as DOCX
    * Following the same structure as PDF generator
@@ -1215,8 +1220,70 @@ export class CMVRDocxGeneratorService {
           }),
         ];
 
-        // Data rows with numbering
-        attendees.forEach((attendee: any, index: number) => {
+        // Data rows with numbering - fetch and add signatures
+        for (let index = 0; index < attendees.length; index++) {
+          const attendee: any = attendees[index];
+
+          // Prepare signature cell content
+          const signatureCellChildren: Paragraph[] = [];
+
+          // Check if attendee is absent
+          if (attendee.attendanceStatus === 'ABSENT') {
+            signatureCellChildren.push(
+              createParagraph('ABSENT', false, AlignmentType.CENTER),
+            );
+          } else if (
+            attendee.signatureUrl &&
+            attendee.signatureUrl.trim() !== ''
+          ) {
+            try {
+              // Convert storage path to signed URL
+              const signedUrl =
+                await this.storageService.createSignedDownloadUrl(
+                  attendee.signatureUrl,
+                  60, // expires in 60 seconds
+                );
+
+              const imageBuffer = await this.fetchImageBuffer(signedUrl);
+              if (imageBuffer) {
+                // Add image to cell
+                signatureCellChildren.push(
+                  new Paragraph({
+                    children: [
+                      new ImageRun({
+                        data: imageBuffer,
+                        transformation: {
+                          width: 60,
+                          height: 30,
+                        },
+                        type: 'png',
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                );
+              } else {
+                // Fallback to ABSENT if image fetch failed
+                signatureCellChildren.push(
+                  createParagraph('ABSENT', false, AlignmentType.CENTER),
+                );
+              }
+            } catch (error) {
+              console.error(
+                `Failed to add signature image for ${attendee.name}:`,
+                error,
+              );
+              signatureCellChildren.push(
+                createParagraph('ABSENT', false, AlignmentType.CENTER),
+              );
+            }
+          } else {
+            // No signature URL, add ABSENT
+            signatureCellChildren.push(
+              createParagraph('ABSENT', false, AlignmentType.CENTER),
+            );
+          }
+
           attendanceRows.push(
             new TableRow({
               height: { value: 400, rule: 'atLeast' },
@@ -1234,7 +1301,7 @@ export class CMVRDocxGeneratorService {
                 new TableCell({
                   children: [
                     createParagraph(
-                      attendee.company || '',
+                      attendee.agency || attendee.office || '',
                       false,
                       AlignmentType.CENTER,
                     ),
@@ -1252,13 +1319,13 @@ export class CMVRDocxGeneratorService {
                   verticalAlign: VerticalAlign.CENTER,
                 }),
                 new TableCell({
-                  children: [createParagraph('', false, AlignmentType.CENTER)],
+                  children: signatureCellChildren,
                   verticalAlign: VerticalAlign.CENTER,
                 }),
               ],
             }),
           );
-        });
+        }
 
         children.push(
           new Table({
@@ -1293,5 +1360,27 @@ export class CMVRDocxGeneratorService {
       ],
     });
     return Packer.toBuffer(doc);
+  }
+
+  /**
+   * Fetch image buffer from URL (for signature images)
+   */
+  private async fetchImageBuffer(url: string): Promise<Buffer | null> {
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 5000, // 5 second timeout
+      });
+      return Buffer.from(response.data);
+    } catch (error) {
+      // Log simplified error message (404s are expected for missing signatures)
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        console.warn(`Image not found (404): ${url}`);
+      } else {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to fetch image from ${url}: ${errorMsg}`);
+      }
+      return null;
+    }
   }
 }
