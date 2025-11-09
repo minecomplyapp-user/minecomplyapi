@@ -73,8 +73,7 @@ export class EccService {
     }
 
     // Now TypeScript still thinks it's unknown — so cast it:
-    const permitHolders = (permit_holder_with_conditions as any)
-      ?.permit_holders;
+    const permitHolders = permit_holder_with_conditions?.permit_holders;
 
     reportData.generalInfo;
     const formattedPermitHolders = permitHolders.map((holder) => {

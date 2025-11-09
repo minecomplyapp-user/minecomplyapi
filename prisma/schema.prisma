@@ -48,6 +48,7 @@ model CMVRReport {
   updatedAt   DateTime @updatedAt
   cmvrData    Json?
   fileName    String?  @db.VarChar
+  attachments Json     @default("[]")
   createdBy   User?    @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_cmvr_report_creator")
@@ -95,7 +96,6 @@ model AttendanceRecord {
   meetingDate DateTime?
   location    String?
   attendees   Json
-  attachments Json      @default("[]")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdById String?

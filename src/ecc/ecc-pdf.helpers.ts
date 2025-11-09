@@ -90,13 +90,13 @@ export function toConditionRows(
       const CHECK_MARK = 'V';
       const BLANK = '';
 
-      const statusComplied = status === 'compliant' ? CHECK_MARK : BLANK;
+      const statusComplied = status === 'complied' ? CHECK_MARK : BLANK;
       const statusPartial = status.includes('partial') ? CHECK_MARK : BLANK;
-      const statusNotComplied = status.includes('non') ? CHECK_MARK : BLANK;
+      const statusNotComplied = status.includes('not') ? CHECK_MARK : BLANK;
 
       let remark: string;
       if (
-        status.includes('compliant') &&
+        status.includes('complied') &&
         e.remark_list &&
         e.remark_list.length > 0
       ) {
@@ -108,7 +108,7 @@ export function toConditionRows(
       ) {
         remark = e.remark_list[1];
       } else if (
-        status.includes('non') &&
+        status.includes('not') &&
         e.remark_list &&
         e.remark_list.length > 2
       ) {
@@ -116,11 +116,20 @@ export function toConditionRows(
       } else {
         remark = '';
       }
+      const conditionText = e.condition?.toString() || '';
+      const match = conditionText.match(/Condition\s+([0-9]+)\s*:/i);
+      const conditionNo = match ? match[1] : BLANK;
+      let condition;
+      if (match) {
+        condition = e.condition?.toString().split(':')[1];
+      } else {
+        condition = e.condition;
+      }
 
       // Create the 6-column row
       const row: ConditionRow = [
-        e.condition_number?.toString() || BLANK, // Column 1: Condition No.
-        e.condition || BLANK, // Column 2: Condition Text
+        conditionNo || BLANK, // Column 1: Condition No.
+        condition || BLANK, // Column 2: Condition Text
         statusComplied, // Column 3: C
         statusPartial, // Column 4: PC
         statusNotComplied, // Column 5: NC

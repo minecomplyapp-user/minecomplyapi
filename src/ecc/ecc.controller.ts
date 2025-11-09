@@ -140,7 +140,6 @@ export class EccController {
     res.end(buffer);
   }
 
-
   @Post('createEccAndGenerateDocs')
   @ApiOperation({
     summary: 'Create a new ECC Report and generate docs',
@@ -150,7 +149,8 @@ export class EccController {
     @Res() res: Response, // <--- FIX: Inject the response object
   ) {
     // Await the service call to get the file data (fileName and buffer)
-    const { fileName, buffer } = await this.eccService.createEccAndGenerateDocs(createEccDto);
+    const { fileName, buffer } =
+      await this.eccService.createEccAndGenerateDocs(createEccDto);
 
     // Set headers for file download
     res.set({
@@ -163,6 +163,4 @@ export class EccController {
     // End the response stream with the file buffer
     res.end(buffer);
   }
-
- 
 }

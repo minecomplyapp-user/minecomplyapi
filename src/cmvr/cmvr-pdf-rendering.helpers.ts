@@ -3055,637 +3055,703 @@ export function drawComplianceToImpactManagementCommitmentsTable(
 
 /**
  * Draw the Air Quality Impact Assessment table with 9 columns including nested headers
+ * Updated to handle location-based structure
  */
 export function drawAirQualityImpactAssessmentTable(
   doc: PDFKit.PDFDocument,
   data: {
-    quarry?: string;
-    quarryPlant?: string;
-    plant?: string;
-    port?: string;
-    parameters?: Array<{
-      name?: string;
-      results?: {
-        inSMR?: {
-          current?: string;
-          previous?: string;
+    quarry?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
         };
-        mmtConfirmatorySampling?: {
-          current?: string;
-          previous?: string;
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
         };
-      };
-      eqpl?: {
-        redFlag?: string;
-        action?: string;
-        limit?: string;
-      };
-      remarks?: string;
-    }>;
-    samplingDate?: string;
-    weatherAndWind?: string;
-    explanationForConfirmatorySampling?: string;
-    overallAssessment?: string;
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    plant?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    quarryAndPlant?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
+    port?: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    };
   },
 ) {
-  const left = doc.page.margins.left || 50;
-  const right = doc.page.width - (doc.page.margins.right || 50);
-  const tableWidth = right - left;
-  const bottomMargin = doc.page.margins.bottom || 50;
-  const bottomLimit = doc.page.height - bottomMargin - 30;
+  // Helper function to draw a single location's air quality table
+  const drawLocationAirQualityTable = (
+    locationName: string,
+    locationData: {
+      locationInput?: string;
+      parameters?: Array<{
+        name?: string;
+        results?: {
+          inSMR?: {
+            current?: string;
+            previous?: string;
+          };
+          mmtConfirmatorySampling?: {
+            current?: string;
+            previous?: string;
+          };
+        };
+        eqpl?: {
+          redFlag?: string;
+          action?: string;
+          limit?: string;
+        };
+        remarks?: string;
+      }>;
+      samplingDate?: string;
+      weatherAndWind?: string;
+      explanationForConfirmatorySampling?: string;
+      overallAssessment?: string;
+    },
+  ) => {
+    const left = doc.page.margins.left || 50;
+    const right = doc.page.width - (doc.page.margins.right || 50);
+    const tableWidth = right - left;
+    const bottomMargin = doc.page.margins.bottom || 50;
+    const bottomLimit = doc.page.height - bottomMargin - 30;
 
-  let y = doc.y;
+    let y = doc.y;
 
-  // Display quarry, plant, and port as text paragraphs with indentation
-  const textIndent = 60; // Indent from left margin
+    // Display location name and input as text paragraphs with indentation
+    const textIndent = 60; // Indent from left margin
 
-  if (data.quarry) {
-    // Bold label, regular text for value
+    // Display location name header
     doc.font('Helvetica-Bold').fontSize(11);
-    doc.text('Quarry: ', left + textIndent, y, {
+    doc.text(`${locationName}: `, left + textIndent, y, {
       continued: true,
       lineBreak: false,
     });
     doc.font('Helvetica').fontSize(11);
-    doc.text(data.quarry);
-    y = doc.y;
-    doc.moveDown(0.3);
-    y = doc.y;
-  }
-
-  if (data.quarryPlant) {
-    // Bold label, regular text for value
-    doc.font('Helvetica-Bold').fontSize(11);
-    doc.text('Quarry/Plant: ', left + textIndent, y, {
-      continued: true,
-      lineBreak: false,
-    });
-    doc.font('Helvetica').fontSize(11);
-    doc.text(data.quarryPlant);
-    y = doc.y;
-    doc.moveDown(0.3);
-    y = doc.y;
-  }
-
-  if (data.plant) {
-    // Bold label, regular text for value
-    doc.font('Helvetica-Bold').fontSize(11);
-    doc.text('Plant: ', left + textIndent, y, {
-      continued: true,
-      lineBreak: false,
-    });
-    doc.font('Helvetica').fontSize(11);
-    doc.text(data.plant);
-    y = doc.y;
-    doc.moveDown(0.3);
-    y = doc.y;
-  }
-
-  if (data.port) {
-    // Bold label, regular text for value
-    doc.font('Helvetica-Bold').fontSize(11);
-    doc.text('Port: ', left + textIndent, y, {
-      continued: true,
-      lineBreak: false,
-    });
-    doc.font('Helvetica').fontSize(11);
-    doc.text(data.port);
+    doc.text(locationData.locationInput || '');
     y = doc.y;
     doc.moveDown(1.5);
     y = doc.y;
-  }
 
-  // Check if we need to add a page before the table
-  if (y + 100 > bottomLimit) {
-    doc.addPage();
-    y = doc.page.margins.top || 50;
-  }
-
-  // Define column structure: 9 columns total
-  // Parameter | Results (4 cols) | EQPL (3 cols) | Remarks
-  // Results: inSMR (Current, Previous), mmtConfirmatorySampling (Current, Previous)
-  // EQPL: Red Flag, Action, Limit
-  const colWidths = [
-    tableWidth * 0.12, // Parameter
-    tableWidth * 0.11, // inSMR Current
-    tableWidth * 0.11, // inSMR Previous
-    tableWidth * 0.11, // MMT Current
-    tableWidth * 0.11, // MMT Previous
-    tableWidth * 0.11, // Red Flag
-    tableWidth * 0.11, // Action
-    tableWidth * 0.11, // Limit
-    tableWidth * 0.11, // Remarks
-  ];
-
-  const getColX = (colIndex: number): number =>
-    left + colWidths.slice(0, colIndex).reduce((s, w) => s + w, 0);
-
-  // Draw three-row header
-  const header1Height = 20; // "Results" and "EQPL" row
-  const header2Height = 40; // "inSMR" and "mmtConfirmatorySampling" row
-  const header3Height = 20; // Individual column names row
-  const totalHeaderHeight = header1Height + header2Height + header3Height;
-
-  const drawHeader = (startY: number): number => {
-    let currentY = startY;
-    doc.font('Helvetica-Bold').fontSize(10);
-    doc.strokeColor('#000000').lineWidth(0.5);
-
-    // Row 1: Parameter (merged 3 rows) | Results (4 cols merged) | EQPL (3 cols merged) | Remarks (merged 3 rows)
-    // Top border
-    doc
-      .moveTo(left, currentY)
-      .lineTo(left + tableWidth, currentY)
-      .stroke();
-
-    // Draw Parameter cell (spans all 3 rows)
-    const paramX = getColX(0);
-    const paramWidth = colWidths[0];
-    doc
-      .moveTo(paramX, currentY)
-      .lineTo(paramX, currentY + totalHeaderHeight)
-      .stroke();
-    doc
-      .moveTo(paramX + paramWidth, currentY)
-      .lineTo(paramX + paramWidth, currentY + totalHeaderHeight)
-      .stroke();
-    const paramTextHeight = doc.heightOfString('Parameter', {
-      width: paramWidth - 4,
-      align: 'center',
-    });
-    doc.text(
-      'Parameter',
-      paramX + 2,
-      currentY + (totalHeaderHeight - paramTextHeight) / 2,
-      {
-        width: paramWidth - 4,
-        align: 'center',
-      },
-    );
-
-    // Draw Results cell (row 1 only)
-    const resultsX = getColX(1);
-    const resultsWidth =
-      colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4];
-    doc
-      .moveTo(resultsX, currentY)
-      .lineTo(resultsX, currentY + header1Height)
-      .stroke();
-    doc
-      .moveTo(resultsX + resultsWidth, currentY)
-      .lineTo(resultsX + resultsWidth, currentY + header1Height)
-      .stroke();
-    const resultsTextHeight = doc.heightOfString('Results', {
-      width: resultsWidth - 4,
-      align: 'center',
-    });
-    doc.text(
-      'Results',
-      resultsX + 2,
-      currentY + (header1Height - resultsTextHeight) / 2,
-      {
-        width: resultsWidth - 4,
-        align: 'center',
-      },
-    );
-
-    // Draw EQPL cell (spans rows 1, 2, and 3) with sub-columns
-    const eqplX = getColX(5);
-    const eqplWidth = colWidths[5] + colWidths[6] + colWidths[7];
-    doc
-      .moveTo(eqplX, currentY)
-      .lineTo(eqplX, currentY + totalHeaderHeight)
-      .stroke();
-    doc
-      .moveTo(eqplX + eqplWidth, currentY)
-      .lineTo(eqplX + eqplWidth, currentY + totalHeaderHeight)
-      .stroke();
-
-    // Draw EQPL title at the top (bold)
-    doc.font('Helvetica-Bold').fontSize(10);
-    const eqplTitleHeight = doc.heightOfString('EQPL', {
-      width: eqplWidth - 4,
-      align: 'center',
-    });
-    doc.text('EQPL', eqplX + 2, currentY + 4, {
-      width: eqplWidth - 4,
-      align: 'center',
-    });
-
-    // Draw horizontal line below EQPL title to separate from sub-columns
-    const eqplTitleBottomY = currentY + eqplTitleHeight + 8;
-    doc
-      .moveTo(eqplX, eqplTitleBottomY)
-      .lineTo(eqplX + eqplWidth, eqplTitleBottomY)
-      .stroke();
-
-    // Draw internal vertical borders for EQPL sub-columns (only below the title line)
-    for (let i = 6; i <= 7; i++) {
-      const colX = getColX(i);
-      doc
-        .moveTo(colX, eqplTitleBottomY)
-        .lineTo(colX, currentY + totalHeaderHeight)
-        .stroke();
+    // Check if we need to add a page before the table
+    if (y + 100 > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
     }
 
-    // Draw sub-column labels (Red Flag, Action, Limit) below EQPL title
-    const eqplSubLabels = ['Red Flag', 'Action', 'Limit\n(DENR std.\nPM 2.5)'];
-    const eqplSubAreaHeight = currentY + totalHeaderHeight - eqplTitleBottomY;
-
-    for (let i = 0; i < 3; i++) {
-      const colIndex = 5 + i;
-      const colX = getColX(colIndex);
-      const colWidth = colWidths[colIndex];
-
-      doc.font('Helvetica-Bold').fontSize(11);
-
-      // Calculate text height for vertical centering
-      const textHeight = doc.heightOfString(eqplSubLabels[i], {
-        width: colWidth - 4,
-        align: 'center',
-      });
-
-      // Center vertically within the sub-area
-      const centeredY = eqplTitleBottomY + (eqplSubAreaHeight - textHeight) / 2;
-
-      doc.text(eqplSubLabels[i], colX + 2, centeredY, {
-        width: colWidth - 4,
-        align: 'center',
-      });
-    }
-
-    doc.font('Helvetica-Bold').fontSize(10); // Reset to bold for other headers
-
-    // Draw Remarks cell (spans all 3 rows)
-    const remarksX = getColX(8);
-    const remarksWidth = colWidths[8];
-    doc
-      .moveTo(remarksX, currentY)
-      .lineTo(remarksX, currentY + totalHeaderHeight)
-      .stroke();
-    doc
-      .moveTo(remarksX + remarksWidth, currentY)
-      .lineTo(remarksX + remarksWidth, currentY + totalHeaderHeight)
-      .stroke();
-    const remarksTextHeight = doc.heightOfString('Remarks', {
-      width: remarksWidth - 4,
-      align: 'center',
-    });
-    doc.text(
-      'Remarks',
-      remarksX + 2,
-      currentY + (totalHeaderHeight - remarksTextHeight) / 2,
-      {
-        width: remarksWidth - 4,
-        align: 'center',
-      },
-    );
-
-    // Bottom border of row 1
-    doc
-      .moveTo(resultsX, currentY + header1Height)
-      .lineTo(resultsX + resultsWidth, currentY + header1Height)
-      .stroke();
-
-    currentY += header1Height;
-
-    // Row 2: inSMR (2 cols merged) | mmtConfirmatorySampling (2 cols merged)
-    const row2Cells = [
-      {
-        text: 'In SMR c/o Geosphere Technologies, Inc.',
-        x: getColX(1),
-        width: colWidths[1] + colWidths[2],
-        colSpan: 2,
-      },
-      {
-        text: 'MMT Confirmatory Sampling',
-        x: getColX(3),
-        width: colWidths[3] + colWidths[4],
-        colSpan: 2,
-      },
+    // Define column structure: 9 columns total
+    // Parameter | Results (4 cols) | EQPL (3 cols) | Remarks
+    // Results: inSMR (Current, Previous), mmtConfirmatorySampling (Current, Previous)
+    // EQPL: Red Flag, Action, Limit
+    const colWidths = [
+      tableWidth * 0.12, // Parameter
+      tableWidth * 0.11, // inSMR Current
+      tableWidth * 0.11, // inSMR Previous
+      tableWidth * 0.11, // MMT Current
+      tableWidth * 0.11, // MMT Previous
+      tableWidth * 0.11, // Red Flag
+      tableWidth * 0.11, // Action
+      tableWidth * 0.11, // Limit
+      tableWidth * 0.11, // Remarks
     ];
 
-    row2Cells.forEach((cell) => {
-      // Left border
+    const getColX = (colIndex: number): number =>
+      left + colWidths.slice(0, colIndex).reduce((s, w) => s + w, 0);
+
+    // Draw three-row header
+    const header1Height = 20; // "Results" and "EQPL" row
+    const header2Height = 40; // "inSMR" and "mmtConfirmatorySampling" row
+    const header3Height = 20; // Individual column names row
+    const totalHeaderHeight = header1Height + header2Height + header3Height;
+
+    const drawHeader = (startY: number): number => {
+      let currentY = startY;
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.strokeColor('#000000').lineWidth(0.5);
+
+      // Row 1: Parameter (merged 3 rows) | Results (4 cols merged) | EQPL (3 cols merged) | Remarks (merged 3 rows)
+      // Top border
       doc
-        .moveTo(cell.x, currentY)
-        .lineTo(cell.x, currentY + header2Height)
+        .moveTo(left, currentY)
+        .lineTo(left + tableWidth, currentY)
         .stroke();
-      // Right border
+
+      // Draw Parameter cell (spans all 3 rows)
+      const paramX = getColX(0);
+      const paramWidth = colWidths[0];
       doc
-        .moveTo(cell.x + cell.width, currentY)
-        .lineTo(cell.x + cell.width, currentY + header2Height)
+        .moveTo(paramX, currentY)
+        .lineTo(paramX, currentY + totalHeaderHeight)
         .stroke();
-      // Text
-      const textHeight = doc.heightOfString(cell.text, {
-        width: cell.width - 4,
+      doc
+        .moveTo(paramX + paramWidth, currentY)
+        .lineTo(paramX + paramWidth, currentY + totalHeaderHeight)
+        .stroke();
+      const paramTextHeight = doc.heightOfString('Parameter', {
+        width: paramWidth - 4,
         align: 'center',
       });
       doc.text(
-        cell.text,
-        cell.x + 2,
-        currentY + (header2Height - textHeight) / 2,
+        'Parameter',
+        paramX + 2,
+        currentY + (totalHeaderHeight - paramTextHeight) / 2,
         {
-          width: cell.width - 4,
+          width: paramWidth - 4,
           align: 'center',
         },
       );
-    });
 
-    // Bottom border of row 2
-    doc
-      .moveTo(resultsX, currentY + header2Height)
-      .lineTo(resultsX + resultsWidth, currentY + header2Height)
-      .stroke();
-
-    currentY += header2Height;
-
-    // Row 3: Current | Previous | Current | Previous (only for Results columns)
-    const row3Headers = ['Current', 'Previous', 'Current', 'Previous'];
-
-    for (let i = 0; i < row3Headers.length; i++) {
-      const colIndex = i + 1; // Start from column 1 (after Parameter)
-      const colX = getColX(colIndex);
-      const colWidth = colWidths[colIndex];
-
-      // Left border
+      // Draw Results cell (row 1 only)
+      const resultsX = getColX(1);
+      const resultsWidth =
+        colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4];
       doc
-        .moveTo(colX, currentY)
-        .lineTo(colX, currentY + header3Height)
+        .moveTo(resultsX, currentY)
+        .lineTo(resultsX, currentY + header1Height)
         .stroke();
-      // Right border
       doc
-        .moveTo(colX + colWidth, currentY)
-        .lineTo(colX + colWidth, currentY + header3Height)
+        .moveTo(resultsX + resultsWidth, currentY)
+        .lineTo(resultsX + resultsWidth, currentY + header1Height)
         .stroke();
-
-      // Text
-      const textHeight = doc.heightOfString(row3Headers[i], {
-        width: colWidth - 4,
+      const resultsTextHeight = doc.heightOfString('Results', {
+        width: resultsWidth - 4,
         align: 'center',
       });
       doc.text(
-        row3Headers[i],
-        colX + 2,
-        currentY + (header3Height - textHeight) / 2,
+        'Results',
+        resultsX + 2,
+        currentY + (header1Height - resultsTextHeight) / 2,
         {
-          width: colWidth - 4,
+          width: resultsWidth - 4,
           align: 'center',
         },
       );
-    }
 
-    // Bottom border of row 3 (full width)
-    doc
-      .moveTo(left, currentY + header3Height)
-      .lineTo(left + tableWidth, currentY + header3Height)
-      .stroke();
+      // Draw EQPL cell (spans rows 1, 2, and 3) with sub-columns
+      const eqplX = getColX(5);
+      const eqplWidth = colWidths[5] + colWidths[6] + colWidths[7];
+      doc
+        .moveTo(eqplX, currentY)
+        .lineTo(eqplX, currentY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(eqplX + eqplWidth, currentY)
+        .lineTo(eqplX + eqplWidth, currentY + totalHeaderHeight)
+        .stroke();
 
-    currentY += header3Height;
+      // Draw EQPL title at the top (bold)
+      doc.font('Helvetica-Bold').fontSize(10);
+      const eqplTitleHeight = doc.heightOfString('EQPL', {
+        width: eqplWidth - 4,
+        align: 'center',
+      });
+      doc.text('EQPL', eqplX + 2, currentY + 4, {
+        width: eqplWidth - 4,
+        align: 'center',
+      });
 
-    return currentY;
-  };
+      // Draw horizontal line below EQPL title to separate from sub-columns
+      const eqplTitleBottomY = currentY + eqplTitleHeight + 8;
+      doc
+        .moveTo(eqplX, eqplTitleBottomY)
+        .lineTo(eqplX + eqplWidth, eqplTitleBottomY)
+        .stroke();
 
-  // Draw initial header
-  y = drawHeader(y);
-
-  // Draw parameter rows
-  doc.font('Helvetica').fontSize(10);
-
-  if (data.parameters && data.parameters.length > 0) {
-    for (const param of data.parameters) {
-      const rowData = [
-        param.name || '',
-        param.results?.inSMR?.current || '',
-        param.results?.inSMR?.previous || '',
-        param.results?.mmtConfirmatorySampling?.current || '',
-        param.results?.mmtConfirmatorySampling?.previous || '',
-        param.eqpl?.redFlag || '',
-        param.eqpl?.action || '',
-        param.eqpl?.limit || '',
-        param.remarks || '',
-      ];
-
-      // Calculate row height based on content
-      const cellHeights = rowData.map((text, idx) =>
-        doc.heightOfString(text, {
-          width: colWidths[idx] - 4,
-          align: 'center',
-        }),
-      );
-      const rowHeight = Math.max(14, ...cellHeights) + 4;
-
-      // Check if we need a page break
-      if (y + rowHeight > bottomLimit) {
-        doc.addPage();
-        y = doc.page.margins.top || 50;
-        y = drawHeader(y);
+      // Draw internal vertical borders for EQPL sub-columns (only below the title line)
+      for (let i = 6; i <= 7; i++) {
+        const colX = getColX(i);
+        doc
+          .moveTo(colX, eqplTitleBottomY)
+          .lineTo(colX, currentY + totalHeaderHeight)
+          .stroke();
       }
 
-      // Draw row
-      for (let i = 0; i < rowData.length; i++) {
-        const colX = getColX(i);
-        const colWidth = colWidths[i];
+      // Draw sub-column labels (Red Flag, Action, Limit) below EQPL title
+      const eqplSubLabels = [
+        'Red Flag',
+        'Action',
+        'Limit\n(DENR std.\nPM 2.5)',
+      ];
+      const eqplSubAreaHeight = currentY + totalHeaderHeight - eqplTitleBottomY;
 
+      for (let i = 0; i < 3; i++) {
+        const colIndex = 5 + i;
+        const colX = getColX(colIndex);
+        const colWidth = colWidths[colIndex];
+
+        doc.font('Helvetica-Bold').fontSize(11);
+
+        // Calculate text height for vertical centering
+        const textHeight = doc.heightOfString(eqplSubLabels[i], {
+          width: colWidth - 4,
+          align: 'center',
+        });
+
+        // Center vertically within the sub-area
+        const centeredY =
+          eqplTitleBottomY + (eqplSubAreaHeight - textHeight) / 2;
+
+        doc.text(eqplSubLabels[i], colX + 2, centeredY, {
+          width: colWidth - 4,
+          align: 'center',
+        });
+      }
+
+      doc.font('Helvetica-Bold').fontSize(10); // Reset to bold for other headers
+
+      // Draw Remarks cell (spans all 3 rows)
+      const remarksX = getColX(8);
+      const remarksWidth = colWidths[8];
+      doc
+        .moveTo(remarksX, currentY)
+        .lineTo(remarksX, currentY + totalHeaderHeight)
+        .stroke();
+      doc
+        .moveTo(remarksX + remarksWidth, currentY)
+        .lineTo(remarksX + remarksWidth, currentY + totalHeaderHeight)
+        .stroke();
+      const remarksTextHeight = doc.heightOfString('Remarks', {
+        width: remarksWidth - 4,
+        align: 'center',
+      });
+      doc.text(
+        'Remarks',
+        remarksX + 2,
+        currentY + (totalHeaderHeight - remarksTextHeight) / 2,
+        {
+          width: remarksWidth - 4,
+          align: 'center',
+        },
+      );
+
+      // Bottom border of row 1
+      doc
+        .moveTo(resultsX, currentY + header1Height)
+        .lineTo(resultsX + resultsWidth, currentY + header1Height)
+        .stroke();
+
+      currentY += header1Height;
+
+      // Row 2: inSMR (2 cols merged) | mmtConfirmatorySampling (2 cols merged)
+      const row2Cells = [
+        {
+          text: 'In SMR c/o Geosphere Technologies, Inc.',
+          x: getColX(1),
+          width: colWidths[1] + colWidths[2],
+          colSpan: 2,
+        },
+        {
+          text: 'MMT Confirmatory Sampling',
+          x: getColX(3),
+          width: colWidths[3] + colWidths[4],
+          colSpan: 2,
+        },
+      ];
+
+      row2Cells.forEach((cell) => {
         // Left border
         doc
-          .moveTo(colX, y)
-          .lineTo(colX, y + rowHeight)
+          .moveTo(cell.x, currentY)
+          .lineTo(cell.x, currentY + header2Height)
           .stroke();
         // Right border
         doc
-          .moveTo(colX + colWidth, y)
-          .lineTo(colX + colWidth, y + rowHeight)
+          .moveTo(cell.x + cell.width, currentY)
+          .lineTo(cell.x + cell.width, currentY + header2Height)
+          .stroke();
+        // Text
+        const textHeight = doc.heightOfString(cell.text, {
+          width: cell.width - 4,
+          align: 'center',
+        });
+        doc.text(
+          cell.text,
+          cell.x + 2,
+          currentY + (header2Height - textHeight) / 2,
+          {
+            width: cell.width - 4,
+            align: 'center',
+          },
+        );
+      });
+
+      // Bottom border of row 2
+      doc
+        .moveTo(resultsX, currentY + header2Height)
+        .lineTo(resultsX + resultsWidth, currentY + header2Height)
+        .stroke();
+
+      currentY += header2Height;
+
+      // Row 3: Current | Previous | Current | Previous (only for Results columns)
+      const row3Headers = ['Current', 'Previous', 'Current', 'Previous'];
+
+      for (let i = 0; i < row3Headers.length; i++) {
+        const colIndex = i + 1; // Start from column 1 (after Parameter)
+        const colX = getColX(colIndex);
+        const colWidth = colWidths[colIndex];
+
+        // Left border
+        doc
+          .moveTo(colX, currentY)
+          .lineTo(colX, currentY + header3Height)
+          .stroke();
+        // Right border
+        doc
+          .moveTo(colX + colWidth, currentY)
+          .lineTo(colX + colWidth, currentY + header3Height)
           .stroke();
 
-        // Text - bold for parameter name (column 0), regular for others
-        if (i === 0) {
-          doc.font('Helvetica-Bold').fontSize(10);
-        } else {
-          doc.font('Helvetica').fontSize(10);
+        // Text
+        const textHeight = doc.heightOfString(row3Headers[i], {
+          width: colWidth - 4,
+          align: 'center',
+        });
+        doc.text(
+          row3Headers[i],
+          colX + 2,
+          currentY + (header3Height - textHeight) / 2,
+          {
+            width: colWidth - 4,
+            align: 'center',
+          },
+        );
+      }
+
+      // Bottom border of row 3 (full width)
+      doc
+        .moveTo(left, currentY + header3Height)
+        .lineTo(left + tableWidth, currentY + header3Height)
+        .stroke();
+
+      currentY += header3Height;
+
+      return currentY;
+    };
+
+    // Draw initial header
+    y = drawHeader(y);
+
+    // Draw parameter rows
+    doc.font('Helvetica').fontSize(10);
+
+    if (locationData.parameters && locationData.parameters.length > 0) {
+      for (const param of locationData.parameters) {
+        const rowData = [
+          param.name || '',
+          param.results?.inSMR?.current || '',
+          param.results?.inSMR?.previous || '',
+          param.results?.mmtConfirmatorySampling?.current || '',
+          param.results?.mmtConfirmatorySampling?.previous || '',
+          param.eqpl?.redFlag || '',
+          param.eqpl?.action || '',
+          param.eqpl?.limit || '',
+          param.remarks || '',
+        ];
+
+        // Calculate row height based on content
+        const cellHeights = rowData.map((text, idx) =>
+          doc.heightOfString(text, {
+            width: colWidths[idx] - 4,
+            align: 'center',
+          }),
+        );
+        const rowHeight = Math.max(14, ...cellHeights) + 4;
+
+        // Check if we need a page break
+        if (y + rowHeight > bottomLimit) {
+          doc.addPage();
+          y = doc.page.margins.top || 50;
+          y = drawHeader(y);
         }
 
-        const textHeight = doc.heightOfString(rowData[i], {
-          width: colWidth - 4,
-          align: 'center',
-        });
-        doc.text(rowData[i], colX + 2, y + (rowHeight - textHeight) / 2, {
-          width: colWidth - 4,
-          align: 'center',
-        });
+        // Draw row
+        for (let i = 0; i < rowData.length; i++) {
+          const colX = getColX(i);
+          const colWidth = colWidths[i];
+
+          // Left border
+          doc
+            .moveTo(colX, y)
+            .lineTo(colX, y + rowHeight)
+            .stroke();
+          // Right border
+          doc
+            .moveTo(colX + colWidth, y)
+            .lineTo(colX + colWidth, y + rowHeight)
+            .stroke();
+
+          // Text - bold for parameter name (column 0), regular for others
+          if (i === 0) {
+            doc.font('Helvetica-Bold').fontSize(10);
+          } else {
+            doc.font('Helvetica').fontSize(10);
+          }
+
+          const textHeight = doc.heightOfString(rowData[i], {
+            width: colWidth - 4,
+            align: 'center',
+          });
+          doc.text(rowData[i], colX + 2, y + (rowHeight - textHeight) / 2, {
+            width: colWidth - 4,
+            align: 'center',
+          });
+        }
+
+        // Reset font
+        doc.font('Helvetica').fontSize(10);
+
+        // Bottom border
+        doc
+          .moveTo(left, y + rowHeight)
+          .lineTo(left + tableWidth, y + rowHeight)
+          .stroke();
+
+        y += rowHeight;
       }
-
-      // Reset font
-      doc.font('Helvetica').fontSize(10);
-
-      // Bottom border
-      doc
-        .moveTo(left, y + rowHeight)
-        .lineTo(left + tableWidth, y + rowHeight)
-        .stroke();
-
-      y += rowHeight;
     }
-  }
 
-  // Draw the 4 additional rows (full width, centered text)
-  const additionalRows = [
-    { label: 'Date/ time of sampling:', value: data.samplingDate || '' },
-    { label: 'Weather and wind direction:', value: data.weatherAndWind || '' },
-    {
-      label:
-        'Explanation of why confirmatory sampling was conducted for specific parameter in the sampling station:',
-      value: data.explanationForConfirmatorySampling || '',
-    },
-    { label: 'Overall Assessment:', value: data.overallAssessment || '' },
-  ];
+    // Draw the 4 additional rows (full width, centered text)
+    const additionalRows = [
+      {
+        label: 'Date/ time of sampling:',
+        value: locationData.samplingDate || '',
+      },
+      {
+        label: 'Weather and wind direction:',
+        value: locationData.weatherAndWind || '',
+      },
+      {
+        label:
+          'Explanation of why confirmatory sampling was conducted for specific parameter in the sampling station:',
+        value: locationData.explanationForConfirmatorySampling || '',
+      },
+      {
+        label: 'Overall Assessment:',
+        value: locationData.overallAssessment || '',
+      },
+    ];
 
-  doc.font('Helvetica').fontSize(10);
+    doc.font('Helvetica').fontSize(10);
 
-  for (const row of additionalRows) {
-    const isOverallAssessment = row.label === 'Overall Assessment:';
+    for (const row of additionalRows) {
+      const isOverallAssessment = row.label === 'Overall Assessment:';
 
-    // For Overall Assessment, we need to handle bold value separately
-    if (isOverallAssessment) {
-      // Calculate combined width for positioning
-      const labelWidth = doc.widthOfString(row.label);
-      const valueWidth = doc.font('Helvetica-Bold').widthOfString(row.value);
-      const totalWidth = labelWidth + doc.widthOfString(' ') + valueWidth;
+      // For Overall Assessment, we need to handle bold value separately
+      if (isOverallAssessment) {
+        // Calculate combined width for positioning
+        const labelWidth = doc.widthOfString(row.label);
+        const valueWidth = doc.font('Helvetica-Bold').widthOfString(row.value);
+        const totalWidth = labelWidth + doc.widthOfString(' ') + valueWidth;
 
-      const textHeight = Math.max(
-        doc.font('Helvetica').heightOfString(row.label, {
+        const textHeight = Math.max(
+          doc.font('Helvetica').heightOfString(row.label, {
+            width: tableWidth - 10,
+          }),
+          doc.font('Helvetica-Bold').heightOfString(row.value, {
+            width: tableWidth - 10,
+          }),
+        );
+        const rowHeight = Math.max(14, textHeight) + 4;
+
+        // Check if we need a page break
+        if (y + rowHeight > bottomLimit) {
+          doc.addPage();
+          y = doc.page.margins.top || 50;
+        }
+
+        // Draw borders
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc
+          .moveTo(left, y)
+          .lineTo(left, y + rowHeight)
+          .stroke();
+        doc
+          .moveTo(left + tableWidth, y)
+          .lineTo(left + tableWidth, y + rowHeight)
+          .stroke();
+        doc
+          .moveTo(left, y + rowHeight)
+          .lineTo(left + tableWidth, y + rowHeight)
+          .stroke();
+
+        // Calculate starting X to center the text
+        const startX = left + (tableWidth - totalWidth) / 2;
+        const textY = y + (rowHeight - textHeight) / 2;
+
+        // Draw label (regular)
+        doc.font('Helvetica').fontSize(10);
+        doc.text(row.label, startX, textY, {
+          continued: true,
+          lineBreak: false,
+        });
+
+        // Draw space
+        doc.text(' ', {
+          continued: true,
+          lineBreak: false,
+        });
+
+        // Draw value (bold)
+        doc.font('Helvetica-Bold').fontSize(10);
+        doc.text(row.value, {
+          lineBreak: false,
+        });
+
+        y += rowHeight;
+      } else {
+        // Regular rows with normal text
+        const combinedText = `${row.label} ${row.value}`;
+        const textHeight = doc.heightOfString(combinedText, {
           width: tableWidth - 10,
-        }),
-        doc.font('Helvetica-Bold').heightOfString(row.value, {
+          align: 'left',
+        });
+        const rowHeight = Math.max(14, textHeight) + 4;
+
+        // Check if we need a page break
+        if (y + rowHeight > bottomLimit) {
+          doc.addPage();
+          y = doc.page.margins.top || 50;
+        }
+
+        // Draw borders
+        doc.strokeColor('#000000').lineWidth(0.5);
+        doc
+          .moveTo(left, y)
+          .lineTo(left, y + rowHeight)
+          .stroke();
+        doc
+          .moveTo(left + tableWidth, y)
+          .lineTo(left + tableWidth, y + rowHeight)
+          .stroke();
+        doc
+          .moveTo(left, y + rowHeight)
+          .lineTo(left + tableWidth, y + rowHeight)
+          .stroke();
+
+        // Text (centered)
+        doc.font('Helvetica').fontSize(10);
+        doc.text(combinedText, left + 5, y + (rowHeight - textHeight) / 2, {
           width: tableWidth - 10,
-        }),
-      );
-      const rowHeight = Math.max(14, textHeight) + 4;
+          align: 'left',
+        });
 
-      // Check if we need a page break
-      if (y + rowHeight > bottomLimit) {
-        doc.addPage();
-        y = doc.page.margins.top || 50;
+        y += rowHeight;
       }
-
-      // Draw borders
-      doc.strokeColor('#000000').lineWidth(0.5);
-      doc
-        .moveTo(left, y)
-        .lineTo(left, y + rowHeight)
-        .stroke();
-      doc
-        .moveTo(left + tableWidth, y)
-        .lineTo(left + tableWidth, y + rowHeight)
-        .stroke();
-      doc
-        .moveTo(left, y + rowHeight)
-        .lineTo(left + tableWidth, y + rowHeight)
-        .stroke();
-
-      // Calculate starting X to center the text
-      const startX = left + (tableWidth - totalWidth) / 2;
-      const textY = y + (rowHeight - textHeight) / 2;
-
-      // Draw label (regular)
-      doc.font('Helvetica').fontSize(10);
-      doc.text(row.label, startX, textY, {
-        continued: true,
-        lineBreak: false,
-      });
-
-      // Draw space
-      doc.text(' ', {
-        continued: true,
-        lineBreak: false,
-      });
-
-      // Draw value (bold)
-      doc.font('Helvetica-Bold').fontSize(10);
-      doc.text(row.value, {
-        lineBreak: false,
-      });
-
-      y += rowHeight;
-    } else {
-      // Regular rows with normal text
-      const combinedText = `${row.label} ${row.value}`;
-      const textHeight = doc.heightOfString(combinedText, {
-        width: tableWidth - 10,
-        align: 'left',
-      });
-      const rowHeight = Math.max(14, textHeight) + 4;
-
-      // Check if we need a page break
-      if (y + rowHeight > bottomLimit) {
-        doc.addPage();
-        y = doc.page.margins.top || 50;
-      }
-
-      // Draw borders
-      doc.strokeColor('#000000').lineWidth(0.5);
-      doc
-        .moveTo(left, y)
-        .lineTo(left, y + rowHeight)
-        .stroke();
-      doc
-        .moveTo(left + tableWidth, y)
-        .lineTo(left + tableWidth, y + rowHeight)
-        .stroke();
-      doc
-        .moveTo(left, y + rowHeight)
-        .lineTo(left + tableWidth, y + rowHeight)
-        .stroke();
-
-      // Text (centered)
-      doc.font('Helvetica').fontSize(10);
-      doc.text(combinedText, left + 5, y + (rowHeight - textHeight) / 2, {
-        width: tableWidth - 10,
-        align: 'left',
-      });
-
-      y += rowHeight;
     }
-  }
 
-  doc.y = y;
-  doc.moveDown(0.5);
+    doc.y = y;
+    doc.moveDown(0.5);
+  }; // End of drawLocationAirQualityTable helper function
+
+  // Draw tables for each location that has data
+  if (data.quarry) {
+    drawLocationAirQualityTable('Quarry', data.quarry);
+  }
+  if (data.plant) {
+    drawLocationAirQualityTable('Plant', data.plant);
+  }
+  if (data.quarryAndPlant) {
+    drawLocationAirQualityTable('Quarry & Plant', data.quarryAndPlant);
+  }
+  if (data.port) {
+    drawLocationAirQualityTable('Port', data.port);
+  }
 }
 
 /**
  * Draw the Water Quality Impact Assessment table
  */
-export function drawWaterQualityImpactAssessmentTable(
+export function drawWaterQualityLocationTable(
   doc: PDFKit.PDFDocument,
   data: {
-    quarry?: string;
-    quarryPlant?: string;
-    plant?: string;
-    port?: string;
     parameters?: Array<{
-      name?: string;
-      result?: {
-        internalMonitoring?: {
-          month?: string;
-          readings?: Array<{
-            label?: string;
-            current_mgL?: number;
-            previous_mgL?: number;
-          }>;
-        };
-        mmtConfirmatorySampling?: {
-          current?: string;
-          previous?: string;
-        };
-      };
-      denrStandard?: {
-        redFlag?: string;
-        action?: string;
-        limit_mgL?: number;
-      };
-      remark?: string;
-    }>;
-    parametersTable2?: Array<{
       name?: string;
       result?: {
         internalMonitoring?: {
@@ -3720,37 +3786,6 @@ export function drawWaterQualityImpactAssessmentTable(
   const bottomLimit = doc.page.height - (doc.page.margins.bottom || 50) - 30;
 
   let y = doc.y;
-
-  // Helper function to render text fields
-  const renderTextField = (label: string, value: string) => {
-    const textIndent = 60;
-    doc.font('Helvetica-Bold').fontSize(11);
-    doc.text(`${label}: `, left + textIndent, y, {
-      continued: true,
-      lineBreak: false,
-    });
-    doc.font('Helvetica').fontSize(11);
-    doc.text(value);
-    y = doc.y;
-  };
-
-  // Quarry text
-  if (data.quarry) {
-    renderTextField('Quarry', data.quarry);
-  }
-
-  // Quarry Plant text
-  if (data.quarryPlant) {
-    renderTextField('Quarry Plant', data.quarryPlant);
-  }
-
-  // Plant text
-  if (data.plant) {
-    renderTextField('Plant', data.plant);
-  }
-
-  doc.moveDown(2);
-  y = doc.y;
 
   // Column structure: Parameter | Month | Current (mg/L) | Previous (mg/L) | MMT Current | MMT Previous | Red Flag | Action | Limit | Remark
   const parameterWidth = tableWidth * 0.12;
@@ -4507,22 +4542,118 @@ export function drawWaterQualityImpactAssessmentTable(
     }
   }
 
-  // Port text (between tables)
-  if (data.port) {
-    doc.moveDown(4);
-    y = doc.y;
-    renderTextField('Port', data.port);
-    doc.moveDown(2);
-    y = doc.y;
+  // Footer rows - similar to air quality
+  const footerRows = [
+    ['Date/ Time of sampling', data.samplingDate || ''],
+    ['Weather and wind direction', data.weatherAndWind || ''],
+    [
+      'Explanation of why confirmatory sampling was conducted for specific parameter in the sampling station',
+      data.explanationForConfirmatorySampling || '',
+    ],
+  ];
+
+  for (const [label, value] of footerRows) {
+    const combinedText = `${label}: ${value}`;
+    doc.font('Helvetica').fontSize(11);
+    const textHeight = doc.heightOfString(combinedText, {
+      width: tableWidth - 10,
+      align: 'left',
+    });
+    const rowHeight = Math.max(14, textHeight) + 4;
+
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
+    doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    doc.text(combinedText, left + 5, y + (rowHeight - textHeight) / 2, {
+      width: tableWidth - 10,
+      align: 'left',
+    });
+
+    y += rowHeight;
   }
 
-  // Render second table if parametersTable2 exists
-  if (data.parametersTable2 && data.parametersTable2.length > 0) {
-    // Re-draw header for second table
-    const currentY2 = y;
+  // Overall Assessment row (bold value)
+  if (data.overallAssessment) {
+    const label = 'Overall Assessment';
+    const value = data.overallAssessment;
+    const fullText = `${label}: ${value}`;
 
-    // Row 1: Parameter | Result | DENR Standard | Remark
+    doc.font('Helvetica').fontSize(11);
+    const textHeight = doc.heightOfString(fullText, {
+      width: tableWidth - 10,
+      align: 'center',
+    });
+    const rowHeight = Math.max(14, textHeight) + 4;
+
+    if (y + rowHeight > bottomLimit) {
+      doc.addPage();
+      y = doc.page.margins.top || 50;
+    }
+
+    // Draw borders
+    doc.strokeColor('#000000').lineWidth(0.5);
     doc
+      .moveTo(left, y)
+      .lineTo(left, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left + tableWidth, y)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+    doc
+      .moveTo(left, y + rowHeight)
+      .lineTo(left + tableWidth, y + rowHeight)
+      .stroke();
+
+    // Calculate position for centered text
+    const textY = y + (rowHeight - textHeight) / 2;
+
+    // Calculate widths for positioning
+    doc.font('Helvetica').fontSize(11);
+    const labelWidth = doc.widthOfString(`${label}: `);
+
+    // Center the entire text block
+    const totalWidth =
+      doc.widthOfString(label + ': ') +
+      doc.font('Helvetica-Bold').widthOfString(value);
+    const startX = left + (tableWidth - totalWidth) / 2;
+
+    // Draw label
+    doc.font('Helvetica').fontSize(11);
+    doc.text(`${label}: `, startX, textY, {
+      continued: true,
+      lineBreak: false,
+    });
+
+    // Draw bold value
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text(value);
+
+    y += rowHeight;
+  }
+
+  doc.y = y;
+  doc.moveDown(0.5);
+}
+
+/**
       .font('Helvetica-Bold')
       .fontSize(11)
       .strokeColor('#000000')
