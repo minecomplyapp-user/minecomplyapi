@@ -1760,14 +1760,6 @@ export class CMVRDocxGeneratorService {
         const imageBuffer = await this.fetchImageBuffer(signedUrl);
 
         if (imageBuffer) {
-          // Add file caption
-          elements.push(
-            new Paragraph({
-              children: [createText(file.name, true)],
-              spacing: { before: 100, after: 100 },
-            }),
-          );
-
           // Add large chart image
           elements.push(
             new Paragraph({
