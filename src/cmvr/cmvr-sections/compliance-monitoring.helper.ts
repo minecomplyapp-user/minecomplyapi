@@ -575,6 +575,8 @@ export function createWaterQualitySection(
 
   const buildLocationTable = (
     locationData: {
+      locationDescription?: string;
+      locationInput?: string;
       parameters?: Array<{
         name?: string;
         result?: {
@@ -611,7 +613,13 @@ export function createWaterQualitySection(
       return locationOut;
     }
 
-    locationOut.push(createParagraph(locationName, true));
+    const locationLabel = locationData.locationDescription?.trim()
+      ? `${locationName} – ${locationData.locationDescription}`
+      : locationData.locationInput?.trim()
+        ? `${locationName} – ${locationData.locationInput}`
+        : locationName;
+
+    locationOut.push(createParagraph(locationLabel, true));
 
     const rows: TableRow[] = [];
     rows.push(

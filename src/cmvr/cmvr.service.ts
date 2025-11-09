@@ -48,7 +48,7 @@ export class CmvrService {
 
     // Add attendanceId to the cmvrData JSON if provided
     if (attendanceId) {
-      (flattenedData as any).attendanceId = attendanceId;
+      flattenedData.attendanceId = attendanceId;
     }
 
     const dataToSave = {
@@ -197,7 +197,7 @@ export class CmvrService {
 
     // Add attendanceId to the cmvrData JSON if provided
     if (attendanceId) {
-      (flattenedData as any).attendanceId = attendanceId;
+      flattenedData.attendanceId = attendanceId;
     }
 
     const dataToUpdate = {

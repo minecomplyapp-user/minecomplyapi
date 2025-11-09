@@ -90,6 +90,14 @@ export interface CMVRGeneralInfo {
     dateUpdated?: string;
   }>;
 
+  // ECC Conditions Attachment
+  eccConditionsAttachment?: {
+    fileName?: string;
+    fileUrl?: string;
+    mimeType?: string;
+    storagePath?: string;
+  };
+
   // Section II: Executive Summary of Compliance
   executiveSummaryOfCompliance?: {
     complianceWithEpepCommitments?: {
@@ -162,6 +170,7 @@ export interface CMVRGeneralInfo {
       withinSpecs?: boolean;
       remarks?: string;
     }>;
+    uploadedImages?: Record<string, string>;
   };
 
   complianceToImpactManagementCommitments?: {
@@ -295,6 +304,8 @@ export interface CMVRGeneralInfo {
 
   waterQualityImpactAssessment?: {
     quarry?: {
+      locationDescription?: string;
+      locationInput?: string;
       parameters?: Array<{
         name?: string;
         result?: {
@@ -324,6 +335,8 @@ export interface CMVRGeneralInfo {
       overallAssessment?: string;
     };
     plant?: {
+      locationDescription?: string;
+      locationInput?: string;
       parameters?: Array<{
         name?: string;
         result?: {
@@ -353,6 +366,8 @@ export interface CMVRGeneralInfo {
       overallAssessment?: string;
     };
     quarryAndPlant?: {
+      locationDescription?: string;
+      locationInput?: string;
       parameters?: Array<{
         name?: string;
         result?: {
@@ -382,6 +397,8 @@ export interface CMVRGeneralInfo {
       overallAssessment?: string;
     };
     port?: {
+      locationDescription?: string;
+      locationInput?: string;
       parameters?: Array<{
         name?: string;
         result?: {
@@ -453,6 +470,13 @@ export interface CMVRGeneralInfo {
         assessment?: string;
       };
     };
+    uploadedFiles?: Array<{
+      uri: string;
+      name: string;
+      size?: number;
+      mimeType?: string;
+      storagePath?: string;
+    }>;
   };
 
   complianceWithGoodPracticeInSolidAndHazardousWasteManagement?: {
@@ -979,54 +1003,61 @@ export class CMVRPdfGeneratorService {
 
         // Render each location's table separately
         if (generalInfo.waterQualityImpactAssessment.quarry) {
+          const quarrySection = generalInfo.waterQualityImpactAssessment.quarry;
+          const quarryLabel = quarrySection.locationDescription
+            ? `Quarry – ${quarrySection.locationDescription}`
+            : 'Quarry';
           doc
             .fontSize(11)
             .font('Helvetica-Bold')
-            .text('Quarry', leftMargin, doc.y);
+            .text(quarryLabel, leftMargin, doc.y);
           doc.moveDown(0.3);
-          drawWaterQualityLocationTable(
-            doc,
-            generalInfo.waterQualityImpactAssessment.quarry,
-          );
+          drawWaterQualityLocationTable(doc, quarrySection);
           doc.moveDown(1);
         }
 
         if (generalInfo.waterQualityImpactAssessment.plant) {
+          const plantSection = generalInfo.waterQualityImpactAssessment.plant;
+          const plantLabel = plantSection.locationDescription
+            ? `Plant – ${plantSection.locationDescription}`
+            : 'Plant';
           doc
             .fontSize(11)
             .font('Helvetica-Bold')
-            .text('Plant', leftMargin, doc.y);
+            .text(plantLabel, leftMargin, doc.y);
           doc.moveDown(0.3);
-          drawWaterQualityLocationTable(
-            doc,
-            generalInfo.waterQualityImpactAssessment.plant,
-          );
+          drawWaterQualityLocationTable(doc, plantSection);
           doc.moveDown(1);
         }
 
         if (generalInfo.waterQualityImpactAssessment.quarryAndPlant) {
+          const quarryPlantSection =
+            generalInfo.waterQualityImpactAssessment.quarryAndPlant;
+          const quarryPlantLabel = quarryPlantSection.locationDescription
+            ? `Quarry/Plant – ${quarryPlantSection.locationDescription}`
+            : 'Quarry/Plant';
           doc
             .fontSize(11)
             .font('Helvetica-Bold')
-            .text('Quarry/Plant', leftMargin, doc.y);
+            .text(quarryPlantLabel, leftMargin, doc.y);
           doc.moveDown(0.3);
-          drawWaterQualityLocationTable(
-            doc,
-            generalInfo.waterQualityImpactAssessment.quarryAndPlant,
-          );
+          drawWaterQualityLocationTable(doc, quarryPlantSection);
           doc.moveDown(1);
         }
 
         if (generalInfo.waterQualityImpactAssessment.port) {
+          const portSection = generalInfo.waterQualityImpactAssessment.port;
+          const portLabel = portSection.locationDescription
+            ? `Port – ${portSection.locationDescription}`
+            : portSection.locationInput
+              ? `Port – ${portSection.locationInput}`
+              : 'Port';
           doc
             .fontSize(11)
             .font('Helvetica-Bold')
-            .text('Port', leftMargin, doc.y);
+            .text(portLabel, leftMargin, doc.y);
           doc.moveDown(0.3);
-          drawWaterQualityLocationTable(
-            doc,
-            generalInfo.waterQualityImpactAssessment.port,
-          );
+          drawWaterQualityLocationTable(doc, portSection);
           doc.moveDown(1);
         }
       }

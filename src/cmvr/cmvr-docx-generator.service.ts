@@ -18,6 +18,8 @@ import {
   ImageRun,
 } from 'docx';
 import axios from 'axios';
+import mammoth from 'mammoth';
+import { parse } from 'node-html-parser';
 import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
 import { SupabaseStorageService } from '../storage/supabase-storage.service';
 
@@ -535,6 +537,8 @@ export class CMVRDocxGeneratorService {
   ): Promise<Buffer> {
     const children: (Paragraph | Table)[] = [];
     const attachmentEntries = this.normalizeAttachments(attachments);
+    const eccAttachment = info.eccConditionsAttachment;
+    const eccSupportsMerge = this.supportsDocxMerge(eccAttachment);
 
     children.push(...createGeneralInfoKeyValues(info));
     children.push(
@@ -998,13 +1002,35 @@ export class CMVRDocxGeneratorService {
         spacing: { before: 200, after: 100 },
       }),
     );
-    children.push(
-      createParagraph(
-        'Please see attached Annexes for ECC conditions',
-        false,
-        AlignmentType.CENTER,
-      ),
-    );
+
+    // Add ECC attachment reference if available
+    if (eccAttachment?.fileName) {
+      if (eccSupportsMerge) {
+        children.push(
+          createParagraph(
+            `ECC Conditions document "${eccAttachment.fileName}" is included in the appendix of this report. If any pages appear blank, download the original file from the system.`,
+            false,
+            AlignmentType.CENTER,
+          ),
+        );
+      } else {
+        children.push(
+          createParagraph(
+            `Please see attached document: ${eccAttachment.fileName}`,
+            false,
+            AlignmentType.CENTER,
+          ),
+        );
+      }
+    } else {
+      children.push(
+        createParagraph(
+          'Please see attached Annexes for ECC conditions',
+          false,
+          AlignmentType.CENTER,
+        ),
+      );
+    }
 
     // B.2 Air Quality Impact Assessment
     children.push(
@@ -1372,22 +1398,58 @@ export class CMVRDocxGeneratorService {
       }
     }
 
+    // Add project location images if available
+    if (
+      info.complianceToProjectLocationAndCoverageLimits?.uploadedImages &&
+      Object.keys(
+        info.complianceToProjectLocationAndCoverageLimits.uploadedImages,
+      ).length > 0
+    ) {
+      const locationImagesElements = await this.buildLocationImagesSection(
+        info.complianceToProjectLocationAndCoverageLimits.uploadedImages,
+      );
+      children.push(...locationImagesElements);
+    }
+
+    // Add noise quality monitoring charts if available
+    if (
+      info.noiseQualityImpactAssessment?.uploadedFiles &&
+      info.noiseQualityImpactAssessment.uploadedFiles.length > 0
+    ) {
+      const noiseQualityElements = await this.buildNoiseQualityFilesSection(
+        info.noiseQualityImpactAssessment.uploadedFiles,
+      );
+      children.push(...noiseQualityElements);
+    }
+
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
     // Page size remains 21.59 cm x 33.02 cm
+
+    // If ECC file is attached and it's a DOCX, add a reference note
+    await this.appendEccAppendix(children, eccAttachment);
+
+    // Generate the main CMVR report buffer (without ECC merge if merge failed or no ECC)
     const doc = new Document({
       sections: [
         {
           properties: {
             page: {
               size: { width: 12240, height: 18720 },
-              margin: { top: 1134, left: 1134, bottom: 1418, right: 1021 },
+              margin: {
+                top: 1134,
+                left: 1134,
+                bottom: 1418,
+                right: 1021,
+              },
             },
           },
           children,
         },
       ],
     });
-    return Packer.toBuffer(doc);
+
+    const mainDocBuffer = await Packer.toBuffer(doc);
+    return mainDocBuffer;
   }
 
   private normalizeAttachments(
@@ -1424,8 +1486,8 @@ export class CMVRDocxGeneratorService {
         new TableRow({
           height: { value: 400, rule: 'atLeast' },
           children: [
-            this.createAttachmentCaptionCell(first, index + 1),
-            this.createAttachmentCaptionCell(second, index + 2),
+            this.createAttachmentCaptionCell(first),
+            this.createAttachmentCaptionCell(second),
           ],
         }),
       );
@@ -1492,7 +1554,6 @@ export class CMVRDocxGeneratorService {
 
   private createAttachmentCaptionCell(
     attachment: { path: string; caption?: string } | undefined,
-    displayIndex: number,
   ): TableCell {
     const captionRaw = attachment?.caption?.trim();
     const captionText = captionRaw && captionRaw.length > 0 ? captionRaw : ``;
@@ -1543,5 +1604,794 @@ export class CMVRDocxGeneratorService {
       }
       return null;
     }
+  }
+
+  private supportsDocxMerge(
+    attachment?: {
+      fileName?: string;
+      mimeType?: string;
+    } | null,
+  ): boolean {
+    if (!attachment?.fileName && !attachment?.mimeType) {
+      return false;
+    }
+
+    const mimeType = attachment.mimeType?.toLowerCase() ?? '';
+    const fileName = attachment.fileName?.toLowerCase() ?? '';
+
+    if (fileName.endsWith('.docx')) {
+      return true;
+    }
+
+    if (mimeType.includes('wordprocessingml')) {
+      return true;
+    }
+
+    if (mimeType === 'application/msword') {
+      return true;
+    }
+
+    return false;
+  }
+
+  private createEccAppendixHeader(fileName: string): Paragraph[] {
+    return [
+      new Paragraph({
+        pageBreakBefore: true,
+        children: [
+          new TextRun({
+            text: 'APPENDIX: ECC CONDITIONS DOCUMENT',
+            bold: true,
+            size: 28,
+          }),
+        ],
+        spacing: { before: 200, after: 400 },
+        alignment: AlignmentType.CENTER,
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Document Name: "${fileName}"`,
+            bold: true,
+            size: 24,
+          }),
+        ],
+        spacing: { after: 200 },
+        alignment: AlignmentType.CENTER,
+      }),
+    ];
+  }
+
+  /**
+   * Build location images section for the document
+   */
+  private async buildLocationImagesSection(
+    uploadedImages: Record<string, string>,
+  ): Promise<(Paragraph | Table)[]> {
+    const elements: (Paragraph | Table)[] = [];
+
+    if (!uploadedImages || Object.keys(uploadedImages).length === 0) {
+      return elements;
+    }
+
+    // Add section title
+    elements.push(
+      new Paragraph({
+        children: [createText('PROJECT LOCATION IMAGES', true)],
+        spacing: { before: 300, after: 200 },
+        pageBreakBefore: false,
+      }),
+    );
+
+    // Process each image
+    for (const [fieldKey, storagePath] of Object.entries(uploadedImages)) {
+      if (!storagePath) continue;
+
+      try {
+        const signedUrl = await this.storageService.createSignedDownloadUrl(
+          storagePath,
+          60,
+        );
+        const imageBuffer = await this.fetchImageBuffer(signedUrl);
+
+        if (imageBuffer) {
+          // Add large image (single image, make it big)
+          elements.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imageBuffer,
+                  transformation: {
+                    width: 500, // Large width for single project location image
+                    height: 350, // Maintain aspect ratio
+                  },
+                  type: this.resolveImageType(storagePath),
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 },
+            }),
+          );
+        }
+      } catch (error) {
+        console.error(`Failed to add location image for ${fieldKey}:`, error);
+      }
+    }
+
+    return elements;
+  }
+
+  /**
+   * Build noise quality files section for the document
+   */
+  private async buildNoiseQualityFilesSection(
+    uploadedFiles: Array<{
+      uri: string;
+      name: string;
+      size?: number;
+      mimeType?: string;
+      storagePath?: string;
+    }>,
+  ): Promise<(Paragraph | Table)[]> {
+    const elements: (Paragraph | Table)[] = [];
+
+    if (!uploadedFiles || uploadedFiles.length === 0) {
+      return elements;
+    }
+
+    // Add section title
+    elements.push(
+      new Paragraph({
+        children: [createText('NOISE QUALITY MONITORING CHARTS', true)],
+        spacing: { before: 300, after: 200 },
+        pageBreakBefore: false,
+      }),
+    );
+
+    // Process each file (assuming they are images/charts)
+    for (const file of uploadedFiles) {
+      if (!file.storagePath) continue;
+
+      try {
+        const signedUrl = await this.storageService.createSignedDownloadUrl(
+          file.storagePath,
+          60,
+        );
+        const imageBuffer = await this.fetchImageBuffer(signedUrl);
+
+        if (imageBuffer) {
+          // Add file caption
+          elements.push(
+            new Paragraph({
+              children: [createText(file.name, true)],
+              spacing: { before: 100, after: 100 },
+            }),
+          );
+
+          // Add large chart image
+          elements.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: imageBuffer,
+                  transformation: {
+                    width: 500, // Large width for charts
+                    height: 300,
+                  },
+                  type: this.resolveImageType(file.storagePath || file.name),
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 },
+            }),
+          );
+        }
+      } catch (error) {
+        console.error(`Failed to add noise quality file ${file.name}:`, error);
+      }
+    }
+
+    return elements;
+  }
+
+  private async appendEccAppendix(
+    children: (Paragraph | Table)[],
+    attachment?: {
+      fileName?: string;
+      fileUrl?: string;
+      mimeType?: string;
+      storagePath?: string;
+    } | null,
+  ): Promise<'none' | 'merged' | 'fallback' | 'unsupported'> {
+    if (!attachment?.fileName) {
+      return 'none';
+    }
+
+    const headerParagraphs = this.createEccAppendixHeader(attachment.fileName);
+    let headerPushed = false;
+    const ensureHeader = () => {
+      if (!headerPushed) {
+        children.push(...headerParagraphs);
+        headerPushed = true;
+      }
+    };
+
+    if (!this.supportsDocxMerge(attachment)) {
+      ensureHeader();
+      children.push(
+        new Paragraph({
+          children: [
+            createText(
+              'This ECC Conditions document cannot be merged automatically because it is not a DOCX file. Please download the original file from the system.',
+            ),
+          ],
+          spacing: { after: 200 },
+        }),
+      );
+
+      if (attachment.fileUrl) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Access URL: ',
+                bold: true,
+                size: 22,
+              }),
+              new TextRun({
+                text: attachment.fileUrl,
+                color: '0000EE',
+                size: 20,
+              }),
+            ],
+            spacing: { after: 200 },
+          }),
+        );
+      }
+
+      return 'unsupported';
+    }
+
+    const downloadCandidates = await this.buildDownloadCandidates(attachment);
+    const eccBuffer = await this.fetchFirstAvailableBuffer(downloadCandidates);
+    ensureHeader();
+    if (!eccBuffer) {
+      children.push(
+        new Paragraph({
+          children: [
+            createText(
+              'The ECC Conditions document could not be downloaded for merging. Please open the original file in the system.',
+            ),
+          ],
+          spacing: { after: 200 },
+        }),
+      );
+      return 'fallback';
+    }
+
+    try {
+      const htmlResult = await mammoth.convertToHtml({ buffer: eccBuffer });
+      const htmlWarnings = htmlResult.messages?.filter(
+        (message) => message.type === 'warning',
+      );
+      if (htmlWarnings && htmlWarnings.length > 0) {
+        console.warn(
+          'Warnings while extracting ECC document HTML:',
+          htmlWarnings.map((warning) => warning.message).join('; '),
+        );
+      }
+
+      const docNodes = this.convertHtmlToDocxNodes(htmlResult.value ?? '');
+      let mergedSuccessfully = false;
+
+      if (docNodes.length > 0) {
+        children.push(...docNodes);
+        mergedSuccessfully = true;
+      } else {
+        const textResult = await mammoth.extractRawText({ buffer: eccBuffer });
+        const textWarnings = textResult.messages?.filter(
+          (message) => message.type === 'warning',
+        );
+        if (textWarnings && textWarnings.length > 0) {
+          console.warn(
+            'Warnings while extracting ECC document text:',
+            textWarnings.map((warning) => warning.message).join('; '),
+          );
+        }
+
+        const sanitized = this.sanitizeExtractedText(textResult.value ?? '');
+        if (!sanitized) {
+          children.push(
+            new Paragraph({
+              children: [
+                createText(
+                  'The ECC Conditions document did not contain extractable text. Please download the original file for full details.',
+                ),
+              ],
+              spacing: { after: 200 },
+            }),
+          );
+
+          if (attachment.fileUrl) {
+            children.push(
+              this.createLinkParagraph('Access URL: ', attachment.fileUrl),
+            );
+          }
+
+          return 'fallback';
+        }
+
+        children.push(...this.convertPlainTextToParagraphs(sanitized));
+      }
+
+      children.push(this.createEndOfEccParagraph());
+
+      if (attachment.fileUrl) {
+        children.push(this.createOriginalFileParagraph(attachment.fileUrl));
+      }
+
+      return mergedSuccessfully ? 'merged' : 'fallback';
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Failed to merge ECC document text: ${errorMsg}`);
+
+      children.push(
+        new Paragraph({
+          children: [
+            createText(
+              'The ECC Conditions document could not be merged automatically. Please download the original file from the system.',
+            ),
+          ],
+          spacing: { after: 200 },
+        }),
+      );
+
+      if (attachment.fileUrl) {
+        children.push(
+          this.createLinkParagraph('Access URL: ', attachment.fileUrl),
+        );
+      }
+
+      return 'fallback';
+    }
+  }
+
+  private async fetchFileBuffer(url: string): Promise<Buffer | null> {
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 30000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+      });
+      return Buffer.from(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        console.warn(`ECC document not found (404): ${url}`);
+      } else {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(
+          `Failed to download ECC document from ${url}: ${errorMsg}`,
+        );
+      }
+      return null;
+    }
+  }
+
+  private async buildDownloadCandidates(attachment: {
+    fileUrl?: string;
+    storagePath?: string;
+  }): Promise<Array<{ url: string; source: 'public' | 'signed' }>> {
+    const candidates: Array<{ url: string; source: 'public' | 'signed' }> = [];
+
+    if (attachment.storagePath) {
+      try {
+        const signedUrl = await this.storageService.createSignedDownloadUrl(
+          attachment.storagePath,
+          600,
+        );
+        candidates.push({ url: signedUrl, source: 'signed' });
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(
+          `Failed to create signed download URL for ${attachment.storagePath}: ${errorMsg}`,
+        );
+      }
+    }
+
+    if (attachment.fileUrl) {
+      candidates.push({ url: attachment.fileUrl, source: 'public' });
+    }
+
+    return candidates;
+  }
+
+  private async fetchFirstAvailableBuffer(
+    candidates: Array<{ url: string; source: 'public' | 'signed' }>,
+  ): Promise<Buffer | null> {
+    for (const candidate of candidates) {
+      const buffer = await this.fetchFileBuffer(candidate.url);
+      if (buffer) {
+        if (candidate.source === 'signed') {
+          console.log('ECC document fetched using signed URL.');
+        }
+        return buffer;
+      }
+    }
+    return null;
+  }
+
+  private sanitizeExtractedText(raw: string): string {
+    return raw.replace(/\r/g, '\n').split('\u0000').join('').trim();
+  }
+
+  private convertPlainTextToParagraphs(text: string): Paragraph[] {
+    const paragraphs: Paragraph[] = [];
+    const lines = text.split(/\n/);
+    let blankStreak = 0;
+
+    for (const line of lines) {
+      const normalized = line.replace(/\t/g, '    ');
+      if (normalized.trim().length === 0) {
+        blankStreak += 1;
+        if (blankStreak > 2) {
+          continue;
+        }
+        paragraphs.push(this.createPlainParagraph(''));
+        continue;
+      }
+
+      blankStreak = 0;
+      paragraphs.push(this.createPlainParagraph(normalized.trim()));
+    }
+
+    return paragraphs;
+  }
+
+  private convertHtmlToDocxNodes(html: string): Array<Paragraph | Table> {
+    if (!html || html.trim().length === 0) {
+      return [];
+    }
+
+    const root = parse(html);
+    const body = (
+      root as { querySelector?: (selector: string) => unknown }
+    )?.querySelector?.('body') as { childNodes?: unknown[] } | undefined;
+    const container = (body?.childNodes?.length ? body : root) as {
+      childNodes?: unknown[];
+    };
+
+    if (!container.childNodes || container.childNodes.length === 0) {
+      return [];
+    }
+
+    const output: Array<Paragraph | Table> = [];
+
+    for (const node of container.childNodes) {
+      output.push(...this.convertHtmlNodeToDocx(node));
+    }
+
+    return output;
+  }
+
+  private convertHtmlNodeToDocx(node: unknown): Array<Paragraph | Table> {
+    if (!node) {
+      return [];
+    }
+
+    const htmlNode = node as {
+      nodeType?: number;
+      text?: string;
+      tagName?: string;
+      rawTagName?: string;
+      childNodes?: unknown[];
+    };
+
+    if (htmlNode.nodeType === 3) {
+      const text = (htmlNode.text ?? '').trim();
+      return text.length > 0 ? [this.createPlainParagraph(text)] : [];
+    }
+
+    if (htmlNode.nodeType !== 1) {
+      return [];
+    }
+
+    const tagName = (
+      htmlNode.tagName ??
+      htmlNode.rawTagName ??
+      ''
+    ).toLowerCase();
+    const element = htmlNode as {
+      childNodes?: unknown[];
+      innerText?: string;
+      getAttribute?: (name: string) => string | undefined;
+      querySelectorAll?: (selector: string) => unknown[];
+    };
+
+    switch (tagName) {
+      case 'p':
+        return this.createParagraphsFromInnerText(element.innerText ?? '');
+      case 'h1':
+        return this.createParagraphsFromInnerText(element.innerText ?? '', {
+          bold: true,
+          size: 36,
+          spacing: { before: 300, after: 200 },
+        });
+      case 'h2':
+        return this.createParagraphsFromInnerText(element.innerText ?? '', {
+          bold: true,
+          size: 32,
+          spacing: { before: 260, after: 180 },
+        });
+      case 'h3':
+        return this.createParagraphsFromInnerText(element.innerText ?? '', {
+          bold: true,
+          size: 28,
+          spacing: { before: 240, after: 160 },
+        });
+      case 'h4':
+      case 'h5':
+      case 'h6':
+        return this.createParagraphsFromInnerText(element.innerText ?? '', {
+          bold: true,
+          size: 24,
+          spacing: { before: 220, after: 140 },
+        });
+      case 'br':
+        return [this.createPlainParagraph('')];
+      case 'ul':
+      case 'ol': {
+        const nodes: Paragraph[] = [];
+        const listItems = (element.childNodes ?? []).filter((child) =>
+          this.isTag(child, 'li'),
+        );
+        let index = 1;
+        for (const item of listItems) {
+          const text = this.collectTextContent(item).trim();
+          if (!text) {
+            continue;
+          }
+          const prefix = tagName === 'ol' ? `${index}. ` : '• ';
+          nodes.push(this.createPlainParagraph(`${prefix}${text}`));
+          index += 1;
+        }
+        return nodes;
+      }
+      case 'table': {
+        const table = this.convertHtmlTable(element);
+        return table ? [table] : [];
+      }
+      default: {
+        const children = htmlNode.childNodes ?? [];
+        const collected: Array<Paragraph | Table> = [];
+        for (const child of children) {
+          collected.push(...this.convertHtmlNodeToDocx(child));
+        }
+        return collected;
+      }
+    }
+  }
+
+  private convertHtmlTable(element: {
+    querySelectorAll?: (selector: string) => unknown[];
+  }): Table | null {
+    const querySelectorAll = element.querySelectorAll?.bind(element);
+    const rowElements = querySelectorAll ? querySelectorAll('tr') : [];
+
+    if (!rowElements || rowElements.length === 0) {
+      return null;
+    }
+
+    const rows: TableRow[] = [];
+
+    for (const rowElement of rowElements) {
+      const cellElements = (
+        rowElement as {
+          querySelectorAll?: (selector: string) => unknown[];
+        }
+      ).querySelectorAll?.('th,td');
+
+      if (!cellElements || cellElements.length === 0) {
+        continue;
+      }
+
+      const cells: TableCell[] = [];
+
+      for (const cellElement of cellElements) {
+        const cell = cellElement as {
+          tagName?: string;
+          rawTagName?: string;
+          innerText?: string;
+          getAttribute?: (name: string) => string | undefined;
+        };
+        const isHeader = this.isTag(cell, 'th');
+        const textLines = this.collectTextContent(cell)
+          .split(/\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        const paragraphs =
+          textLines.length > 0
+            ? textLines.map((line) =>
+                this.createPlainParagraph(line, {
+                  bold: isHeader,
+                }),
+              )
+            : [this.createPlainParagraph('')];
+
+        const columnSpanRaw = cell.getAttribute?.('colspan');
+        const rowSpanRaw = cell.getAttribute?.('rowspan');
+        const columnSpan = columnSpanRaw ? Number(columnSpanRaw) : undefined;
+        const rowSpan = rowSpanRaw ? Number(rowSpanRaw) : undefined;
+
+        cells.push(
+          new TableCell({
+            children: paragraphs,
+            columnSpan: columnSpan && columnSpan > 1 ? columnSpan : undefined,
+            rowSpan: rowSpan && rowSpan > 1 ? rowSpan : undefined,
+            verticalAlign: VerticalAlign.CENTER,
+          }),
+        );
+      }
+
+      if (cells.length > 0) {
+        rows.push(new TableRow({ children: cells }));
+      }
+    }
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: createTableBorders(),
+      rows,
+    });
+  }
+
+  private createPlainParagraph(
+    text: string,
+    options?: {
+      bold?: boolean;
+      size?: number;
+      spacing?: { before?: number; after?: number };
+    },
+  ): Paragraph {
+    const spacing = options?.spacing ?? { after: 100 };
+    const trimmed = text ?? '';
+    return new Paragraph({
+      children:
+        trimmed.length > 0
+          ? [createText(trimmed, options?.bold ?? false, options?.size ?? 22)]
+          : [],
+      spacing,
+    });
+  }
+
+  private createParagraphsFromInnerText(
+    text: string,
+    options?: {
+      bold?: boolean;
+      size?: number;
+      spacing?: { before?: number; after?: number };
+    },
+  ): Paragraph[] {
+    const normalized = text
+      .replace(/\r/g, '\n')
+      .split(/\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    if (normalized.length === 0) {
+      return [];
+    }
+
+    return normalized.map((line) => this.createPlainParagraph(line, options));
+  }
+
+  private collectTextContent(node: unknown): string {
+    if (!node) {
+      return '';
+    }
+
+    const htmlNode = node as {
+      nodeType?: number;
+      text?: string;
+      childNodes?: unknown[];
+      tagName?: string;
+      rawTagName?: string;
+    };
+
+    if (htmlNode.nodeType === 3) {
+      return htmlNode.text ?? '';
+    }
+
+    if (htmlNode.nodeType !== 1) {
+      return '';
+    }
+
+    const tag = (htmlNode.tagName ?? htmlNode.rawTagName ?? '').toLowerCase();
+    if (tag === 'br') {
+      return '\n';
+    }
+
+    const children = htmlNode.childNodes ?? [];
+    const parts: string[] = [];
+    for (const child of children) {
+      const content = this.collectTextContent(child);
+      if (content.length > 0) {
+        parts.push(content);
+      }
+    }
+
+    if (tag === 'li' && parts.length > 0) {
+      return `\n• ${parts.join('').trim()}`;
+    }
+
+    return parts.join('');
+  }
+
+  private isTag(node: unknown, tagName: string): boolean {
+    if (!node) {
+      return false;
+    }
+    const htmlNode = node as { tagName?: string; rawTagName?: string };
+    const tag = (htmlNode.tagName ?? htmlNode.rawTagName ?? '').toLowerCase();
+    return tag === tagName.toLowerCase();
+  }
+
+  private createEndOfEccParagraph(): Paragraph {
+    return new Paragraph({
+      spacing: { before: 200, after: 200 },
+      children: [
+        new TextRun({
+          text: 'End of ECC Conditions document.',
+          italics: true,
+          size: 20,
+          color: '666666',
+        }),
+      ],
+    });
+  }
+
+  private createOriginalFileParagraph(url: string): Paragraph {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          text: 'Original file: ',
+          bold: true,
+          size: 20,
+        }),
+        new TextRun({
+          text: url,
+          color: '0000EE',
+          size: 20,
+        }),
+      ],
+      spacing: { after: 100 },
+    });
+  }
+
+  private createLinkParagraph(
+    label: string,
+    url: string,
+    options?: { spacingAfter?: number; labelSize?: number; urlSize?: number },
+  ): Paragraph {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          text: label,
+          bold: true,
+          size: options?.labelSize ?? 22,
+        }),
+        new TextRun({
+          text: url,
+          color: '0000EE',
+          size: options?.urlSize ?? 20,
+        }),
+      ],
+      spacing: { after: options?.spacingAfter ?? 200 },
+    });
   }
 }

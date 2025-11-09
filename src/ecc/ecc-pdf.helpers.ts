@@ -116,14 +116,14 @@ export function toConditionRows(
       } else {
         remark = '';
       }
-      const conditionText = e.condition?.toString() || "";
+      const conditionText = e.condition?.toString() || '';
       const match = conditionText.match(/Condition\s+([0-9]+)\s*:/i);
       const conditionNo = match ? match[1] : BLANK;
-      let condition
-      if(match){
-        condition= e.condition?.toString().split(":")[1]
-      }else{
-        condition =e.condition
+      let condition;
+      if (match) {
+        condition = e.condition?.toString().split(':')[1];
+      } else {
+        condition = e.condition;
       }
 
       // Create the 6-column row
