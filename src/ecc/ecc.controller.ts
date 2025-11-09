@@ -33,12 +33,12 @@ export class EccController {
     return this.eccService.createEccReport(createEccDto);
   }
 
-  @Get('getAllEccReports')
+ @Get('getAllEccReports/:id')
   @ApiOperation({
     summary: 'Retrieve all ECC Reports',
   })
-  findAll() {
-    return this.eccService.findAll();
+  findAll(@Param('createdById') createdById: string) {
+    return this.eccService.findAll(createdById);
   }
 
   @ApiOperation({
