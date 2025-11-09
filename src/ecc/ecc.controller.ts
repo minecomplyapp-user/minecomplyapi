@@ -47,7 +47,6 @@ export class EccController {
   @Get('getEccReportById/:id')
   findOne(@Param('id') id: string) {
     return this.eccService.getEccReportById(id);
-    console.log("Adsasddsd")
   }
 
   //CONDITION NI NA PART
