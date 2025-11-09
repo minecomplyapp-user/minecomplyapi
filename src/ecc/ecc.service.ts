@@ -28,9 +28,11 @@ export class EccService {
 
     return eccReport;
   }
-
-  async findAll() {
+  async findAll(createdById) {
     const rawReports = await this.prisma.eCCReport.findMany({
+      where: { // <--- ADD THIS where CLAUSE
+        createdById: createdById, // <--- FILTER BY the createdById passed to the function
+      },
       select: {
         id: true, // Select the top-level ID
         generalInfo: true, // Select the entire generalInfo JSON object
