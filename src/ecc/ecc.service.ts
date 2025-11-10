@@ -240,11 +240,9 @@ export class EccService {
           // Wait for all conditions to be created concurrently within the transaction
           newConditions = await Promise.all(conditionCreationPromises);
         }
-
         // 5. Return both the parent report and the created conditions.
         return {
           ...newEccReport,
-
           conditions: newConditions,
         };
       },
@@ -335,16 +333,17 @@ export class EccService {
 
   async createEccAndGenerateDocs(
     createEccReportDto: CreateEccReportDto,
-  ): Promise<{ fileName: string; buffer: Buffer }> {
+  ): Promise<{ download_url: string}> {
     // 1. Create the report and all nested conditions.
     // The result contains the parent report object (including its ID) and the conditions array.
     const createdReport = await this.createEccReport(createEccReportDto);
 
     // 2. Safely extract the ID of the newly created report.
     const reportId = createdReport.id;
-
+    const download_url=`ecc/generateEccWord/${reportId}`
+    console.log(download_url)
     // 3. Generate the Word document using the ID.
     // Assuming generateWordReport is responsible for fetching data and creating the file.
-    return await this.generateWordReport(reportId);
+    return {download_url:download_url};
   }
 }
