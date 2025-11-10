@@ -139,28 +139,13 @@ export class EccController {
 
     res.end(buffer);
   }
-
-  @Post('createEccAndGenerateDocs')
-  @ApiOperation({
-    summary: 'Create a new ECC Report and generate docs',
-  })
-  async createEccAndGenerateDocs(
-    @Body() createEccDto: CreateEccReportDto,
-    @Res() res: Response, // <--- FIX: Inject the response object
-  ) {
-    // Await the service call to get the file data (fileName and buffer)
-    const { fileName, buffer } =
-      await this.eccService.createEccAndGenerateDocs(createEccDto);
-
-    // Set headers for file download
-    res.set({
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="${fileName}`,
-      'Content-Length': buffer.length,
-    });
-
-    // End the response stream with the file buffer
-    res.end(buffer);
-  }
+@Post('createEccAndGenerateDocs')
+@ApiOperation({
+  summary: 'Create a new ECC Report and generate docs',
+})
+async createEccAndGenerateDocs(
+  @Body() createEccDto: CreateEccReportDto,
+) {
+  return await this.eccService.createEccAndGenerateDocs(createEccDto);
+}
 }

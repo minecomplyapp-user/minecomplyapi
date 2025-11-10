@@ -65,7 +65,7 @@ export class ECCWordGeneratorService {
           alignment: AlignmentType.LEFT,
           children: [
             new TextRun({
-              text: eccReport.generalInfo.company_name || 'Company Name',
+              text: eccReport.generalInfo.companyName || 'Company Name',
               font: 'Times New Roman',
               size: 24, // 12pt
             }),
