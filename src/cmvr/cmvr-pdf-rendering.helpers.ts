@@ -3055,63 +3055,69 @@ export function drawComplianceToImpactManagementCommitmentsTable(
 
 /**
  * Draw the Air Quality Impact Assessment table with 9 columns including nested headers
- * Updated to handle location-based structure
+ * Updated to handle unified structure with backward compatibility
  */
 export function drawAirQualityImpactAssessmentTable(
   doc: PDFKit.PDFDocument,
   data: {
-    quarry?: {
-      locationInput?: string;
-      parameters?: Array<{
-        name?: string;
-        results?: {
-          inSMR?: {
-            current?: string;
-            previous?: string;
-          };
-          mmtConfirmatorySampling?: {
-            current?: string;
-            previous?: string;
-          };
+    // New structure: location descriptions as strings
+    quarry?:
+      | string
+      | {
+          locationInput?: string;
+          parameters?: Array<{
+            name?: string;
+            results?: {
+              inSMR?: {
+                current?: string;
+                previous?: string;
+              };
+              mmtConfirmatorySampling?: {
+                current?: string;
+                previous?: string;
+              };
+            };
+            eqpl?: {
+              redFlag?: string;
+              action?: string;
+              limit?: string;
+            };
+            remarks?: string;
+          }>;
+          samplingDate?: string;
+          weatherAndWind?: string;
+          explanationForConfirmatorySampling?: string;
+          overallAssessment?: string;
         };
-        eqpl?: {
-          redFlag?: string;
-          action?: string;
-          limit?: string;
+    plant?:
+      | string
+      | {
+          locationInput?: string;
+          parameters?: Array<{
+            name?: string;
+            results?: {
+              inSMR?: {
+                current?: string;
+                previous?: string;
+              };
+              mmtConfirmatorySampling?: {
+                current?: string;
+                previous?: string;
+              };
+            };
+            eqpl?: {
+              redFlag?: string;
+              action?: string;
+              limit?: string;
+            };
+            remarks?: string;
+          }>;
+          samplingDate?: string;
+          weatherAndWind?: string;
+          explanationForConfirmatorySampling?: string;
+          overallAssessment?: string;
         };
-        remarks?: string;
-      }>;
-      samplingDate?: string;
-      weatherAndWind?: string;
-      explanationForConfirmatorySampling?: string;
-      overallAssessment?: string;
-    };
-    plant?: {
-      locationInput?: string;
-      parameters?: Array<{
-        name?: string;
-        results?: {
-          inSMR?: {
-            current?: string;
-            previous?: string;
-          };
-          mmtConfirmatorySampling?: {
-            current?: string;
-            previous?: string;
-          };
-        };
-        eqpl?: {
-          redFlag?: string;
-          action?: string;
-          limit?: string;
-        };
-        remarks?: string;
-      }>;
-      samplingDate?: string;
-      weatherAndWind?: string;
-      explanationForConfirmatorySampling?: string;
-      overallAssessment?: string;
-    };
+    quarryPlant?: string;
     quarryAndPlant?: {
       locationInput?: string;
       parameters?: Array<{
@@ -3138,8 +3144,43 @@ export function drawAirQualityImpactAssessmentTable(
       explanationForConfirmatorySampling?: string;
       overallAssessment?: string;
     };
-    port?: {
-      locationInput?: string;
+    port?:
+      | string
+      | {
+          locationInput?: string;
+          parameters?: Array<{
+            name?: string;
+            results?: {
+              inSMR?: {
+                current?: string;
+                previous?: string;
+              };
+              mmtConfirmatorySampling?: {
+                current?: string;
+                previous?: string;
+              };
+            };
+            eqpl?: {
+              redFlag?: string;
+              action?: string;
+              limit?: string;
+            };
+            remarks?: string;
+          }>;
+          samplingDate?: string;
+          weatherAndWind?: string;
+          explanationForConfirmatorySampling?: string;
+          overallAssessment?: string;
+        };
+
+    // Checkbox states (new structure)
+    quarryEnabled?: boolean;
+    plantEnabled?: boolean;
+    quarryPlantEnabled?: boolean;
+    portEnabled?: boolean;
+
+    // Unified air quality data (new structure)
+    airQuality?: {
       parameters?: Array<{
         name?: string;
         results?: {
@@ -3730,18 +3771,45 @@ export function drawAirQualityImpactAssessmentTable(
     doc.moveDown(0.5);
   }; // End of drawLocationAirQualityTable helper function
 
-  // Draw tables for each location that has data
-  if (data.quarry) {
-    drawLocationAirQualityTable('Quarry', data.quarry);
+  // NEW STRUCTURE: Render unified airQuality table if present
+  if ((data as any).airQuality) {
+    // Build location label from enabled checkboxes and descriptions
+    const labels: string[] = [];
+    if (
+      (data as any).quarryEnabled &&
+      typeof (data as any).quarry === 'string'
+    ) {
+      labels.push(`Quarry – ${(data as any).quarry}`);
+    }
+    if ((data as any).plantEnabled && typeof (data as any).plant === 'string') {
+      labels.push(`Plant – ${(data as any).plant}`);
+    }
+    if (
+      (data as any).quarryPlantEnabled &&
+      typeof (data as any).quarryPlant === 'string'
+    ) {
+      labels.push(`Quarry/Plant – ${(data as any).quarryPlant}`);
+    }
+    if ((data as any).portEnabled && typeof (data as any).port === 'string') {
+      labels.push(`Port – ${(data as any).port}`);
+    }
+    const combinedLabel = labels.join('; ') || 'Air Quality Monitoring';
+    drawLocationAirQualityTable(combinedLabel, (data as any).airQuality);
   }
-  if (data.plant) {
-    drawLocationAirQualityTable('Plant', data.plant);
-  }
-  if (data.quarryAndPlant) {
-    drawLocationAirQualityTable('Quarry & Plant', data.quarryAndPlant);
-  }
-  if (data.port) {
-    drawLocationAirQualityTable('Port', data.port);
+  // OLD STRUCTURE: Draw tables for each location that has data (backward compatibility)
+  else {
+    if (data.quarry && typeof data.quarry !== 'string') {
+      drawLocationAirQualityTable('Quarry', data.quarry);
+    }
+    if (data.plant && typeof data.plant !== 'string') {
+      drawLocationAirQualityTable('Plant', data.plant);
+    }
+    if (data.quarryAndPlant) {
+      drawLocationAirQualityTable('Quarry & Plant', data.quarryAndPlant);
+    }
+    if (data.port && typeof data.port !== 'string') {
+      drawLocationAirQualityTable('Port', data.port);
+    }
   }
 }
 

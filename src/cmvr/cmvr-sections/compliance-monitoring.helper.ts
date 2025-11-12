@@ -552,17 +552,42 @@ export function createAirQualitySection(
     return locationOut;
   };
 
-  if (air.quarry) {
-    out.push(...buildLocationTable(air.quarry, 'Quarry'));
+  // NEW STRUCTURE: Use unified airQuality if present
+  if ((air as any).airQuality) {
+    // Build location name from enabled checkboxes and descriptions
+    const labels: string[] = [];
+    if ((air as any).quarryEnabled && typeof (air as any).quarry === 'string') {
+      labels.push(`Quarry – ${(air as any).quarry}`);
+    }
+    if ((air as any).plantEnabled && typeof (air as any).plant === 'string') {
+      labels.push(`Plant – ${(air as any).plant}`);
+    }
+    if (
+      (air as any).quarryPlantEnabled &&
+      typeof (air as any).quarryPlant === 'string'
+    ) {
+      labels.push(`Quarry/Plant – ${(air as any).quarryPlant}`);
+    }
+    if ((air as any).portEnabled && typeof (air as any).port === 'string') {
+      labels.push(`Port – ${(air as any).port}`);
+    }
+    const locationName = labels.join('; ') || 'Air Quality Monitoring';
+    out.push(...buildLocationTable((air as any).airQuality, locationName));
   }
-  if (air.plant) {
-    out.push(...buildLocationTable(air.plant, 'Plant'));
-  }
-  if (air.quarryAndPlant) {
-    out.push(...buildLocationTable(air.quarryAndPlant, 'Quarry & Plant'));
-  }
-  if (air.port) {
-    out.push(...buildLocationTable(air.port, 'Port'));
+  // OLD STRUCTURE: Render each location separately (backward compatibility)
+  else {
+    if (air.quarry && typeof air.quarry !== 'string') {
+      out.push(...buildLocationTable(air.quarry, 'Quarry'));
+    }
+    if (air.plant && typeof air.plant !== 'string') {
+      out.push(...buildLocationTable(air.plant, 'Plant'));
+    }
+    if (air.quarryAndPlant) {
+      out.push(...buildLocationTable(air.quarryAndPlant, 'Quarry & Plant'));
+    }
+    if (air.port && typeof air.port !== 'string') {
+      out.push(...buildLocationTable(air.port, 'Port'));
+    }
   }
 
   return out;
@@ -783,10 +808,37 @@ export function createWaterQualitySection(
   };
 
   // Generate sections for each location
-  if (wq.quarry) {
+  // Handle new structure: waterQuality unified table with quarry/plant/quarryPlant as strings
+  if (wq.waterQuality) {
+    const locations: string[] = [];
+    if (wq.quarryEnabled && wq.quarry) {
+      locations.push(
+        typeof wq.quarry === 'string'
+          ? `Quarry – ${wq.quarry}`
+          : `Quarry – ${wq.quarry.locationDescription || ''}`,
+      );
+    }
+    if (wq.plantEnabled && wq.plant) {
+      locations.push(
+        typeof wq.plant === 'string'
+          ? `Plant – ${wq.plant}`
+          : `Plant – ${wq.plant.locationDescription || ''}`,
+      );
+    }
+    if (wq.quarryPlantEnabled && wq.quarryPlant) {
+      locations.push(`Quarry/Plant – ${wq.quarryPlant}`);
+    }
+
+    const locationName =
+      locations.length > 0 ? locations.join('; ') : 'Water Quality';
+    out.push(...buildLocationTable(wq.waterQuality, locationName));
+  }
+
+  // Legacy support: handle old structure where quarry/plant are objects
+  if (wq.quarry && typeof wq.quarry !== 'string') {
     out.push(...buildLocationTable(wq.quarry, 'Quarry'));
   }
-  if (wq.plant) {
+  if (wq.plant && typeof wq.plant !== 'string') {
     out.push(...buildLocationTable(wq.plant, 'Plant'));
   }
   if (wq.quarryAndPlant) {
