@@ -3,6 +3,10 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cron from 'node-cron';
+import fetch from 'node-fetch';
+
+
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
@@ -52,4 +56,18 @@ async function bootstrap() {
 
   await app.listen(port, '0.0.0.0');
 }
+
+  const appUrl =`https://minecomplyapi.onrender.com/api`;
+
+ console.log(`Keep-alive pings enabled for: ${appUrl}`);
+
+cron.schedule('*/10 * * * *', async () => {
+  try {
+    const res = await fetch(`${appUrl}/health`);
+    console.log(`🔁 Keep-alive ping: ${res.status}`);
+  } catch (err) {
+    console.error('❌ Keep-alive ping failed:', err.message);
+  }
+});
+
 void bootstrap();
