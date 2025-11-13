@@ -182,16 +182,16 @@ export function createKeyValueTable(rows: Array<[string, string]>): Table {
         height: { value: 400, rule: 'atLeast' },
         children: [
           new TableCell({
-            children: [createParagraph(`${key}:`, true, AlignmentType.CENTER)],
+            children: [createParagraph(`${key}:`, true, AlignmentType.LEFT)],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 40, type: WidthType.PERCENTAGE },
+            width: { size: 35, type: WidthType.PERCENTAGE },
           }),
           new TableCell({
             children: [
-              createParagraph(value || 'N/A', false, AlignmentType.CENTER),
+              createParagraph(value || 'N/A', false, AlignmentType.LEFT),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 60, type: WidthType.PERCENTAGE },
+            width: { size: 65, type: WidthType.PERCENTAGE },
           }),
         ],
       }),

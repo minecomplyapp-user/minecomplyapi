@@ -472,29 +472,73 @@ class AirQualityLocationDataDto {
 }
 
 class AirQualityImpactAssessmentDto {
+  // New structure: location descriptions as strings (for backward compatibility with old structure as objects)
+  @ApiProperty({
+    required: false,
+    description:
+      'Quarry location description (new structure) or location data object (old structure)',
+  })
+  @IsOptional()
+  quarry?: string | AirQualityLocationDataDto;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Plant location description (new structure) or location data object (old structure)',
+  })
+  @IsOptional()
+  plant?: string | AirQualityLocationDataDto;
+
+  @ApiProperty({
+    required: false,
+    description: 'Quarry & Plant location description (new structure)',
+  })
+  @IsOptional()
+  @IsString()
+  quarryPlant?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Port location description (new structure) or location data object (old structure)',
+  })
+  @IsOptional()
+  port?: string | AirQualityLocationDataDto;
+
+  // Checkbox states for enabling/disabling inputs
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  quarryEnabled?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  plantEnabled?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  quarryPlantEnabled?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  portEnabled?: boolean;
+
+  // Unified air quality monitoring data (new structure)
   @ApiProperty({ type: AirQualityLocationDataDto, required: false })
   @IsOptional()
   @ValidateNested()
   @Type(() => AirQualityLocationDataDto)
-  quarry?: AirQualityLocationDataDto;
+  airQuality?: AirQualityLocationDataDto;
 
-  @ApiProperty({ type: AirQualityLocationDataDto, required: false })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => AirQualityLocationDataDto)
-  plant?: AirQualityLocationDataDto;
-
+  // For backward compatibility: keep old quarryAndPlant field
   @ApiProperty({ type: AirQualityLocationDataDto, required: false })
   @IsOptional()
   @ValidateNested()
   @Type(() => AirQualityLocationDataDto)
   quarryAndPlant?: AirQualityLocationDataDto;
-
-  @ApiProperty({ type: AirQualityLocationDataDto, required: false })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => AirQualityLocationDataDto)
-  port?: AirQualityLocationDataDto;
 }
 
 class WaterQualityReadingDto {
@@ -635,18 +679,55 @@ class WaterQualityLocationDataDto {
 }
 
 class WaterQualityImpactAssessmentDto {
+  // New structure: location descriptions as strings
+  @ApiProperty({
+    required: false,
+    description: 'Quarry location description (new structure)',
+  })
+  @IsOptional()
+  @IsString()
+  quarry?: string | WaterQualityLocationDataDto;
+
+  @ApiProperty({
+    required: false,
+    description: 'Plant location description (new structure)',
+  })
+  @IsOptional()
+  @IsString()
+  plant?: string | WaterQualityLocationDataDto;
+
+  @ApiProperty({
+    required: false,
+    description: 'Quarry & Plant location description (new structure)',
+  })
+  @IsOptional()
+  @IsString()
+  quarryPlant?: string;
+
+  // Checkbox states for enabling/disabling inputs
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  quarryEnabled?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  plantEnabled?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  quarryPlantEnabled?: boolean;
+
+  // New structure: unified water quality data
   @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
   @IsOptional()
   @ValidateNested()
   @Type(() => WaterQualityLocationDataDto)
-  quarry?: WaterQualityLocationDataDto;
+  waterQuality?: WaterQualityLocationDataDto;
 
-  @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => WaterQualityLocationDataDto)
-  plant?: WaterQualityLocationDataDto;
-
+  // Old structure support (deprecated)
   @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
   @IsOptional()
   @ValidateNested()

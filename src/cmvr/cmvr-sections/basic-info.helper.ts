@@ -703,7 +703,6 @@ export function createFundStatusSections(
   if (sections.length === 0) return elements;
 
   // Build a single consolidated table with a left label column.
-  const LABEL_COL_WIDTH = 15; // %
   const NAME_COL = 30;
   const ACCT_COL = 25;
   const AMOUNT_COL = 15;
@@ -711,11 +710,25 @@ export function createFundStatusSections(
 
   const rows: TableRow[] = [];
 
-  // Compute total number of rows to span the label cell across:
-  // For each section: 1 (section title header) + 1 (column header) + N (data rows)
-  const totalRowsToSpan = sections.reduce(
-    (sum, s) => sum + 1 + 1 + s.list.length,
-    0,
+  // Add a full-width header row for "RCF/ MTF and FMRDF Status"
+  rows.push(
+    new TableRow({
+      height: { value: 600, rule: 'atLeast' },
+      children: [
+        new TableCell({
+          children: [
+            createParagraph(
+              'RCF/ MTF and FMRDF Status',
+              true,
+              AlignmentType.CENTER,
+            ),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+          columnSpan: 5, // Span all 5 columns (label + 4 data columns)
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        }),
+      ],
+    }),
   );
 
   const addColumnHeader = () =>
@@ -761,55 +774,23 @@ export function createFundStatusSections(
       ],
     });
 
-  let isFirstRow = true;
   for (const section of sections) {
-    // Section title row
-    if (isFirstRow) {
-      rows.push(
-        new TableRow({
-          height: { value: 600, rule: 'atLeast' },
-          children: [
-            new TableCell({
-              children: [
-                createParagraph(
-                  'RCF/ MTF and FMRDF Status',
-                  true,
-                  AlignmentType.CENTER,
-                ),
-              ],
-              verticalAlign: VerticalAlign.CENTER,
-              rowSpan: totalRowsToSpan,
-              width: { size: LABEL_COL_WIDTH, type: WidthType.PERCENTAGE },
-            }),
-            new TableCell({
-              children: [
-                createParagraph(section.title, true, AlignmentType.CENTER),
-              ],
-              verticalAlign: VerticalAlign.CENTER,
-              columnSpan: 4,
-              width: { size: 85, type: WidthType.PERCENTAGE },
-            }),
-          ],
-        }),
-      );
-      isFirstRow = false;
-    } else {
-      rows.push(
-        new TableRow({
-          height: { value: 600, rule: 'atLeast' },
-          children: [
-            new TableCell({
-              children: [
-                createParagraph(section.title, true, AlignmentType.CENTER),
-              ],
-              verticalAlign: VerticalAlign.CENTER,
-              columnSpan: 4,
-              width: { size: 85, type: WidthType.PERCENTAGE },
-            }),
-          ],
-        }),
-      );
-    }
+    // Section title row (e.g., "REHABILITATION CASH FUND")
+    rows.push(
+      new TableRow({
+        height: { value: 600, rule: 'atLeast' },
+        children: [
+          new TableCell({
+            children: [
+              createParagraph(section.title, true, AlignmentType.CENTER),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+            columnSpan: 4, // Span all 4 data columns
+            width: { size: 85, type: WidthType.PERCENTAGE },
+          }),
+        ],
+      }),
+    );
 
     // Column header row for this section
     rows.push(addColumnHeader());
@@ -946,7 +927,24 @@ export function createAdditionalInfo(
   }
 
   if (rows.length > 0) {
+    // Add spacing before the table
+    elements.push(
+      new Paragraph({
+        text: '',
+        spacing: { before: 0, after: 0 },
+      }),
+    );
+
+    // Add the table
     elements.push(createKeyValueTable(rows));
+
+    // Add spacing after the table
+    elements.push(
+      new Paragraph({
+        text: '',
+        spacing: { before: 200, after: 400 },
+      }),
+    );
   }
 
   return elements;
