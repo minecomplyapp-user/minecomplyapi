@@ -87,7 +87,7 @@ export function toConditionRows(
       // 3. Map the individual condition object (e) to a 6-column row array
       const status = e.status ? e.status.toLowerCase() : '';
 
-      const CHECK_MARK = 'V';
+      const CHECK_MARK = '✓';
       const BLANK = '';
 
       const statusComplied = status === 'complied' ? CHECK_MARK : BLANK;
