@@ -1,7 +1,4 @@
-import { Injectable } from '@nestjs/common';
 import {
-  Document,
-  Packer,
   Paragraph,
   TextRun,
   AlignmentType,
@@ -9,252 +6,397 @@ import {
   TableRow,
   TableCell,
   WidthType,
-  BorderStyle,
   VerticalAlign,
 } from 'docx';
 import type { CMVRGeneralInfo } from '../cmvr-pdf-generator.service';
-import {
-  createFundTable,
-  createTableBorders,
-  createText,
-  createParagraph,
-  createKeyValueTable,
-} from './general-use.helper';
+import { createTableBorders } from './general-use.helper';
 
 export function createExecutiveSummaryTable(
   summary: NonNullable<CMVRGeneralInfo['executiveSummaryOfCompliance']>,
 ): Table {
   const rows: TableRow[] = [];
 
-  const yn = (v: boolean | undefined) => (v ? 'Yes' : v === false ? 'No' : '-');
+  const checkmark = (v: boolean | undefined) => (v ? '✓' : '');
 
-  // EPEP Commitments
-  if (summary.complianceWithEpepCommitments) {
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [
-              createParagraph('Compliance with EPEP Commitments', true),
-            ],
-            columnSpan: 4,
-          }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('Safety')] }),
-          new TableCell({
-            children: [
-              createParagraph(yn(summary.complianceWithEpepCommitments.safety)),
-            ],
-          }),
-          new TableCell({ children: [createParagraph('Social')] }),
-          new TableCell({
-            children: [
-              createParagraph(yn(summary.complianceWithEpepCommitments.social)),
-            ],
-          }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [createParagraph('Rehabilitation')],
-          }),
-          new TableCell({
-            children: [
-              createParagraph(
-                yn(summary.complianceWithEpepCommitments.rehabilitation),
-              ),
-            ],
-          }),
-          new TableCell({ children: [createParagraph('Remarks')] }),
-          new TableCell({
-            children: [
-              createParagraph(
-                summary.complianceWithEpepCommitments.remarks || '-',
-              ),
-            ],
-          }),
-        ],
-      }),
-    );
-  }
+  // Helper functions for consistent text formatting (Arial 11pt = 22 half-points)
+  const createTextRun = (text: string, bold = false) => {
+    return new TextRun({
+      text,
+      bold,
+      font: 'Arial',
+      size: 22, // 11pt
+    });
+  };
 
-  // SDMP Commitments
-  if (summary.complianceWithSdmpCommitments) {
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [
-              createParagraph('Compliance with SDMP Commitments', true),
-            ],
-            columnSpan: 4,
-          }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('Complied')] }),
-          new TableCell({
-            children: [
-              createParagraph(
-                yn(summary.complianceWithSdmpCommitments.complied),
-              ),
-            ],
-          }),
-          new TableCell({ children: [createParagraph('Not Complied')] }),
-          new TableCell({
-            children: [
-              createParagraph(
-                yn(summary.complianceWithSdmpCommitments.notComplied),
-              ),
-            ],
-          }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('Remarks')] }),
-          new TableCell({
-            children: [
-              createParagraph(
-                summary.complianceWithSdmpCommitments.remarks || '-',
-              ),
-            ],
-            columnSpan: 3,
-          }),
-        ],
-      }),
-    );
-  }
+  // Cell padding in twips (1pt = 20 twips, so 5pt = 100 twips)
+  const cellMargins = {
+    top: 100,
+    bottom: 100,
+    left: 100,
+    right: 100,
+  };
 
-  // Complaints Management
-  if (summary.complaintsManagement) {
-    const c = summary.complaintsManagement;
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [createParagraph('Complaints Management', true)],
-            columnSpan: 4,
-          }),
-        ],
-      }),
-    );
-    const addPair = (k: string, v?: boolean) =>
-      rows.push(
-        new TableRow({
+  const createLeftAlignedCell = (
+    content: TextRun[],
+    opts: Record<string, unknown> = {},
+  ) => {
+    return new TableCell({
+      children: [
+        new Paragraph({
+          children: content,
+          alignment: AlignmentType.LEFT,
+        }),
+      ],
+      verticalAlign: VerticalAlign.CENTER,
+      margins: cellMargins,
+      ...opts,
+    });
+  };
+
+  const createCenteredCell = (
+    text: string,
+    opts: Record<string, unknown> = {},
+  ) => {
+    return new TableCell({
+      children: [
+        new Paragraph({
+          children: [createTextRun(text)],
+          alignment: AlignmentType.CENTER,
+        }),
+      ],
+      verticalAlign: VerticalAlign.CENTER,
+      margins: cellMargins,
+      ...opts,
+    });
+  };
+
+  // Header Row - "Requirements" and "Remarks" span 2 rows vertically
+  rows.push(
+    new TableRow({
+      children: [
+        new TableCell({
           children: [
-            new TableCell({ children: [createParagraph(k)] }),
-            new TableCell({
-              children: [createParagraph(yn(v))],
-              columnSpan: 3,
+            new Paragraph({
+              children: [createTextRun('Requirements', true)],
+              alignment: AlignmentType.CENTER,
             }),
           ],
+          columnSpan: 2,
+          rowSpan: 2,
+          width: { size: 40, type: WidthType.PERCENTAGE },
+          verticalAlign: VerticalAlign.CENTER,
+          margins: cellMargins,
         }),
-      );
-    addPair('N/A for all', c.naForAll);
-    addPair('Complaint Receiving Setup', c.complaintReceivingSetup);
-    addPair('Case Investigation', c.caseInvestigation);
-    addPair('Implementation of Control', c.implementationOfControl);
-    addPair(
-      'Communication w/ Complainant/Public',
-      c.communicationWithComplainantOrPublic,
-    );
-    addPair('Complaint Documentation', c.complaintDocumentation);
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [createTextRun('Complied?', true)],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+          columnSpan: 2,
+          width: { size: 20, type: WidthType.PERCENTAGE },
+          verticalAlign: VerticalAlign.CENTER,
+          margins: cellMargins,
+        }),
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                createTextRun('Remarks/ ECC or EPEP Condition #', true),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+          rowSpan: 2,
+          width: { size: 40, type: WidthType.PERCENTAGE },
+          verticalAlign: VerticalAlign.CENTER,
+          margins: cellMargins,
+        }),
+      ],
+    }),
+  );
+
+  // Sub-header row - Y and N columns only
+  rows.push(
+    new TableRow({
+      children: [
+        createCenteredCell('Y', {
+          width: { size: 10, type: WidthType.PERCENTAGE },
+        }),
+        createCenteredCell('N', {
+          width: { size: 10, type: WidthType.PERCENTAGE },
+        }),
+      ],
+    }),
+  );
+
+  // EPEP Commitments - Category spans 3 rows vertically
+  if (summary.complianceWithEpepCommitments) {
+    const epep = summary.complianceWithEpepCommitments;
+
+    // Row 1: Safety
     rows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [createParagraph('Remarks')] }),
           new TableCell({
-            children: [createParagraph(c.remarks || '-')],
-            columnSpan: 3,
+            children: [
+              new Paragraph({
+                children: [
+                  createTextRun('Compliance with EPEP Commitments', true),
+                ],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            rowSpan: 3,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
+          }),
+          createLeftAlignedCell([createTextRun('Safety')], {
+            width: { size: 20, type: WidthType.PERCENTAGE },
+          }),
+          createCenteredCell(checkmark(epep.safety === true)),
+          createCenteredCell(checkmark(epep.safety === false)),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [createTextRun(epep.remarks || '')],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            rowSpan: 3,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
+          }),
+        ],
+      }),
+    );
+
+    // Row 2: Social
+    rows.push(
+      new TableRow({
+        children: [
+          createLeftAlignedCell([createTextRun('Social')]),
+          createCenteredCell(checkmark(epep.social === true)),
+          createCenteredCell(checkmark(epep.social === false)),
+        ],
+      }),
+    );
+
+    // Row 3: Rehabilitation
+    rows.push(
+      new TableRow({
+        children: [
+          createLeftAlignedCell([createTextRun('Rehabilitation')]),
+          createCenteredCell(checkmark(epep.rehabilitation === true)),
+          createCenteredCell(checkmark(epep.rehabilitation === false)),
+        ],
+      }),
+    );
+  }
+
+  // SDMP Commitments - Single row, category and detail merged horizontally
+  if (summary.complianceWithSdmpCommitments) {
+    const sdmp = summary.complianceWithSdmpCommitments;
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  createTextRun('Compliance with SDMP Commitments', true),
+                ],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            columnSpan: 2,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
+          }),
+          createCenteredCell(checkmark(sdmp.complied === true)),
+          createCenteredCell(checkmark(sdmp.complied === false)),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [createTextRun(sdmp.remarks || '')],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
           }),
         ],
       }),
     );
   }
 
-  // Accountability
+  // Complaints Management - Category spans 5 rows vertically
+  if (summary.complaintsManagement) {
+    const c = summary.complaintsManagement;
+
+    // Row 1: Complaint Receiving Setup
+    rows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [createTextRun('Complaints Management', true)],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            rowSpan: 5,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
+          }),
+          createLeftAlignedCell([createTextRun('Complaint receiving set-up')], {
+            width: { size: 20, type: WidthType.PERCENTAGE },
+          }),
+          createCenteredCell(checkmark(c.complaintReceivingSetup === true)),
+          createCenteredCell(checkmark(c.complaintReceivingSetup === false)),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [createTextRun(c.remarks || '')],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            rowSpan: 5,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
+          }),
+        ],
+      }),
+    );
+
+    // Row 2: Case Investigation
+    rows.push(
+      new TableRow({
+        children: [
+          createLeftAlignedCell([createTextRun('Case investigation')]),
+          createCenteredCell(checkmark(c.caseInvestigation === true)),
+          createCenteredCell(checkmark(c.caseInvestigation === false)),
+        ],
+      }),
+    );
+
+    // Row 3: Implementation of Control
+    rows.push(
+      new TableRow({
+        children: [
+          createLeftAlignedCell([createTextRun('Implementation of control')]),
+          createCenteredCell(checkmark(c.implementationOfControl === true)),
+          createCenteredCell(checkmark(c.implementationOfControl === false)),
+        ],
+      }),
+    );
+
+    // Row 4: Communication with Complainant/Public
+    rows.push(
+      new TableRow({
+        children: [
+          createLeftAlignedCell([
+            createTextRun('Communication with complainant/public'),
+          ]),
+          createCenteredCell(
+            checkmark(c.communicationWithComplainantOrPublic === true),
+          ),
+          createCenteredCell(
+            checkmark(c.communicationWithComplainantOrPublic === false),
+          ),
+        ],
+      }),
+    );
+
+    // Row 5: Complaint Documentation
+    rows.push(
+      new TableRow({
+        children: [
+          createLeftAlignedCell([createTextRun('Complaint documentation')]),
+          createCenteredCell(checkmark(c.complaintDocumentation === true)),
+          createCenteredCell(checkmark(c.complaintDocumentation === false)),
+        ],
+      }),
+    );
+  }
+
+  // Accountability - Single row, category and detail merged horizontally
   if (summary.accountability) {
+    const acc = summary.accountability;
     rows.push(
       new TableRow({
         children: [
           new TableCell({
-            children: [createParagraph('Accountability', true)],
-            columnSpan: 4,
+            children: [
+              new Paragraph({
+                children: [
+                  createTextRun(
+                    'Accountability – qualified personnel shall be assigned to responsible for the implementation of the approved ECC or EPEP conditions and other commitments',
+                    true,
+                  ),
+                ],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            columnSpan: 2,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
           }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('Complied')] }),
+          createCenteredCell(checkmark(acc.complied === true)),
+          createCenteredCell(checkmark(acc.complied === false)),
           new TableCell({
-            children: [createParagraph(yn(summary.accountability.complied))],
-          }),
-          new TableCell({ children: [createParagraph('Not Complied')] }),
-          new TableCell({
-            children: [createParagraph(yn(summary.accountability.notComplied))],
-          }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('Remarks')] }),
-          new TableCell({
-            children: [createParagraph(summary.accountability.remarks || '-')],
-            columnSpan: 3,
+            children: [
+              new Paragraph({
+                children: [createTextRun(acc.remarks || '')],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
           }),
         ],
       }),
     );
   }
 
-  // Others
+  // Others - Single row, category and detail merged horizontally
   if (summary.others) {
     rows.push(
       new TableRow({
         children: [
           new TableCell({
-            children: [createParagraph('Others', true)],
-            columnSpan: 4,
+            children: [
+              new Paragraph({
+                children: [createTextRun('Others, please specify', true)],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            columnSpan: 2,
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
           }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('Specify')] }),
+          createCenteredCell(checkmark(summary.others.na !== true)),
+          createCenteredCell(checkmark(summary.others.na === true)),
           new TableCell({
-            children: [createParagraph(summary.others.specify || '-')],
-            columnSpan: 3,
-          }),
-        ],
-      }),
-    );
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ children: [createParagraph('N/A')] }),
-          new TableCell({
-            children: [createParagraph(yn(summary.others.na))],
-            columnSpan: 3,
+            children: [
+              new Paragraph({
+                children: [createTextRun(summary.others.specify || '')],
+                alignment: AlignmentType.LEFT,
+              }),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 40, type: WidthType.PERCENTAGE },
+            margins: cellMargins,
           }),
         ],
       }),
