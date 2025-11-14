@@ -1814,21 +1814,40 @@ export function createWaterQualitySection(
     out.push(...buildLocationTable(wq.quarryAndPlant, 'Quarry/Plant'));
   }
   if (wq.port) {
-    const portLabel = `Port – ${wq.port.locationDescription || wq.port.locationInput || ''}`;
-    out.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: portLabel,
-            bold: true,
-            font: 'Arial',
-            size: 22,
-          }),
-        ],
-        spacing: { before: 200, after: 100 },
-      }),
-    );
-    out.push(...buildLocationTable(wq.port, 'Water Quality'));
+    if (typeof wq.port === 'string') {
+      // If port is a string, just add it as a label
+      const portLabel = `Port – ${wq.port}`;
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: portLabel,
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          spacing: { before: 200, after: 100 },
+        }),
+      );
+    } else {
+      // If port is an object with location data
+      const portLabel = `Port – ${wq.port.locationDescription || wq.port.locationInput || ''}`;
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: portLabel,
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          spacing: { before: 200, after: 100 },
+        }),
+      );
+      out.push(...buildLocationTable(wq.port, 'Water Quality'));
+    }
   }
 
   return out;
