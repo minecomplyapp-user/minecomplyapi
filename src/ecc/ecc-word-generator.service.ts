@@ -55,7 +55,11 @@ export class ECCWordGeneratorService {
   ): Promise<{ fileName: string; buffer: Buffer }> {
     eccReport.conditions = eCCConditions;
     const hasConditions = eccReport.conditions?.length > 0;
-    const conditionsBySection = toConditionRows(eccReport.conditions);
+    const result = toConditionRows(eccReport.conditions);
+    const conditionsBySection = result.rows;
+    const counts = result.counts;
+   console.log('counts', counts);
+
     const children: (Paragraph | Table)[] = [];
 
     const columnWidths = [1474, 3088, 601, 601, 601, 2706]; // 6 columns (DXA)
@@ -130,6 +134,14 @@ export class ECCWordGeneratorService {
         });
 
         children.push(table, new Paragraph({ text: '' }));
+        // console.log('counts inside loop', counts['1'].complied);
+        children.push(new Paragraph({ text:"Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"Partially Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"Not Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"N/A: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+
+        children.push(table, new Paragraph({ text: '' }));
+
         const values = eccReport.remarks_list[sectionIndex];
 
         // Check if values is an array and not empty

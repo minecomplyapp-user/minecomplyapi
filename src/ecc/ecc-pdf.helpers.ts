@@ -1,3 +1,4 @@
+import { number } from 'joi';
 import type { ECCConditionInfo } from './ecc-pdf-generator.service';
 
 /**
@@ -56,98 +57,97 @@ type ConditionRow = [string, string, string, string, string, string];
 // contains ConditionRow arrays.
 export function toConditionRows(
   list: NonNullable<ECCConditionInfo['conditions']>,
-): ConditionRow[][] {
-  // 1. Sort the list first (primary: section, secondary: condition_number)
+): {
+  rows: ConditionRow[][];        // existing output
+  counts: Record<string, { na: number; complied: number; partial: number; not: number }>; // counts per section
+} {
   const sortedList = [...list].sort((a, b) => {
-    // Primary Sort: Section Number (Ensure it's treated as a number)
     const sectionA = Number(a.section) || Infinity;
     const sectionB = Number(b.section) || Infinity;
 
-    if (sectionA !== sectionB) {
-      return sectionA - sectionB;
-    }
+    if (sectionA !== sectionB) return sectionA - sectionB;
 
-    // Secondary Sort: Condition Number (Ensure it's treated as a number)
     const conditionNumA = Number(a.condition_number) || Infinity;
     const conditionNumB = Number(b.condition_number) || Infinity;
 
     return conditionNumA - conditionNumB;
   });
 
-  // 2. Reduce the sorted list to group conditions by section number.
-  const sectionsMap = sortedList.reduce(
-    (acc, e) => {
-      // Use the section number as the key (default to '0' or 'General' if needed)
-      const sectionKey = e.section?.toString() || '0';
+  let currentConditionNumber = 0;
 
-      if (!acc[sectionKey]) {
-        acc[sectionKey] = [];
-      }
+  const sectionsMap = sortedList.reduce((acc, e) => {
+    const sectionKey = e.section?.toString() || '0';
 
-      // 3. Map the individual condition object (e) to a 6-column row array
-      const status = e.status ? e.status.toLowerCase() : '';
+    // initialize map
+    if (!acc[sectionKey]) {
+      acc[sectionKey] = { rows: [], counts: { na: 0, complied: 0, partial: 0, not: 0 } };
+    }
 
-      const CHECK_MARK = '✓';
-      const BLANK = '';
+    const status = e.status ? e.status.toLowerCase() : '';
+    const CHECK_MARK = '✓';
+    const BLANK = '';
 
-      const statusComplied = status === 'complied' ? CHECK_MARK : BLANK;
-      const statusPartial = status.includes('partial') ? CHECK_MARK : BLANK;
-      const statusNotComplied = status.includes('not') ? CHECK_MARK : BLANK;
+    const isComplied = status === 'complied';
+    const isPartial = status.includes('partial');
+    const isNotComplied = status.includes('not');
 
-      let remark: string;
-      if (
-        status.includes('complied') &&
-        e.remark_list &&
-        e.remark_list.length > 0
-      ) {
-        remark = e.remark_list[0];
-      } else if (
-        status.includes('partial') &&
-        e.remark_list &&
-        e.remark_list.length > 1
-      ) {
-        remark = e.remark_list[1];
-      } else if (
-        status.includes('not') &&
-        e.remark_list &&
-        e.remark_list.length > 2
-      ) {
-        remark = e.remark_list[2];
-      } else {
-        remark = '';
-      }
-      const conditionText = e.condition?.toString() || '';
-      const match = conditionText.match(/Condition\s+([0-9]+)\s*:/i);
-      const conditionNo = match ? match[1] : BLANK;
-      let condition;
-      if (match) {
-        condition = e.condition?.toString().split(':')[1];
-      } else {
-        condition = e.condition;
-      }
+    const statusComplied = isComplied ? CHECK_MARK : BLANK;
+    const statusPartial = isPartial ? CHECK_MARK : BLANK;
+    const statusNotComplied = isNotComplied ? CHECK_MARK : BLANK;
 
-      // Create the 6-column row
-      const row: ConditionRow = [
-        conditionNo || BLANK, // Column 1: Condition No.
-        condition || BLANK, // Column 2: Condition Text
-        statusComplied, // Column 3: C
-        statusPartial, // Column 4: PC
-        statusNotComplied, // Column 5: NC
-        remark || BLANK, // Column 6: Remarks
-      ];
+    // Count per section
+    if (!isComplied && !isPartial && !isNotComplied) {
+      acc[sectionKey].counts.na++;
+    } else if (isComplied) {
+      acc[sectionKey].counts.complied++;
+    } else if (isPartial) {
+      acc[sectionKey].counts.partial++;
+    } else if (isNotComplied) {
+      acc[sectionKey].counts.not++;
+    }
 
-      acc[sectionKey].push(row);
+    let remark = e.remarks || BLANK;
 
-      return acc;
-    },
-    {} as Record<string, ConditionRow[]>,
-  ); // The accumulator is a map of string -> array of rows
+    const conditionText = e.condition?.toString() || '';
+    const match = conditionText.match(/Condition\s+([0-9]+)\s*:/i);
+    let conditionNo = match ? match[1] : BLANK;
 
-  // 4. Extract the array of arrays from the map, ensuring numeric order of sections
-  const sectionKeys = Object.keys(sectionsMap).sort(
-    (a, b) => Number(a) - Number(b),
-  );
+    const matchCustom = conditionText.match(/Condition\s+custom-([0-9]+)\s*:/i);
 
-  // Return the final array of row arrays
-  return sectionKeys.map((key) => sectionsMap[key]);
+    let condition;
+    if (match) {
+      condition = e.condition?.toString().split(':')[1];
+      currentConditionNumber = parseInt(conditionNo);
+    } else if (matchCustom) {
+      condition = e.condition?.toString().split(':')[1];
+      currentConditionNumber++;
+      conditionNo = currentConditionNumber.toString();
+    } else {
+      condition = e.condition;
+    }
+
+    const row: ConditionRow = [
+      conditionNo || BLANK,
+      condition || BLANK,
+      statusComplied,
+      statusPartial,
+      statusNotComplied,
+      remark || BLANK,
+    ];
+
+    acc[sectionKey].rows.push(row);
+
+    return acc;
+  }, {} as Record<string, { rows: ConditionRow[]; counts: { na: number; complied: number; partial: number; not: number } }>);
+
+  const sectionKeys = Object.keys(sectionsMap).sort((a, b) => Number(a) - Number(b));
+
+  return {
+    rows: sectionKeys.map((key) => sectionsMap[key].rows),
+    counts: sectionKeys.reduce((cAcc, key) => {
+      cAcc[key] = sectionsMap[key].counts;
+      return cAcc;
+    }, {} as Record<string, { na: number; complied: number; partial: number; not: number }>),
+  };
 }
+
