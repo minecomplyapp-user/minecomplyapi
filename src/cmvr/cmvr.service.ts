@@ -159,6 +159,68 @@ export class CmvrService {
     return result;
   }
 
+  async duplicate(id: string) {
+    const originalReport = await this.findOne(id);
+
+    if (!originalReport) {
+      throw new NotFoundException(`CMVR Report with ID ${id} not found`);
+    }
+
+    // Extract the data we need to duplicate
+    const cmvrData = originalReport.cmvrData as any;
+    const attachments = (originalReport as any).attachments || [];
+
+    // Find the next available number for duplication
+    const originalFileName = originalReport.fileName || 'CMVR_Report';
+
+    // Remove existing (n) pattern if present
+    const cleanFileName = originalFileName.replace(/\s*\(\d+\)\s*$/, '').trim();
+
+    // Find all reports with similar names
+    const allReports = await this.prisma.cMVRReport.findMany({
+      where: {
+        createdById: originalReport.createdById,
+      },
+      select: {
+        fileName: true,
+      },
+    });
+
+    // Find the highest number used
+    let maxNumber = 0;
+    const pattern = new RegExp(
+      `^${cleanFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\((\\d+)\\)\\s*$`,
+    );
+    allReports.forEach((report) => {
+      const match = report.fileName?.match(pattern);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+
+    const nextNumber = maxNumber + 1;
+    const duplicateFileName = `${cleanFileName} (${nextNumber})`;
+
+    // Update the fileName in cmvrData if it exists
+    const updatedCmvrData = {
+      ...cmvrData,
+      fileName: duplicateFileName,
+    };
+
+    const dataToSave = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      cmvrData: updatedCmvrData as unknown as any,
+      createdById: originalReport.createdById,
+      fileName: duplicateFileName,
+      attachments: attachments, // Reuse the same attachment references
+    };
+
+    return this.prisma.cMVRReport.create({
+      data: dataToSave as any,
+    });
+  }
+
   private extractAttachmentPaths(attachments: unknown): string[] {
     if (!Array.isArray(attachments)) {
       return [];

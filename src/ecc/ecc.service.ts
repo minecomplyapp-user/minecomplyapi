@@ -30,7 +30,8 @@ export class EccService {
   }
   async findAll(createdById) {
     const rawReports = await this.prisma.eCCReport.findMany({
-      where: { // <--- ADD THIS where CLAUSE
+      where: {
+        // <--- ADD THIS where CLAUSE
         createdById: createdById, // <--- FILTER BY the createdById passed to the function
       },
       select: {
@@ -333,17 +334,107 @@ export class EccService {
 
   async createEccAndGenerateDocs(
     createEccReportDto: CreateEccReportDto,
-  ): Promise<{ download_url: string}> {
+  ): Promise<{ download_url: string }> {
     // 1. Create the report and all nested conditions.
     // The result contains the parent report object (including its ID) and the conditions array.
     const createdReport = await this.createEccReport(createEccReportDto);
 
     // 2. Safely extract the ID of the newly created report.
     const reportId = createdReport.id;
-    const download_url=`ecc/generateEccWord/${reportId}`
-    console.log(download_url)
+    const download_url = `ecc/generateEccWord/${reportId}`;
+    console.log(download_url);
     // 3. Generate the Word document using the ID.
     // Assuming generateWordReport is responsible for fetching data and creating the file.
-    return {download_url:download_url};
+    return { download_url: download_url };
+  }
+
+  async duplicate(id: string) {
+    const originalReport = await this.findOne(id);
+
+    if (!originalReport) {
+      throw new NotFoundException(`ECC Report with ID ${id} not found`);
+    }
+
+    // Get all conditions associated with this report
+    const originalConditions = await this.getEccConditionsByReportId(id);
+
+    // Find the next available number for duplication
+    const originalFilename = originalReport.filename || 'ECC_Report';
+
+    // Remove existing (n) pattern if present
+    const cleanFilename = originalFilename.replace(/\s*\(\d+\)\s*$/, '').trim();
+
+    // Find all reports with similar names
+    const allReports = await this.prisma.eCCReport.findMany({
+      where: {
+        createdById: originalReport.createdById,
+      },
+      select: {
+        filename: true,
+      },
+    });
+
+    // Find the highest number used
+    let maxNumber = 0;
+    const pattern = new RegExp(
+      `^${cleanFilename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\((\\d+)\\)\\s*$`,
+    );
+    allReports.forEach((report) => {
+      const match = report.filename?.match(pattern);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+
+    const nextNumber = maxNumber + 1;
+    const duplicateFilename = `${cleanFilename} (${nextNumber})`;
+
+    // Create a duplicate with copied data
+    const duplicateReportData = {
+      generalInfo: originalReport.generalInfo,
+      mmtInfo: originalReport.mmtInfo,
+      permit_holder_with_conditions:
+        originalReport.permit_holder_with_conditions,
+      createdById: originalReport.createdById,
+      filename: duplicateFilename,
+    };
+
+    // Use transaction to ensure atomicity
+    return this.prisma.$transaction(
+      async (tx) => {
+        // Create the duplicate report
+        const newReport = await tx.eCCReport.create({
+          data: duplicateReportData as any,
+        });
+
+        // Duplicate all conditions if they exist
+        if (originalConditions && originalConditions.length > 0) {
+          const conditionCreationPromises = originalConditions.map(
+            (condition) => {
+              return tx.eCCCondition.create({
+                data: {
+                  ECCReportID: newReport.id,
+                  condition: condition.condition,
+                  status: condition.status,
+                  remarks: condition.remarks,
+                  remark_list: condition.remark_list,
+                  condition_number: condition.condition_number,
+                  section: condition.section,
+                  nested_to: condition.nested_to,
+                },
+              });
+            },
+          );
+
+          await Promise.all(conditionCreationPromises);
+        }
+
+        return newReport;
+      },
+      {
+        timeout: 150000,
+      },
+    );
   }
 }
