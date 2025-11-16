@@ -1,9 +1,16 @@
 {
-  "name": "minecomplyapi",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
+  "name": "@kwiruu/minecomplyapi-package",
+  "version": "1.0.0",
+  "description": "API for MineComply application",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kwiruu/minecomplyapi.git"
+  },
+  "author": "kwiruu",
+  "private": false,
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
