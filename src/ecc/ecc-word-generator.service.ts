@@ -55,7 +55,12 @@ export class ECCWordGeneratorService {
   ): Promise<{ fileName: string; buffer: Buffer }> {
     eccReport.conditions = eCCConditions;
     const hasConditions = eccReport.conditions?.length > 0;
-    const conditionsBySection = toConditionRows(eccReport.conditions);
+    const result = toConditionRows(eccReport.conditions);
+    const conditionsBySection = result.rows;
+    const counts = result.counts;
+    console.log('conditionsBySection', conditionsBySection);
+   console.log('counts', counts);
+
     const children: (Paragraph | Table)[] = [];
 
     const columnWidths = [1474, 3088, 601, 601, 601, 2706]; // 6 columns (DXA)
@@ -130,11 +135,19 @@ export class ECCWordGeneratorService {
         });
 
         children.push(table, new Paragraph({ text: '' }));
+        // console.log('counts inside loop', counts['1'].complied);
+        children.push(new Paragraph({ text:"Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"Partially Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"Not Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"N/A: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+
+
         const values = eccReport.remarks_list[sectionIndex];
+        
+        children.push(new Paragraph({ text: 'Remarks' })); // Title for the remarks section
 
         // Check if values is an array and not empty
         if (Array.isArray(values) && values.length > 0) {
-          children.push(new Paragraph({ text: 'Remarks' })); // Title for the remarks section
           values.forEach((value) => {
             // Check if the remark is not an empty string
             if (value && value.trim() !== '') {

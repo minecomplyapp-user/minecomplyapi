@@ -49,8 +49,8 @@ export class ECCPdfGeneratorService {
       if (hasConditions) {
         doc.moveDown(0.5);
 
-        const conditionsBySection = toConditionRows(eccReport.conditions);
-        for (const [
+    const result = toConditionRows(eccReport.conditions);
+    const conditionsBySection = result.rows;        for (const [
           index,
           conditionlistRows,
         ] of conditionsBySection.entries()) {
