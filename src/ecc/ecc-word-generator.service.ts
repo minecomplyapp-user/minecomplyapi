@@ -137,9 +137,9 @@ export class ECCWordGeneratorService {
         children.push(table, new Paragraph({ text: '' }));
         // console.log('counts inside loop', counts['1'].complied);
         children.push(new Paragraph({ text:"Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
-        children.push(new Paragraph({ text:"Partially Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
-        children.push(new Paragraph({ text:"Not Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
-        children.push(new Paragraph({ text:"N/A: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
+        children.push(new Paragraph({ text:"Partially Complied: " +String(counts[`${sectionIndex+1}`].partial)+" conditions" }));        
+        children.push(new Paragraph({ text:"Not Complied: " +String(counts[`${sectionIndex+1}`].not)+" conditions" }));        
+        children.push(new Paragraph({ text:"N/A: " +String(counts[`${sectionIndex+1}`].na)+" conditions" }));        
 
 
         const values = eccReport.remarks_list[sectionIndex];
