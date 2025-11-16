@@ -36,7 +36,7 @@ export class EccController {
  @Get('getAllEccReports/:createdById')
   @ApiOperation({
     summary: 'Retrieve all ECC Reports',
-  })
+  }) 
   findAll(@Param('createdById') createdById: string) {
     return this.eccService.findAll(createdById);
   }
