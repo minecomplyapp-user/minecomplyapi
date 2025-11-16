@@ -95,45 +95,6 @@ export function createGeneralInfoKeyValues(
     );
   }
 
-  // Specific coverage line
-  paragraphs.push(
-    new Table({
-      width: { size: 70, type: WidthType.PERCENTAGE },
-      alignment: AlignmentType.CENTER,
-      borders: {
-        top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-      },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              children: [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: '(This CMVR covers the ISAG Permit of ONRI and Fourteen (14) ISAG Permits under Supply Agreement with ONRI)',
-                      font: 'Arial',
-                      size: 22,
-                      color: '000000',
-                    }),
-                  ],
-                  alignment: AlignmentType.CENTER,
-                  spacing: { after: 100 },
-                }),
-              ],
-              width: { size: 70, type: WidthType.PERCENTAGE },
-            }),
-          ],
-        }),
-      ],
-    }),
-  );
-
   paragraphs.push(
     new Paragraph({
       children: [],
