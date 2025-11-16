@@ -1269,14 +1269,27 @@ export class CMVRDocxGeneratorService {
             attendee.signatureUrl.trim() !== ''
           ) {
             try {
-              // Convert storage path to signed URL
-              const signedUrl =
-                await this.storageService.createSignedDownloadUrl(
-                  attendee.signatureUrl,
-                  60, // expires in 60 seconds
-                );
+              let imageBuffer: Buffer | null = null;
 
-              const imageBuffer = await this.fetchImageBuffer(signedUrl);
+              // Check if it's a data URI (base64 image)
+              if (attendee.signatureUrl.startsWith('data:image/')) {
+                // Extract base64 data from data URI
+                const matches = attendee.signatureUrl.match(
+                  /^data:image\/\w+;base64,(.+)$/,
+                );
+                if (matches && matches[1]) {
+                  imageBuffer = Buffer.from(matches[1], 'base64');
+                }
+              } else {
+                // It's a storage path, convert to signed URL
+                const signedUrl =
+                  await this.storageService.createSignedDownloadUrl(
+                    attendee.signatureUrl,
+                    60, // expires in 60 seconds
+                  );
+                imageBuffer = await this.fetchImageBuffer(signedUrl);
+              }
+
               if (imageBuffer) {
                 // Add image to cell
                 signatureCellChildren.push(

@@ -95,4 +95,63 @@ export class AttendanceService {
     const attendanceRecord = await this.findOne(id);
     return this.pdfGenerator.generateAttendancePdf(attendanceRecord);
   }
+
+  async duplicate(id: string) {
+    const originalRecord = await this.findOne(id);
+
+    if (!originalRecord) {
+      throw new NotFoundException(`Attendance record with ID ${id} not found`);
+    }
+
+    // Find the next available number for duplication
+    const baseFileName = originalRecord.fileName || 'attendance';
+    const baseTitle = originalRecord.title || 'Untitled';
+
+    // Remove existing (n) pattern if present
+    const cleanFileName = baseFileName.replace(/\s*\(\d+\)\s*$/, '').trim();
+    const cleanTitle = baseTitle.replace(/\s*\(\d+\)\s*$/, '').trim();
+
+    // Find all records with similar names
+    const allRecords = await this.prisma.attendanceRecord.findMany({
+      where: {
+        createdById: originalRecord.createdById,
+      },
+      select: {
+        fileName: true,
+        title: true,
+      },
+    });
+
+    // Find the highest number used
+    let maxNumber = 0;
+    const pattern = new RegExp(
+      `^${cleanFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\((\\d+)\\)\\s*$`,
+    );
+    allRecords.forEach((record) => {
+      const match = record.fileName?.match(pattern);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+
+    const nextNumber = maxNumber + 1;
+
+    // Create a copy with incremental numbering
+    const duplicateData = {
+      fileName: `${cleanFileName} (${nextNumber})`,
+      title: `${cleanTitle} (${nextNumber})`,
+      description: originalRecord.description,
+      meetingDate: originalRecord.meetingDate,
+      location: originalRecord.location,
+      reportId: originalRecord.reportId,
+      createdById: originalRecord.createdById,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      attendees: originalRecord.attendees as any,
+    };
+
+    return this.prisma.attendanceRecord.create({
+      data: duplicateData,
+    });
+  }
 }

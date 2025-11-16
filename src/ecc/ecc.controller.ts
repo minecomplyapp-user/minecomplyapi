@@ -33,10 +33,10 @@ export class EccController {
     return this.eccService.createEccReport(createEccDto);
   }
 
- @Get('getAllEccReports/:createdById')
+  @Get('getAllEccReports/:createdById')
   @ApiOperation({
     summary: 'Retrieve all ECC Reports',
-  }) 
+  })
   findAll(@Param('createdById') createdById: string) {
     return this.eccService.findAll(createdById);
   }
@@ -139,13 +139,26 @@ export class EccController {
 
     res.end(buffer);
   }
-@Post('createEccAndGenerateDocs')
-@ApiOperation({
-  summary: 'Create a new ECC Report and generate docs',
-})
-async createEccAndGenerateDocs(
-  @Body() createEccDto: CreateEccReportDto,
-) {
-  return await this.eccService.createEccAndGenerateDocs(createEccDto);
-}
+  @Post('createEccAndGenerateDocs')
+  @ApiOperation({
+    summary: 'Create a new ECC Report and generate docs',
+  })
+  async createEccAndGenerateDocs(@Body() createEccDto: CreateEccReportDto) {
+    return await this.eccService.createEccAndGenerateDocs(createEccDto);
+  }
+
+  @Post(':id/duplicate')
+  @ApiOperation({ summary: 'Duplicate an ECC report' })
+  @ApiParam({ name: 'id', description: 'ECC Report ID to duplicate' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'The ECC report has been successfully duplicated.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'ECC report not found.',
+  })
+  async duplicate(@Param('id') id: string) {
+    return this.eccService.duplicate(id);
+  }
 }

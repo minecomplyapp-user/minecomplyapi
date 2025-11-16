@@ -1243,6 +1243,21 @@ export class CmvrController {
     return this.cmvrService.findOne(id);
   }
 
+  @Post(':id/duplicate')
+  @ApiOperation({ summary: 'Duplicate a CMVR report' })
+  @ApiParam({ name: 'id', description: 'CMVR Report ID to duplicate' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'The CMVR report has been successfully duplicated.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'CMVR report not found.',
+  })
+  async duplicate(@Param('id') id: string) {
+    return this.cmvrService.duplicate(id);
+  }
+
   @Get(':id/pdf/general-info')
   @ApiOperation({
     summary: 'Generate PDF for CMVR General Information section',

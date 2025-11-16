@@ -143,4 +143,18 @@ export class AttendanceController {
 
     res.end(pdfBuffer);
   }
+
+  @Post(':id/duplicate')
+  @ApiOperation({ summary: 'Duplicate an attendance record' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'The attendance record has been successfully duplicated.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Attendance record not found.',
+  })
+  duplicate(@Param('id', ParseUUIDPipe) id: string) {
+    return this.attendanceService.duplicate(id);
+  }
 }
