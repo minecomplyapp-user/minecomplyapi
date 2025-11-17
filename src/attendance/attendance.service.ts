@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
 import { AttendancePdfGeneratorService } from './pdf-generator.service';
+import { AttendanceDocxGeneratorService } from './docx-generator.service';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfGenerator: AttendancePdfGeneratorService,
+    private readonly docxGenerator: AttendanceDocxGeneratorService,
   ) {}
 
   async create(createAttendanceRecordDto: CreateAttendanceRecordDto) {
@@ -94,6 +96,11 @@ export class AttendanceService {
   async generatePdf(id: string): Promise<Buffer> {
     const attendanceRecord = await this.findOne(id);
     return this.pdfGenerator.generateAttendancePdf(attendanceRecord);
+  }
+
+  async generateDocx(id: string): Promise<Buffer> {
+    const attendanceRecord = await this.findOne(id);
+    return this.docxGenerator.generateAttendanceDocx(attendanceRecord);
   }
 
   async duplicate(id: string) {

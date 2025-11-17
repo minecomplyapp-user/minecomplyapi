@@ -1008,8 +1008,7 @@ const cmvrReport = {
       },
     ],
   },
-
-  attendanceUrl: '',
+  attendanceId: '',
 };
 
 export { cmvrReport };
