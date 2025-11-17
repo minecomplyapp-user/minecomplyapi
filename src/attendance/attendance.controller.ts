@@ -47,6 +47,89 @@ export class AttendanceController {
     return this.attendanceService.findAll(reportId);
   }
 
+  @Get('report/:reportId')
+  @ApiOperation({ summary: 'Get attendance records by report ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return attendance records for the specified report.',
+  })
+  findByReport(@Param('reportId', ParseUUIDPipe) reportId: string) {
+    return this.attendanceService.findByReport(reportId);
+  }
+
+  @Get('creator/:createdById')
+  @ApiOperation({ summary: 'Get attendance records by creator ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return attendance records created by the specified user.',
+  })
+  findByCreator(@Param('createdById', ParseUUIDPipe) createdById: string) {
+    return this.attendanceService
+      .findAll()
+      .then((records) =>
+        records.filter((record) => record.createdById === createdById),
+      );
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({ summary: 'Generate PDF for an attendance record' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return the attendance record as a PDF.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Attendance record not found.',
+  })
+  @Header('Content-Type', 'application/pdf')
+  async generatePdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const pdfBuffer = await this.attendanceService.generatePdf(id);
+    const attendanceRecord = await this.attendanceService.findOne(id);
+
+    const filename = `${attendanceRecord.fileName?.replace(/[^a-z0-9]/gi, '_') || 'attendance'}.pdf`;
+
+    res.set({
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer);
+  }
+
+  @Get(':id/docx')
+  @ApiOperation({ summary: 'Generate DOCX for an attendance record' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return the attendance record as a DOCX.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Attendance record not found.',
+  })
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  )
+  async generateDocx(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const docxBuffer = await this.attendanceService.generateDocx(id);
+    const attendanceRecord = await this.attendanceService.findOne(id);
+
+    const filename = `${attendanceRecord.fileName?.replace(/[^a-z0-9]/gi, '_') || 'attendance'}.docx`;
+
+    res.set({
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': docxBuffer.length,
+    });
+
+    res.end(docxBuffer);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get an attendance record by ID' })
   @ApiResponse({
@@ -90,58 +173,6 @@ export class AttendanceController {
   })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.attendanceService.remove(id);
-  }
-
-  @Get('report/:reportId')
-  @ApiOperation({ summary: 'Get attendance records by report ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Return attendance records for the specified report.',
-  })
-  findByReport(@Param('reportId', ParseUUIDPipe) reportId: string) {
-    return this.attendanceService.findByReport(reportId);
-  }
-
-  @Get('creator/:createdById')
-  @ApiOperation({ summary: 'Get attendance records by creator ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Return attendance records created by the specified user.',
-  })
-  findByCreator(@Param('createdById', ParseUUIDPipe) createdById: string) {
-    return this.attendanceService
-      .findAll()
-      .then((records) =>
-        records.filter((record) => record.createdById === createdById),
-      );
-  }
-
-  @Get(':id/pdf')
-  @ApiOperation({ summary: 'Generate PDF for an attendance record' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Return the attendance record as a PDF.',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Attendance record not found.',
-  })
-  @Header('Content-Type', 'application/pdf')
-  async generatePdf(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Res() res: Response,
-  ) {
-    const pdfBuffer = await this.attendanceService.generatePdf(id);
-    const attendanceRecord = await this.attendanceService.findOne(id);
-
-    const filename = `attendance_${attendanceRecord.title?.replace(/[^a-z0-9]/gi, '_') || id}_${new Date().toISOString().split('T')[0]}.pdf`;
-
-    res.set({
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Content-Length': pdfBuffer.length,
-    });
-
-    res.end(pdfBuffer);
   }
 
   @Post(':id/duplicate')
