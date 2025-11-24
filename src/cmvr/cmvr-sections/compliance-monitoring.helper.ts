@@ -958,7 +958,7 @@ export function createAirQualitySection(
       out.push(...buildLocationTable(air.plant, 'Plant'));
     }
     if (air.quarryAndPlant) {
-      out.push(...buildLocationTable(air.quarryAndPlant, 'Quarry & Plant'));
+      out.push(...buildLocationTable(air.quarryAndPlant, 'Quarry / Plant'));
     }
     if (air.port && typeof air.port !== 'string') {
       out.push(...buildLocationTable(air.port, 'Port'));

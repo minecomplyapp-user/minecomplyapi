@@ -3805,7 +3805,7 @@ export function drawAirQualityImpactAssessmentTable(
       drawLocationAirQualityTable('Plant', data.plant);
     }
     if (data.quarryAndPlant) {
-      drawLocationAirQualityTable('Quarry & Plant', data.quarryAndPlant);
+      drawLocationAirQualityTable('Quarry / Plant', data.quarryAndPlant);
     }
     if (data.port && typeof data.port !== 'string') {
       drawLocationAirQualityTable('Port', data.port);

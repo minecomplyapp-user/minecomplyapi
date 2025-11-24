@@ -58,7 +58,20 @@ export class AttendanceDocxGeneratorService {
       });
 
       const doc = new Document({
-        sections,
+        sections: sections.map((section) => ({
+          ...section,
+          properties: {
+            ...(section as any).properties,
+            page: {
+              margin: {
+                top: 720, // 0.5"
+                bottom: 720,
+                left: 720,
+                right: 720,
+              },
+            },
+          },
+        })),
       });
 
       const buffer = await Packer.toBuffer(doc);
@@ -237,7 +250,7 @@ export class AttendanceDocxGeneratorService {
               }),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 30, type: WidthType.PERCENTAGE },
+            width: { size: 25, type: WidthType.PERCENTAGE },
             shading: { fill: 'FFFFFF' },
           }),
           new TableCell({
@@ -255,7 +268,7 @@ export class AttendanceDocxGeneratorService {
               }),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 28, type: WidthType.PERCENTAGE },
+            width: { size: 23, type: WidthType.PERCENTAGE },
             shading: { fill: 'FFFFFF' },
           }),
           new TableCell({
@@ -273,7 +286,7 @@ export class AttendanceDocxGeneratorService {
               }),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 15, type: WidthType.PERCENTAGE },
+            width: { size: 12, type: WidthType.PERCENTAGE },
             shading: { fill: 'FFFFFF' },
           }),
           new TableCell({
@@ -291,7 +304,25 @@ export class AttendanceDocxGeneratorService {
               }),
             ],
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 27, type: WidthType.PERCENTAGE },
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            shading: { fill: 'FFFFFF' },
+          }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: 'PHOTO',
+                    bold: true,
+                    font: 'Arial',
+                    size: 22,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+              }),
+            ],
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 20, type: WidthType.PERCENTAGE },
             shading: { fill: 'FFFFFF' },
           }),
         ],
@@ -348,7 +379,7 @@ export class AttendanceDocxGeneratorService {
       const office = attendee.office ?? '';
       let agencyOfficeText = '';
       if (agency && office) {
-        agencyOfficeText = `${agency} - ${office}`;
+        agencyOfficeText = `${agency}`;
       } else if (agency) {
         agencyOfficeText = agency;
       } else if (office) {
@@ -400,9 +431,40 @@ export class AttendanceDocxGeneratorService {
         }
       }
 
+      // Photo cell - embed image if available
+      const photoChildren: any[] = [];
+      if (isAbsent) {
+        photoChildren.push(
+          new TextRun({
+            text: 'ABSENT',
+            font: 'Arial',
+            bold: true,
+            size: 22,
+          }),
+        );
+      } else if (attendee.photoUrl && attendee.photoUrl.trim() !== '') {
+        try {
+          const imageBuffer = await this.fetchImageBuffer(attendee.photoUrl);
+          if (imageBuffer) {
+            photoChildren.push(
+              new ImageRun({
+                data: imageBuffer,
+                transformation: {
+                  width: 100,
+                  height: 100,
+                },
+                type: 'jpeg',
+              } as any),
+            );
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to fetch photo for ${attendee.name}`, error);
+        }
+      }
+
       rows.push(
         new TableRow({
-          height: { value: 600, rule: 'atLeast' },
+          height: { value: 800, rule: 'atLeast' },
           children: [
             new TableCell({
               children: [
@@ -413,7 +475,7 @@ export class AttendanceDocxGeneratorService {
                 }),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 30, type: WidthType.PERCENTAGE },
+              width: { size: 25, type: WidthType.PERCENTAGE },
               margins: {
                 left: 100,
                 right: 100,
@@ -435,7 +497,7 @@ export class AttendanceDocxGeneratorService {
                 }),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 28, type: WidthType.PERCENTAGE },
+              width: { size: 23, type: WidthType.PERCENTAGE },
             }),
             new TableCell({
               children: [
@@ -451,7 +513,7 @@ export class AttendanceDocxGeneratorService {
                 }),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 15, type: WidthType.PERCENTAGE },
+              width: { size: 12, type: WidthType.PERCENTAGE },
             }),
             new TableCell({
               children: [
@@ -461,7 +523,17 @@ export class AttendanceDocxGeneratorService {
                 }),
               ],
               verticalAlign: VerticalAlign.CENTER,
-              width: { size: 27, type: WidthType.PERCENTAGE },
+              width: { size: 20, type: WidthType.PERCENTAGE },
+            }),
+            new TableCell({
+              children: [
+                new Paragraph({
+                  children: photoChildren,
+                  alignment: AlignmentType.CENTER,
+                }),
+              ],
+              verticalAlign: VerticalAlign.CENTER,
+              width: { size: 20, type: WidthType.PERCENTAGE },
             }),
           ],
         }),

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
 import { AttendancePdfGeneratorService } from './pdf-generator.service';
 import { AttendanceDocxGeneratorService } from './docx-generator.service';
+import { SupabaseStorageService } from '../storage/supabase-storage.service';
 
 @Injectable()
 export class AttendanceService {
@@ -10,6 +11,7 @@ export class AttendanceService {
     private readonly prisma: PrismaService,
     private readonly pdfGenerator: AttendancePdfGeneratorService,
     private readonly docxGenerator: AttendanceDocxGeneratorService,
+    private readonly storageService: SupabaseStorageService,
   ) {}
 
   async create(createAttendanceRecordDto: CreateAttendanceRecordDto) {
@@ -100,6 +102,54 @@ export class AttendanceService {
 
   async generateDocx(id: string): Promise<Buffer> {
     const attendanceRecord = await this.findOne(id);
+
+    let attendees: any[] = [];
+    if (Array.isArray(attendanceRecord.attendees)) {
+      attendees = attendanceRecord.attendees as any[];
+    } else if (typeof attendanceRecord.attendees === 'string') {
+      try {
+        attendees = JSON.parse(attendanceRecord.attendees as any);
+      } catch {
+        attendees = [];
+      }
+    }
+
+    const attendeesWithSignedUrls = await Promise.all(
+      attendees.map(async (att) => {
+        const updated: any = { ...att };
+
+        if (att.signatureUrl) {
+          try {
+            const url = await this.storageService.createSignedDownloadUrl(
+              att.signatureUrl as string,
+              300,
+            );
+            updated.signatureUrl = url;
+          } catch {
+            // fall back to original value if signing fails
+            updated.signatureUrl = att.signatureUrl;
+          }
+        }
+
+        if (att.photoUrl) {
+          try {
+            const url = await this.storageService.createSignedDownloadUrl(
+              att.photoUrl as string,
+              300,
+            );
+            updated.photoUrl = url;
+          } catch {
+            updated.photoUrl = att.photoUrl;
+          }
+        }
+
+        return updated;
+      }),
+    );
+
+    // Attach transformed attendees for the DOCX generator to consume
+    (attendanceRecord as any).attendees = attendeesWithSignedUrls;
+
     return this.docxGenerator.generateAttendanceDocx(attendanceRecord);
   }
 

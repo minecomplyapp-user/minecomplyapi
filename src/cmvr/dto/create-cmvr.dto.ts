@@ -491,7 +491,7 @@ class AirQualityImpactAssessmentDto {
 
   @ApiProperty({
     required: false,
-    description: 'Quarry & Plant location description (new structure)',
+    description: 'Quarry / Plant location description (new structure)',
   })
   @IsOptional()
   @IsString()
@@ -698,7 +698,7 @@ class WaterQualityImpactAssessmentDto {
 
   @ApiProperty({
     required: false,
-    description: 'Quarry & Plant location description (new structure)',
+    description: 'Quarry / Plant location description (new structure)',
   })
   @IsOptional()
   @IsString()
@@ -1206,6 +1206,16 @@ export class CreateCMVRDto {
   @ApiProperty()
   @IsString()
   companyName: string;
+
+  @ApiProperty({
+    type: [String],
+    required: false,
+    description: 'List of permit holder names for dropdown options',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  permitHolderList?: string[];
 
   @ApiProperty()
   @IsString()
