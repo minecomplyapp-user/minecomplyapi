@@ -40,6 +40,11 @@ export class AttendeeDto {
   @IsString()
   signatureUrl?: string;
 
+  @ApiPropertyOptional({ description: 'URL to the attendance photo' })
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
+
   @ApiProperty({
     description: 'Attendance status of the attendee',
     enum: AttendanceStatus,
