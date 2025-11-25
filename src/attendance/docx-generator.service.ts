@@ -431,6 +431,17 @@ export class AttendanceDocxGeneratorService {
         }
       }
 
+      // Add N/A if no signature was added and user is not absent
+      if (!isAbsent && signatureChildren.length === 0) {
+        signatureChildren.push(
+          new TextRun({
+            text: 'N/A',
+            font: 'Arial',
+            size: 22,
+          }),
+        );
+      }
+
       // Photo cell - embed image if available
       const photoChildren: any[] = [];
       if (isAbsent) {
@@ -460,6 +471,16 @@ export class AttendanceDocxGeneratorService {
         } catch (error) {
           this.logger.warn(`Failed to fetch photo for ${attendee.name}`, error);
         }
+      }
+
+      if (!isAbsent && photoChildren.length === 0) {
+        photoChildren.push(
+          new TextRun({
+            text: 'N/A',
+            font: 'Arial',
+            size: 22,
+          }),
+        );
       }
 
       rows.push(
