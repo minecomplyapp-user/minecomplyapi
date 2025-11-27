@@ -1248,6 +1248,13 @@ export class CMVRDocxGeneratorService {
                 verticalAlign: VerticalAlign.CENTER,
                 width: { size: 10, type: WidthType.PERCENTAGE },
               }),
+               new TableCell({
+                children: [
+                  createParagraph('PHOTO', true, AlignmentType.CENTER),
+                ],
+                verticalAlign: VerticalAlign.CENTER,
+                width: { size: 10, type: WidthType.PERCENTAGE },
+              }),
             ],
           }),
         ];
@@ -1258,6 +1265,7 @@ export class CMVRDocxGeneratorService {
 
           // Prepare signature cell content
           const signatureCellChildren: Paragraph[] = [];
+          const photoCellChildren: Paragraph[] = [];
 
           // Check if attendee is absent
           if (attendee.attendanceStatus === 'ABSENT') {
@@ -1329,6 +1337,76 @@ export class CMVRDocxGeneratorService {
             );
           }
 
+///////////////////// PHOTO PART
+          if (attendee.attendanceStatus === 'ABSENT') {
+            photoCellChildren.push(
+              createParagraph('ABSENT', false, AlignmentType.CENTER),
+            );
+          } else if (
+            attendee.photoUrl &&
+            attendee.photoUrl.trim() !== ''
+          ) {
+            try {
+              let imageBuffer: Buffer | null = null;
+
+              // Check if it's a data URI (base64 image)
+              if (attendee.photoUrl.startsWith('data:image/')) {
+                // Extract base64 data from data URI
+                const matches = attendee.photoUrl.match(
+                  /^data:image\/\w+;base64,(.+)$/,
+                );
+                if (matches && matches[1]) {
+                  imageBuffer = Buffer.from(matches[1], 'base64');
+                }
+              } else {
+                // It's a storage path, convert to signed URL
+                const signedUrl =
+                  await this.storageService.createSignedDownloadUrl(
+                    attendee.photoUrl,
+                    60, // expires in 60 seconds
+                  );
+                imageBuffer = await this.fetchImageBuffer(signedUrl);
+              }
+
+              if (imageBuffer) {
+                // Add image to cell
+                photoCellChildren.push(
+                  new Paragraph({
+                    children: [
+                      new ImageRun({
+                        data: imageBuffer,
+                        transformation: {
+                          width: 60,
+                          height: 30,
+                        },
+                        type: 'png',
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                );
+              } else {
+                // Fallback to ABSENT if image fetch failed
+                photoCellChildren.push(
+                  createParagraph('ABSENT', false, AlignmentType.CENTER),
+                );
+              }
+            } catch (error) {
+              console.error(
+                `Failed to add signature image for ${attendee.name}:`,
+                error,
+              );
+              photoCellChildren.push(
+                createParagraph('ABSENT', false, AlignmentType.CENTER),
+              );
+            }
+          } else {
+            // No signature URL, add ABSENT
+            photoCellChildren.push(
+              createParagraph('ABSENT', false, AlignmentType.CENTER),
+            );
+          }
+
           attendanceRows.push(
             new TableRow({
               height: { value: 400, rule: 'atLeast' },
@@ -1365,6 +1443,10 @@ export class CMVRDocxGeneratorService {
                 }),
                 new TableCell({
                   children: signatureCellChildren,
+                  verticalAlign: VerticalAlign.CENTER,
+                }),
+                new TableCell({
+                  children: photoCellChildren,
                   verticalAlign: VerticalAlign.CENTER,
                 }),
               ],
