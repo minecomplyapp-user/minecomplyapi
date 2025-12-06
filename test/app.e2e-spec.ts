@@ -20,6 +20,14 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res) => {
+        expect(res.body).toHaveProperty('name');
+        expect(res.body).toHaveProperty('description');
+        expect(res.body).toHaveProperty('version');
+        expect(res.body).toHaveProperty('environment');
+        expect(res.body).toHaveProperty('uptime');
+        expect(res.body).toHaveProperty('timestamp');
+        expect(res.body.name).toBe('MineComply API');
+      });
   });
 });

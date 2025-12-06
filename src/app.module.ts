@@ -14,6 +14,7 @@ import { StorageModule } from './storage/storage.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { CmvrModule } from './cmvr/cmvr.module';
 import { EccModule } from './ecc/ecc.module';
+import { GuestRemarksModule } from './guest-remarks/guest-remarks.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EccModule } from './ecc/ecc.module';
     AttendanceModule,
     CmvrModule,
     EccModule,
+    GuestRemarksModule,
   ],
   controllers: [AppController],
   providers: [

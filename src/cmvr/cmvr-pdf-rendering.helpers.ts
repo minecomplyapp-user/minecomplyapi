@@ -1189,35 +1189,38 @@ export function drawExecutiveSummaryOfCompliance(
       // --- Draw the sub-rows ---
       let currentY = y;
 
-      // Check if this is "Complaints Management" with naForAll = true
+      // ✅ FIX: Check if this is "Complaints Management" with naForAll = true
       const isComplaintsNA =
         row.requirement === 'Complaints Management' && row.complied === true;
 
-      // If naForAll is true, draw merged Y+N columns with "N/A" text
+      // ✅ FIX: If naForAll is true, show "N/A" in YES (Y) column only, leave NO (N) column empty
       if (isComplaintsNA) {
-        // Draw merged complied columns (Y+N) for the entire group
-        const compliedMergedWidth = yWidth + nWidth;
-
-        // Draw vertical borders for merged complied area
+        // Draw vertical borders for Y and N columns separately
         doc
           .moveTo(yX, y)
           .lineTo(yX, y + totalSubRowHeight)
-          .stroke(); // Left border of merged Y+N
+          .stroke(); // Left border of Y column
+        doc
+          .moveTo(nX, y)
+          .lineTo(nX, y + totalSubRowHeight)
+          .stroke(); // Border between Y and N
         doc
           .moveTo(remarksX, y)
           .lineTo(remarksX, y + totalSubRowHeight)
-          .stroke(); // Right border of merged Y+N
+          .stroke(); // Right border of N column
 
-        // Draw "N/A" text centered in merged Y+N area
+        // ✅ FIX: Draw "N/A" text ONLY in the Y (YES) column
         const naText = 'N/A';
         const naTextHeight = doc.heightOfString(naText, {
-          width: compliedMergedWidth - 10,
+          width: yWidth - 10,
         });
         const naTextY = y + (totalSubRowHeight - naTextHeight) / 2;
         doc.font('Helvetica').text(naText, yX + 5, naTextY, {
-          width: compliedMergedWidth - 10,
+          width: yWidth - 10,
           align: 'center',
         });
+        
+        // N column remains empty (no text, no checkmarks)
       }
 
       for (let i = 0; i < subRows.length; i++) {
@@ -1234,29 +1237,21 @@ export function drawExecutiveSummaryOfCompliance(
           .lineTo(subReqX, currentY + subRowHeight)
           .stroke(); // Left border of sub-row's requirement cell (same as parent's right)
 
-        // Only draw vertical borders in Y+N area if NOT naForAll
-        if (!isComplaintsNA) {
-          doc
-            .moveTo(yX, currentY)
-            .lineTo(yX, currentY + subRowHeight)
-            .stroke(); // Right border of sub-row's requirement cell
-          doc
-            .moveTo(nX, currentY)
-            .lineTo(nX, currentY + subRowHeight)
-            .stroke(); // Right border of Y cell
-          doc
-            .moveTo(remarksX, currentY)
-            .lineTo(remarksX, currentY + subRowHeight)
-            .stroke(); // Right border of N cell
-        } else {
-          // For naForAll, only draw the right border of the remarks column
-          doc
-            .moveTo(remarksX, currentY)
-            .lineTo(remarksX, currentY + subRowHeight)
-            .stroke(); // Right border of merged Y+N cell
-        }
+        // ✅ FIX: Draw vertical borders for Y and N columns (same for both naForAll and normal)
+        doc
+          .moveTo(yX, currentY)
+          .lineTo(yX, currentY + subRowHeight)
+          .stroke(); // Right border of sub-row's requirement cell
+        doc
+          .moveTo(nX, currentY)
+          .lineTo(nX, currentY + subRowHeight)
+          .stroke(); // Right border of Y cell
+        doc
+          .moveTo(remarksX, currentY)
+          .lineTo(remarksX, currentY + subRowHeight)
+          .stroke(); // Right border of N cell
 
-        // Bottom border for the sub-row (only under requirement area, not Y+N area when naForAll)
+        // ✅ FIX: Bottom border for the sub-row (under requirement area only when naForAll)
         if (!isComplaintsNA) {
           doc
             .moveTo(subReqX, currentY + subRowHeight)

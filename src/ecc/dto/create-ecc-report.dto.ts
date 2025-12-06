@@ -30,22 +30,27 @@ export class CreateEccReportDto {
 
   @ApiProperty({ description: 'ID of the user who created the report' })
   @IsString()
-  createdById: string;
+  @IsOptional()
+  createdById?: string;
 
   @ApiProperty({ description: 'General information about the report' })
   @IsObject()
-  generalInfo: object;
+  @IsOptional()
+  generalInfo?: object;
 
   @IsObject()
-  mmtInfo: object;
+  @IsOptional()
+  mmtInfo?: object;
 
   @ApiProperty({
     description: 'Details about the Multi-Partite Monitoring Team',
   })
   @IsObject()
+  @IsOptional()
   remarks_list?: object;
 
   @IsObject()
+  @IsOptional()
   permit_holder_with_conditions?: object;
 
   @IsOptional()
@@ -53,7 +58,8 @@ export class CreateEccReportDto {
   @IsString({ each: true })
   recommendations?: string[];
 
-  @ApiProperty({ description: 'ID of the user who created the report' })
+  @ApiProperty({ description: 'Filename for the report' })
   @IsString()
-  filename: string;
+  @IsOptional()
+  filename?: string;
 }

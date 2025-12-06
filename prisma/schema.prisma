@@ -21,6 +21,7 @@ model User {
   createdCMVRReports CMVRReport[]        @relation("UserCreatedCMVRReports")
   validations        ValidationSession[] @relation("ValidationReviewer")
   attendanceRecords  AttendanceRecord[]  @relation("UserAttendanceRecords")
+  guestRemarks       GuestRemark[]       @relation("UserGuestRemarks")
 }
 
 model ECCReport {
@@ -49,9 +50,12 @@ model CMVRReport {
   cmvrData    Json?
   fileName    String?  @db.VarChar
   attachments Json     @default("[]")
+  quarter     String?  @db.VarChar // "Q1", "Q2", "Q3", "Q4"
+  year        Int?     // Year for the report (e.g., 2025)
   createdBy   User?    @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_cmvr_report_creator")
+  @@index([quarter, year], map: "idx_cmvr_quarter_year")
 }
 
 model ValidationSession {
@@ -103,6 +107,23 @@ model AttendanceRecord {
 
   @@index([reportId], map: "idx_attendance_record_report")
   @@index([createdById], map: "idx_attendance_record_creator")
+}
+
+model GuestRemark {
+  id          String   @id @default(uuid())
+  reportId    String
+  reportType  String
+  guestName   String
+  guestEmail  String?
+  guestRole   String
+  remarks     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  createdBy   User?    @relation("UserGuestRemarks", fields: [createdById], references: [id])
+
+  @@index([reportId], map: "idx_guest_remark_report")
+  @@index([createdById], map: "idx_guest_remark_creator")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
