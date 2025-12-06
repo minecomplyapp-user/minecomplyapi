@@ -79,6 +79,25 @@ export class EccService {
     const permitHolders = permit_holder_with_conditions?.permit_holders;
 
     reportData.generalInfo;
+    // Add null safety check - permitHolders might be undefined
+    // Also check top-level permit_holders field from DTO
+    if (!permitHolders || !Array.isArray(permitHolders)) {
+      // Fallback to top-level permit_holders if available
+      if (data.permit_holders && Array.isArray(data.permit_holders)) {
+        return {
+          generalInfo: data.generalInfo,
+          mmtInfo: data.mmtInfo,
+          permit_holders: data.permit_holders,
+        };
+      }
+
+      return {
+        generalInfo: data.generalInfo,
+        mmtInfo: data.mmtInfo,
+        permit_holders: [],
+      };
+    }
+
     const formattedPermitHolders = permitHolders.map((holder) => {
       const conditions = holder.monitoringState?.formatted?.conditions ?? [];
 

@@ -135,15 +135,319 @@ export class ECCWordGeneratorService {
         });
 
         children.push(table, new Paragraph({ text: '' }));
-        // console.log('counts inside loop', counts['1'].complied);
-        children.push(new Paragraph({ text:"Complied: " +String(counts[`${sectionIndex+1}`].complied)+" conditions" }));        
-        children.push(new Paragraph({ text:"Partially Complied: " +String(counts[`${sectionIndex+1}`].partial)+" conditions" }));        
-        children.push(new Paragraph({ text:"Not Complied: " +String(counts[`${sectionIndex+1}`].not)+" conditions" }));        
-        children.push(new Paragraph({ text:"N/A: " +String(counts[`${sectionIndex+1}`].na)+" conditions" }));        
-
-
-        const values = eccReport.remarks_list[sectionIndex];
         
+        // ✅ ENHANCED: Compliance Summary Table (replaces simple text)
+        const count = counts[`${sectionIndex+1}`];
+        const totalConds = count.complied + count.partial + count.not + count.na;
+        
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Compliance Summary - ${eccReport.permit_holders?.[sectionIndex] || 'Permit Holder'}`,
+                bold: true,
+                font: 'Times New Roman',
+                size: 22, // 11pt
+              }),
+            ],
+          }),
+        );
+        
+        const tallyTable = new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            // Header Row
+            new TableRow({
+              children: [
+                new TableCell({
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: 'Status',
+                          bold: true,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  width: { size: 25, type: WidthType.PERCENTAGE },
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: 'Count',
+                          bold: true,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  width: { size: 25, type: WidthType.PERCENTAGE },
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: 'Percentage',
+                          bold: true,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            // Data Rows
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: 'Complied',
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: String(count.complied),
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: `${((count.complied / totalConds) * 100).toFixed(1)}%`,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: 'Not Complied',
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: String(count.not),
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: `${((count.not / totalConds) * 100).toFixed(1)}%`,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: 'Partially Complied',
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: String(count.partial),
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: `${((count.partial / totalConds) * 100).toFixed(1)}%`,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: 'N/A',
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: String(count.na),
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: `${((count.na / totalConds) * 100).toFixed(1)}%`,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            // Total Row
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: 'Total Conditions',
+                          bold: true,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: String(totalConds),
+                          bold: true,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      children: [
+                        new TextRun({
+                          text: '100%',
+                          bold: true,
+                          font: 'Times New Roman',
+                          size: 22,
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        });
+        
+        children.push(tallyTable, new Paragraph({ text: '' }));
+
+
+        // Add null safety check for remarks_list
+        const values = eccReport.remarks_list?.[sectionIndex];
+
         children.push(new Paragraph({ text: 'Remarks' })); // Title for the remarks section
 
         // Check if values is an array and not empty

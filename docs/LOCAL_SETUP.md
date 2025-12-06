@@ -679,3 +679,5 @@ minecomplyapi/
 
 For frontend setup, continue to `minecomplyapp/docs/LOCAL_SETUP.md`
 
+
+

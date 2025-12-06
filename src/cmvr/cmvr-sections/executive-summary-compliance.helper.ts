@@ -54,13 +54,15 @@ export function createExecutiveSummaryTable(
   };
 
   const createCenteredCell = (
-    text: string,
+    text: string | TextRun,
     opts: Record<string, unknown> = {},
   ) => {
+    const content = typeof text === 'string' ? createTextRun(text) : text;
+
     return new TableCell({
       children: [
         new Paragraph({
-          children: [createTextRun(text)],
+          children: [content],
           alignment: AlignmentType.CENTER,
         }),
       ],
@@ -235,9 +237,12 @@ export function createExecutiveSummaryTable(
     );
   }
 
-  // Complaints Management - Category spans 5 rows vertically
+  // ✅ FIX: Complaints Management - Category spans 5 rows vertically
   if (summary.complaintsManagement) {
     const c = summary.complaintsManagement;
+    
+    // ✅ FIX: Check if N/A for all is selected
+    const isNA = c.naForAll === true;
 
     // Row 1: Complaint Receiving Setup
     rows.push(
@@ -258,8 +263,10 @@ export function createExecutiveSummaryTable(
           createLeftAlignedCell([createTextRun('Complaint receiving set-up')], {
             width: { size: 20, type: WidthType.PERCENTAGE },
           }),
-          createCenteredCell(checkmark(c.complaintReceivingSetup === true)),
-          createCenteredCell(checkmark(c.complaintReceivingSetup === false)),
+          // ✅ FIX: Show "N/A" in Y column if naForAll, otherwise show checkmark
+          createCenteredCell(isNA ? createTextRun('N/A') : checkmark(c.complaintReceivingSetup === true)),
+          // ✅ FIX: Leave N column empty if naForAll
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.complaintReceivingSetup === false)),
           new TableCell({
             children: [
               new Paragraph({
@@ -281,8 +288,8 @@ export function createExecutiveSummaryTable(
       new TableRow({
         children: [
           createLeftAlignedCell([createTextRun('Case investigation')]),
-          createCenteredCell(checkmark(c.caseInvestigation === true)),
-          createCenteredCell(checkmark(c.caseInvestigation === false)),
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.caseInvestigation === true)),
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.caseInvestigation === false)),
         ],
       }),
     );
@@ -292,8 +299,8 @@ export function createExecutiveSummaryTable(
       new TableRow({
         children: [
           createLeftAlignedCell([createTextRun('Implementation of control')]),
-          createCenteredCell(checkmark(c.implementationOfControl === true)),
-          createCenteredCell(checkmark(c.implementationOfControl === false)),
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.implementationOfControl === true)),
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.implementationOfControl === false)),
         ],
       }),
     );
@@ -306,10 +313,10 @@ export function createExecutiveSummaryTable(
             createTextRun('Communication with complainant/public'),
           ]),
           createCenteredCell(
-            checkmark(c.communicationWithComplainantOrPublic === true),
+            isNA ? createTextRun('') : checkmark(c.communicationWithComplainantOrPublic === true),
           ),
           createCenteredCell(
-            checkmark(c.communicationWithComplainantOrPublic === false),
+            isNA ? createTextRun('') : checkmark(c.communicationWithComplainantOrPublic === false),
           ),
         ],
       }),
@@ -320,8 +327,8 @@ export function createExecutiveSummaryTable(
       new TableRow({
         children: [
           createLeftAlignedCell([createTextRun('Complaint documentation')]),
-          createCenteredCell(checkmark(c.complaintDocumentation === true)),
-          createCenteredCell(checkmark(c.complaintDocumentation === false)),
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.complaintDocumentation === true)),
+          createCenteredCell(isNA ? createTextRun('') : checkmark(c.complaintDocumentation === false)),
         ],
       }),
     );

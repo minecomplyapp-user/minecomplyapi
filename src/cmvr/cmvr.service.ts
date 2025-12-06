@@ -51,12 +51,53 @@ export class CmvrService {
       flattenedData.attendanceId = attendanceId;
     }
 
+    // ✅ NEW: Extract quarter and year from generalInfo OR top-level
+    const generalInfo = flattenedData.generalInfo;
+    let quarter: string | null = null;
+    let year: number | null = null;
+
+    // Check generalInfo first
+    if (generalInfo) {
+      // Extract quarter (may be "1st", "2nd", "3rd", "4th" or "Q1", "Q2", "Q3", "Q4")
+      if (generalInfo.quarter) {
+        const q = String(generalInfo.quarter).toLowerCase();
+        if (q.includes('1') || q === 'first') quarter = 'Q1';
+        else if (q.includes('2') || q === 'second') quarter = 'Q2';
+        else if (q.includes('3') || q === 'third') quarter = 'Q3';
+        else if (q.includes('4') || q === 'fourth') quarter = 'Q4';
+      }
+
+      // Extract year
+      if (generalInfo.year) {
+        year = parseInt(String(generalInfo.year), 10);
+        if (isNaN(year)) year = null;
+      }
+    }
+
+    // Also check top-level fields (for DTO structure)
+    if (!quarter && cmvrData.quarter) {
+      const q = String(cmvrData.quarter).toLowerCase();
+      if (q.includes('1') || q === 'first') quarter = 'Q1';
+      else if (q.includes('2') || q === 'second') quarter = 'Q2';
+      else if (q.includes('3') || q === 'third') quarter = 'Q3';
+      else if (q.includes('4') || q === 'fourth') quarter = 'Q4';
+    }
+
+    if (!year && cmvrData.year) {
+      year = parseInt(String(cmvrData.year), 10);
+      if (isNaN(year)) year = null;
+    }
+
+    console.log('✅ Extracted quarter:', quarter, '| year:', year);
+
     const dataToSave = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       cmvrData: flattenedData as unknown as any,
       createdById: createdById,
       fileName: fileName || null,
       attachments: attachments || [],
+      quarter: quarter, // ✅ NEW: Store quarter
+      year: year, // ✅ NEW: Store year
     };
 
     console.log('Data being saved to DB:', JSON.stringify(dataToSave, null, 2));
@@ -85,12 +126,64 @@ export class CmvrService {
     return cmvrReport;
   }
 
-  async findAll() {
+  async findAll(quarter?: string, year?: number) {
+    const where: any = {};
+    
+    // ✅ NEW: Filter by quarter if provided
+    if (quarter) {
+      where.quarter = quarter;
+    }
+    
+    // ✅ NEW: Filter by year if provided
+    if (year) {
+      where.year = year;
+    }
+
     return this.prisma.cMVRReport.findMany({
+      where,
       orderBy: {
         createdAt: 'desc',
       },
     });
+  }
+
+  /**
+   * ✅ NEW: Get reports grouped by quarter and year
+   */
+  async findByQuarterAndYear(year?: number) {
+    const where: any = {};
+    if (year) {
+      where.year = year;
+    }
+
+    const reports = await this.prisma.cMVRReport.findMany({
+      where,
+      orderBy: [
+        { year: 'desc' },
+        { quarter: 'asc' },
+        { createdAt: 'desc' },
+      ],
+    });
+
+    // Group by quarter and year
+    const grouped: Record<string, Record<string, any[]>> = {};
+    
+    reports.forEach((report) => {
+      const reportYear = report.year || 'Unknown';
+      const reportQuarter = report.quarter || 'Unassigned';
+      
+      if (!grouped[reportYear]) {
+        grouped[reportYear] = {};
+      }
+      
+      if (!grouped[reportYear][reportQuarter]) {
+        grouped[reportYear][reportQuarter] = [];
+      }
+      
+      grouped[reportYear][reportQuarter].push(report);
+    });
+
+    return grouped;
   }
 
   async findByUserId(userId: string) {

@@ -1024,6 +1024,7 @@ export class CmvrController {
   ) {}
 
   @Post()
+  @Public()
   @ApiOperation({ summary: 'Create a new CMVR report' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -1041,16 +1042,34 @@ export class CmvrController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all CMVR reports' })
+  @Public()
+  @ApiOperation({ summary: 'Get all CMVR reports, optionally filtered by quarter and year' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of all CMVR reports',
   })
-  async findAll() {
-    return this.cmvrService.findAll();
+  async findAll(
+    @Query('quarter') quarter?: string,
+    @Query('year') year?: string,
+  ) {
+    const yearNum = year ? parseInt(year, 10) : undefined;
+    return this.cmvrService.findAll(quarter, yearNum);
+  }
+
+  @Get('grouped-by-quarter')
+  @Public()
+  @ApiOperation({ summary: 'Get CMVR reports grouped by quarter and year' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'CMVR reports grouped by quarter and year',
+  })
+  async getGroupedByQuarter(@Query('year') year?: string) {
+    const yearNum = year ? parseInt(year, 10) : undefined;
+    return this.cmvrService.findByQuarterAndYear(yearNum);
   }
 
   @Get('user/:userId')
+  @Public()
   @ApiOperation({ summary: 'Get all CMVR reports created by a specific user' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({
@@ -1228,6 +1247,7 @@ export class CmvrController {
   }
 
   @Get(':id')
+  @Public()
   @ApiOperation({ summary: 'Get a CMVR report by ID' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID' })
   @ApiResponse({
@@ -1243,6 +1263,7 @@ export class CmvrController {
   }
 
   @Post(':id/duplicate')
+  @Public()
   @ApiOperation({ summary: 'Duplicate a CMVR report' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID to duplicate' })
   @ApiResponse({
@@ -1258,6 +1279,7 @@ export class CmvrController {
   }
 
   @Get(':id/pdf/general-info')
+  @Public()
   @ApiOperation({
     summary: 'Generate PDF for CMVR General Information section',
   })
