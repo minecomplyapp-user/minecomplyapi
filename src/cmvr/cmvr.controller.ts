@@ -1338,6 +1338,7 @@ export class CmvrController {
     await this.cmvrService.remove(id);
   }
 
+  @Public()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a CMVR report by ID (replace cmvrData)' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID' })

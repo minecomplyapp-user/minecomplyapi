@@ -50,6 +50,7 @@ export class AttendanceController {
     return this.attendanceService.findAll(reportId);
   }
 
+  @Public()
   @Get('report/:reportId')
   @ApiOperation({ summary: 'Get attendance records by report ID' })
   @ApiResponse({
