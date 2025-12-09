@@ -109,12 +109,34 @@ export class SupabaseStorageService {
   }
 
   async remove(path: string): Promise<void> {
-    const { error } = await this.client.storage
-      .from(this.bucket)
-      .remove([path]);
+    // Validate input path
+    if (!path || typeof path !== 'string' || path.trim().length === 0) {
+      this.logger.error('Invalid path provided to remove method');
+      throw new InternalServerErrorException('Invalid file path provided');
+    }
 
-    if (error) {
-      this.logger.error(`Failed to remove object ${path}: ${error.message}`);
+    const trimmedPath = path.trim();
+
+    try {
+      const { error } = await this.client.storage
+        .from(this.bucket)
+        .remove([trimmedPath]);
+
+      if (error) {
+        this.logger.error(
+          `Failed to remove object ${trimmedPath}: ${error.message}`,
+        );
+        throw new InternalServerErrorException('Unable to remove storage object');
+      }
+    } catch (error) {
+      // Re-throw InternalServerErrorException as-is
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      // Handle unexpected errors
+      this.logger.error(
+        `Unexpected error removing object ${trimmedPath}: ${error}`,
+      );
       throw new InternalServerErrorException('Unable to remove storage object');
     }
   }

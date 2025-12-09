@@ -1,5 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import {
   CMVRPdfGeneratorService,
   CMVRGeneralInfo,
@@ -102,28 +108,57 @@ export class CmvrService {
 
     console.log('Data being saved to DB:', JSON.stringify(dataToSave, null, 2));
 
-    const result = await this.prisma.cMVRReport.create({
-      data: dataToSave as any,
-    });
+    try {
+      const result = await this.prisma.cMVRReport.create({
+        data: dataToSave as any,
+      });
 
-    console.log(
-      'Created record attachments:',
-      JSON.stringify((result as Record<string, unknown>).attachments, null, 2),
-    );
+      console.log(
+        'Created record attachments:',
+        JSON.stringify(
+          (result as Record<string, unknown>).attachments,
+          null,
+          2,
+        ),
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in create CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(`Validation error in create CMVR: ${error.message}`);
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in create CMVR: ${error}`);
+      throw error;
+    }
   }
 
   async findOne(id: string) {
-    const cmvrReport = await this.prisma.cMVRReport.findUnique({
-      where: { id },
-    });
+    try {
+      const cmvrReport = await this.prisma.cMVRReport.findUnique({
+        where: { id },
+      });
 
-    if (!cmvrReport) {
-      throw new NotFoundException(`CMVR Report with ID ${id} not found`);
+      if (!cmvrReport) {
+        throw new NotFoundException(`CMVR Report with ID ${id} not found`);
+      }
+
+      return cmvrReport;
+    } catch (error) {
+      // Re-throw NotFoundException as-is
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in findOne CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in findOne CMVR: ${error}`);
+      throw error;
     }
-
-    return cmvrReport;
   }
 
   async findAll(quarter?: string, year?: number) {
@@ -220,7 +255,17 @@ export class CmvrService {
       (record as Record<string, unknown>).attachments,
     );
 
-    const result = await this.prisma.cMVRReport.delete({ where: { id } });
+    let result;
+    try {
+      result = await this.prisma.cMVRReport.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in remove CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in remove CMVR: ${error}`);
+      throw error;
+    }
 
     if (attachmentPaths.length > 0) {
       const uniquePaths = Array.from(new Set(attachmentPaths));
@@ -309,9 +354,23 @@ export class CmvrService {
       attachments: attachments, // Reuse the same attachment references
     };
 
-    return this.prisma.cMVRReport.create({
-      data: dataToSave as any,
-    });
+    try {
+      return await this.prisma.cMVRReport.create({
+        data: dataToSave as any,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in duplicate CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(
+          `Validation error in duplicate CMVR: ${error.message}`,
+        );
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in duplicate CMVR: ${error}`);
+      throw error;
+    }
   }
 
   private extractAttachmentPaths(attachments: unknown): string[] {
@@ -367,16 +426,32 @@ export class CmvrService {
       JSON.stringify(dataToUpdate, null, 2),
     );
 
-    const result = await this.prisma.cMVRReport.update({
-      where: { id },
-      data: dataToUpdate as any,
-    });
+    try {
+      const result = await this.prisma.cMVRReport.update({
+        where: { id },
+        data: dataToUpdate as any,
+      });
 
-    console.log(
-      'Updated record attachments:',
-      JSON.stringify((result as Record<string, unknown>).attachments, null, 2),
-    );
+      console.log(
+        'Updated record attachments:',
+        JSON.stringify(
+          (result as Record<string, unknown>).attachments,
+          null,
+          2,
+        ),
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in update CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(`Validation error in update CMVR: ${error.message}`);
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in update CMVR: ${error}`);
+      throw error;
+    }
   }
 }
