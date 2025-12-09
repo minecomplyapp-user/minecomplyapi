@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, ECCCondition } from '@prisma/client';
 import { CreateEccReportDto } from './dto/create-ecc-report.dto';
@@ -11,6 +16,8 @@ import { Console } from 'console';
 
 @Injectable()
 export class EccService {
+  private readonly logger = new Logger(EccService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly pdfGenerator: ECCPdfGeneratorService,
@@ -72,7 +79,15 @@ export class EccService {
 
     // If the value is a string, parse it into an object
     if (typeof permit_holder_with_conditions === 'string') {
-      permit_holder_with_conditions = JSON.parse(permit_holder_with_conditions);
+      try {
+        permit_holder_with_conditions = JSON.parse(permit_holder_with_conditions);
+      } catch (parseError) {
+        this.logger.error(
+          `Failed to parse permit_holder_with_conditions JSON for report ${reportId}: ${parseError}`,
+        );
+        // Fallback to null to prevent crash
+        permit_holder_with_conditions = null;
+      }
     }
 
     // Now TypeScript still thinks it's unknown — so cast it:
@@ -98,8 +113,10 @@ export class EccService {
       };
     }
 
-    const formattedPermitHolders = permitHolders.map((holder) => {
-      const conditions = holder.monitoringState?.formatted?.conditions ?? [];
+    const formattedPermitHolders = permitHolders
+      .filter((holder) => holder && typeof holder === 'object')
+      .map((holder) => {
+        const conditions = holder?.monitoringState?.formatted?.conditions ?? [];
 
       const monitoringState = conditions.map((cond) => ({
         id: String(cond.condition_number),
@@ -121,13 +138,13 @@ export class EccService {
       };
       console.log('asdadadasdsd' + asd);
 
-      return {
-        id: holder.id,
-        name: holder.name,
-        type: holder.type,
-        monitoringState,
-      };
-    });
+        return {
+          id: holder?.id,
+          name: holder?.name,
+          type: holder?.type,
+          monitoringState,
+        };
+      });
     console.log('FORMATTEDDDD', formattedPermitHolders);
     // 3. Construct and return the final combined object
     return {
@@ -231,47 +248,63 @@ export class EccService {
     };
 
     // 2. Start a transaction to ensure all writes succeed or none do.
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        // 3. Create the parent ECC Report record.
-        const newEccReport = await tx.eCCReport.create({
-          data: eccReportData,
-        });
-        console.log('Created ECC Report:', newEccReport);
-
-        let newConditions: ECCCondition[] = [];
-
-        if (conditions && conditions.length > 0) {
-          // 4. OPTIMIZATION: Use Promise.all to run all creation promises concurrently.
-          //    This is significantly faster than a sequential 'for' loop with 'await'.
-
-          const conditionCreationPromises = conditions.map((conditionDto) => {
-            return tx.eCCCondition.create({
-              data: {
-                // Set the foreign key using the newly created report's ID
-                ECCReportID: newEccReport.id,
-
-                // Spread all condition data from the DTO
-                ...(conditionDto as Prisma.ECCConditionUncheckedCreateInput),
-              },
-            });
+    try {
+      const result = await this.prisma.$transaction(
+        async (tx) => {
+          // 3. Create the parent ECC Report record.
+          const newEccReport = await tx.eCCReport.create({
+            data: eccReportData,
           });
+          console.log('Created ECC Report:', newEccReport);
 
-          // Wait for all conditions to be created concurrently within the transaction
-          newConditions = await Promise.all(conditionCreationPromises);
-        }
-        // 5. Return both the parent report and the created conditions.
-        return {
-          ...newEccReport,
-          conditions: newConditions,
-        };
-      },
-      {
-        timeout: 150000,
-      },
-    );
+          let newConditions: ECCCondition[] = [];
 
-    return result;
+          if (conditions && conditions.length > 0) {
+            // 4. OPTIMIZATION: Use Promise.all to run all creation promises concurrently.
+            //    This is significantly faster than a sequential 'for' loop with 'await'.
+
+            const conditionCreationPromises = conditions.map((conditionDto) => {
+              return tx.eCCCondition.create({
+                data: {
+                  // Set the foreign key using the newly created report's ID
+                  ECCReportID: newEccReport.id,
+
+                  // Spread all condition data from the DTO
+                  ...(conditionDto as Prisma.ECCConditionUncheckedCreateInput),
+                },
+              });
+            });
+
+            // Wait for all conditions to be created concurrently within the transaction
+            newConditions = await Promise.all(conditionCreationPromises);
+          }
+          // 5. Return both the parent report and the created conditions.
+          return {
+            ...newEccReport,
+            conditions: newConditions,
+          };
+        },
+        {
+          timeout: 150000,
+        },
+      );
+
+      return result;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        // Handle known Prisma errors (constraint violations, etc.)
+        this.logger.error(`Prisma error in createEccReport: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(
+          `Validation error in createEccReport: ${error.message}`,
+        );
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      // Re-throw other errors (including NotFoundException, etc.)
+      this.logger.error(`Unexpected error in createEccReport: ${error}`);
+      throw error;
+    }
   }
 
   async updateCondition(conditionId: number, updateDto: UpdateConditionDto) {
