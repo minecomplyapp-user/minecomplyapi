@@ -51,7 +51,7 @@ model CMVRReport {
   fileName    String?  @db.VarChar
   attachments Json     @default("[]")
   quarter     String?  @db.VarChar // "Q1", "Q2", "Q3", "Q4"
-  year        Int?     // Year for the report (e.g., 2025)
+  year        Int? // Year for the report (e.g., 2025)
   createdBy   User?    @relation("UserCreatedCMVRReports", fields: [createdById], references: [id])
 
   @@index([createdById], map: "idx_cmvr_report_creator")
@@ -110,20 +110,34 @@ model AttendanceRecord {
 }
 
 model GuestRemark {
-  id          String   @id @default(uuid())
-  reportId    String
-  reportType  String
-  guestName   String
-  guestEmail  String?
-  guestRole   String
-  remarks     String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdById String?
-  createdBy   User?    @relation("UserGuestRemarks", fields: [createdById], references: [id])
+  id                   String    @id @default(uuid())
+  reportId             String?
+  reportType           String?
+  // Legacy fields (kept for backward compatibility)
+  guestName            String? // Maps to fullName
+  guestEmail           String?
+  guestRole            String?
+  remarks              String?   @db.Text // Maps to recommendations
+  // ✅ NEW: Google Form fields (MMT Observation Form)
+  fullName             String? // Full name (nullable for backward compatibility)
+  agency               String? // Agency/Organization (MGB, EMB, LGU, etc. or "Other")
+  agencyOther          String? // If agency is "Other", specify here
+  position             String? // Position/Designation
+  dateOfMonitoring     DateTime? // Date of monitoring
+  siteCompanyMonitored String? // Site / Company Monitored
+  observations         String?   @db.Text // Observations (optional)
+  issuesConcerns       String?   @db.Text // Issues or Concerns Noted (optional)
+  recommendations      String?   @db.Text // Recommendations (required)
+  // Metadata
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  createdById          String?
+  createdByEmail       String? // Store email for reference
+  createdBy            User?     @relation("UserGuestRemarks", fields: [createdById], references: [id])
 
   @@index([reportId], map: "idx_guest_remark_report")
   @@index([createdById], map: "idx_guest_remark_creator")
+  @@index([dateOfMonitoring], map: "idx_guest_remark_date")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

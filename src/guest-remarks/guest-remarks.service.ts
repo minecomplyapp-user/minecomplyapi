@@ -8,17 +8,46 @@ export class GuestRemarksService {
 
   /**
    * Create a new guest remark
+   * Supports both legacy format and new Google Form format
    */
   async create(dto: CreateGuestRemarkDto) {
+    // Convert dateOfMonitoring string to Date if provided
+    let dateOfMonitoringDate: Date | null = null;
+    if (dto.dateOfMonitoring) {
+      try {
+        dateOfMonitoringDate = new Date(dto.dateOfMonitoring);
+        // Validate the date
+        if (isNaN(dateOfMonitoringDate.getTime())) {
+          dateOfMonitoringDate = null;
+        }
+      } catch (error) {
+        console.warn('Invalid dateOfMonitoring format:', dto.dateOfMonitoring);
+        dateOfMonitoringDate = null;
+      }
+    }
+
     return this.prisma.guestRemark.create({
       data: {
-        reportId: dto.reportId,
-        reportType: dto.reportType,
-        guestName: dto.guestName,
+        // Legacy fields (for backward compatibility)
+        reportId: dto.reportId || null,
+        reportType: dto.reportType || null,
+        guestName: dto.guestName || dto.fullName || null, // Fallback to fullName if guestName not provided
         guestEmail: dto.guestEmail || null,
-        guestRole: dto.guestRole,
-        remarks: dto.remarks,
+        guestRole: dto.guestRole || null,
+        remarks: dto.remarks || dto.recommendations || null, // Fallback to recommendations if remarks not provided
+        // ✅ NEW: Google Form fields
+        fullName: dto.fullName || dto.guestName || null, // Use fullName, fallback to guestName for legacy
+        agency: dto.agency || null,
+        agencyOther: dto.agencyOther || null,
+        position: dto.position || null,
+        dateOfMonitoring: dateOfMonitoringDate,
+        siteCompanyMonitored: dto.siteCompanyMonitored || null,
+        observations: dto.observations || null,
+        issuesConcerns: dto.issuesConcerns || null,
+        recommendations: dto.recommendations || dto.remarks || null, // Use recommendations, fallback to remarks for legacy
+        // Metadata
         createdById: dto.createdById || null,
+        createdByEmail: dto.createdByEmail || null,
       },
     });
   }
