@@ -1,43 +1,100 @@
-import { IsString, IsOptional, IsEmail, IsIn, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsIn, IsNotEmpty, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateGuestRemarkDto {
-  @ApiProperty({ description: 'Report ID (CMVR or ECC)' })
+  // Legacy fields (optional for backward compatibility)
+  @ApiPropertyOptional({ description: 'Report ID (CMVR or ECC)' })
   @IsString()
-  @IsNotEmpty()
-  reportId: string;
+  @IsOptional()
+  reportId?: string;
 
-  @ApiProperty({ description: 'Report type', enum: ['CMVR', 'ECC'] })
+  @ApiPropertyOptional({ description: 'Report type', enum: ['CMVR', 'ECC'] })
   @IsIn(['CMVR', 'ECC'])
-  @IsNotEmpty()
-  reportType: string;
+  @IsOptional()
+  reportType?: string;
 
-  @ApiProperty({ description: 'Guest/Member name' })
+  @ApiPropertyOptional({ description: 'Guest/Member name (legacy - use fullName instead)' })
   @IsString()
-  @IsNotEmpty()
-  guestName: string;
+  @IsOptional()
+  guestName?: string;
 
   @ApiPropertyOptional({ description: 'Guest email (optional)' })
   @IsEmail()
   @IsOptional()
   guestEmail?: string;
 
-  @ApiProperty({
-    description: 'Guest role',
+  @ApiPropertyOptional({
+    description: 'Guest role (legacy)',
     enum: ['Member', 'Guest', 'Stakeholder'],
   })
   @IsIn(['Member', 'Guest', 'Stakeholder'])
-  @IsNotEmpty()
-  guestRole: string;
+  @IsOptional()
+  guestRole?: string;
 
-  @ApiProperty({ description: 'Remarks/comments' })
+  @ApiPropertyOptional({ description: 'Remarks/comments (legacy - use recommendations instead)' })
   @IsString()
-  @IsNotEmpty()
-  remarks: string;
+  @IsOptional()
+  remarks?: string;
 
+  // ✅ NEW: Google Form fields (MMT Observation Form)
+  @ApiProperty({ description: 'Full Name (required for new submissions, optional for backward compatibility)' })
+  @IsString()
+  @IsOptional()
+  fullName?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Agency/Organization Represented (MGB, EMB, LGU, CENRO, PENRO, NGO, COMPANY, Other)',
+    enum: ['MGB', 'EMB', 'LGU', 'CENRO', 'PENRO', 'NGO', 'COMPANY', 'Other']
+  })
+  @IsString()
+  @IsOptional()
+  agency?: string;
+
+  @ApiPropertyOptional({ description: 'Specify agency if "Other" is selected' })
+  @IsString()
+  @IsOptional()
+  agencyOther?: string;
+
+  @ApiPropertyOptional({ description: 'Position/Designation' })
+  @IsString()
+  @IsOptional()
+  position?: string;
+
+  @ApiPropertyOptional({ description: 'Date of Monitoring (YYYY-MM-DD format)' })
+  @IsDateString()
+  @IsOptional()
+  dateOfMonitoring?: string;
+
+  @ApiPropertyOptional({ description: 'Site / Company Monitored' })
+  @IsString()
+  @IsOptional()
+  siteCompanyMonitored?: string;
+
+  @ApiPropertyOptional({ description: 'Observations (optional)' })
+  @IsString()
+  @IsOptional()
+  observations?: string;
+
+  @ApiPropertyOptional({ description: 'Issues or Concerns Noted (optional)' })
+  @IsString()
+  @IsOptional()
+  issuesConcerns?: string;
+
+  @ApiProperty({ description: 'Recommendations (required for new submissions, optional for backward compatibility)' })
+  @IsString()
+  @IsOptional()
+  recommendations?: string;
+
+  // Metadata
   @ApiPropertyOptional({ description: 'User ID if authenticated' })
   @IsString()
   @IsOptional()
   createdById?: string;
+
+  @ApiPropertyOptional({ description: 'User email for reference' })
+  @IsEmail()
+  @IsOptional()
+  createdByEmail?: string;
 }
 

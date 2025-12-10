@@ -23,6 +23,8 @@ import {
 
 // Shape for the normalized generalInfo JSON we agreed on
 export interface CMVRGeneralInfo {
+  // ✅ NEW: Permit holder type selection (single vs multiple)
+  permitHolderType?: 'single' | 'multiple';
   companyName?: string;
   location?:
     | string
@@ -704,6 +706,11 @@ export class CMVRPdfGeneratorService {
     });
 
     try {
+      // ✅ NEW: Permit holder type handling
+      // For single permit holder: Standard format
+      // For multiple permit holders: May need per-permit-holder sections or grouped format
+      const permitHolderType = generalInfo.permitHolderType || 'single';
+
       addGeneralInfoKeyValues(doc, generalInfo);
 
       doc.moveDown(1);

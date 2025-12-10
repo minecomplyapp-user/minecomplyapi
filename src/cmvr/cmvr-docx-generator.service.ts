@@ -540,6 +540,11 @@ export class CMVRDocxGeneratorService {
     const eccAttachment = info.eccConditionsAttachment;
     const eccSupportsMerge = this.supportsDocxMerge(eccAttachment);
 
+    // ✅ NEW: Permit holder type handling
+    // For single permit holder: Standard format
+    // For multiple permit holders: May need per-permit-holder sections or grouped format
+    const permitHolderType = info.permitHolderType || 'single';
+
     children.push(...createGeneralInfoKeyValues(info));
     children.push(
       new Paragraph({
