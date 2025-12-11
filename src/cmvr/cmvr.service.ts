@@ -48,6 +48,11 @@ export class CmvrService {
     console.log('Received attachments:', JSON.stringify(attachments, null, 2));
     console.log('Attachments type:', typeof attachments);
     console.log('Is array:', Array.isArray(attachments));
+    console.log('Attachments count:', Array.isArray(attachments) ? attachments.length : 'N/A');
+    
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      console.log('Attachment paths:', attachments.map((a: any) => a?.path).filter(Boolean));
+    }
 
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
