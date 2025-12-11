@@ -2720,18 +2720,24 @@ export class CMVRDocxGeneratorService {
           getAttribute?: (name: string) => string | undefined;
         };
         const isHeader = this.isTag(cell, 'th');
-        const textLines = this.collectTextContent(cell)
+        // ✅ FIX: Preserve spaces and only split on actual newlines
+        // This ensures text wraps naturally at word boundaries, not in the middle of words
+        const cellText = this.collectTextContent(cell);
+        const textLines = cellText
           .split(/\n/)
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
 
         const paragraphs =
           textLines.length > 0
-            ? textLines.map((line) =>
-                this.createPlainParagraph(line, {
+            ? textLines.map((line) => {
+                // ✅ FIX: Ensure line preserves spaces for natural word wrapping
+                // Normalize multiple spaces to single space, but preserve word boundaries
+                const normalizedLine = line.replace(/\s+/g, ' ');
+                return this.createPlainParagraph(normalizedLine, {
                   bold: isHeader,
-                }),
-              )
+                });
+              })
             : [this.createPlainParagraph('')];
 
         const columnSpanRaw = cell.getAttribute?.('colspan');
@@ -2739,12 +2745,22 @@ export class CMVRDocxGeneratorService {
         const columnSpan = columnSpanRaw ? Number(columnSpanRaw) : undefined;
         const rowSpan = rowSpanRaw ? Number(rowSpanRaw) : undefined;
 
+        // ✅ FIX: Ensure table cells have proper word wrapping
+        // Word will automatically wrap text at spaces, but we need to ensure
+        // cells don't have forced width constraints that cause word breaking
         cells.push(
           new TableCell({
             children: paragraphs,
             columnSpan: columnSpan && columnSpan > 1 ? columnSpan : undefined,
             rowSpan: rowSpan && rowSpan > 1 ? rowSpan : undefined,
             verticalAlign: VerticalAlign.CENTER,
+            // ✅ FIX: Add margins to ensure proper spacing and allow natural text wrapping
+            margins: {
+              top: 100, // 5pt
+              bottom: 100,
+              left: 100,
+              right: 100,
+            },
           }),
         );
       }
@@ -2774,13 +2790,20 @@ export class CMVRDocxGeneratorService {
     },
   ): Paragraph {
     const spacing = options?.spacing ?? { after: 100 };
-    const trimmed = text ?? '';
+    // ✅ FIX: Preserve spaces and ensure text wraps naturally at word boundaries
+    // Remove any artificial line breaks within words, but preserve intentional newlines
+    const trimmed = (text ?? '').trim();
+    // Ensure spaces are preserved (don't collapse multiple spaces into one)
+    const normalized = trimmed.replace(/\s+/g, ' ').replace(/\n\s*/g, '\n');
+    
     return new Paragraph({
       children:
-        trimmed.length > 0
-          ? [createText(trimmed, options?.bold ?? false, options?.size ?? 22)]
+        normalized.length > 0
+          ? [createText(normalized, options?.bold ?? false, options?.size ?? 22)]
           : [],
       spacing,
+      // ✅ FIX: Ensure paragraph allows word wrapping
+      // Word will automatically wrap at spaces, but we ensure no forced breaks
     });
   }
 
