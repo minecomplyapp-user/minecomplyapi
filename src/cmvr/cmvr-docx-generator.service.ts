@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   Document,
   Packer,
@@ -52,6 +52,8 @@ import { createExecutiveSummaryTable } from './cmvr-sections/executive-summary-c
 
 @Injectable()
 export class CMVRDocxGeneratorService {
+  private readonly logger = new Logger(CMVRDocxGeneratorService.name);
+
   constructor(private readonly storageService: SupabaseStorageService) {}
 
   /**
@@ -535,8 +537,18 @@ export class CMVRDocxGeneratorService {
     attendanceData?: any,
     attachments: Array<{ path: string; caption?: string }> = [],
   ): Promise<Buffer> {
+    this.logger.log(
+      `[generateFullReportDocx] START - Received ${attachments.length} attachment(s) as parameter`,
+    );
+    this.logger.log(
+      `[generateFullReportDocx] Attachments detail: ${JSON.stringify(attachments.map(a => ({ path: a.path, caption: a.caption })))}`,
+    );
+    
     const children: (Paragraph | Table)[] = [];
     const attachmentEntries = this.normalizeAttachments(attachments);
+    this.logger.log(
+      `[generateFullReportDocx] After normalization: ${attachmentEntries.length} valid attachment(s)`,
+    );
     const eccAttachment = info.eccConditionsAttachment;
     const eccSupportsMerge = this.supportsDocxMerge(eccAttachment);
 
@@ -1294,13 +1306,48 @@ export class CMVRDocxGeneratorService {
                   imageBuffer = Buffer.from(matches[1], 'base64');
                 }
               } else {
-                // It's a storage path, convert to signed URL
-                const signedUrl =
-                  await this.storageService.createSignedDownloadUrl(
-                    attendee.signatureUrl,
-                    60, // expires in 60 seconds
+                // It's a storage path, try direct download first
+                try {
+                  this.logger.log(
+                    `[Attendance] Attempting direct download for signature: ${attendee.signatureUrl} (${attendee.name})`,
                   );
-                imageBuffer = await this.fetchImageBuffer(signedUrl);
+                  imageBuffer = await this.storageService.downloadFile(
+                    attendee.signatureUrl,
+                  );
+                  this.logger.log(
+                    `[Attendance] Successfully downloaded signature for ${attendee.name}`,
+                  );
+                } catch (directDownloadError) {
+                  const errorMsg =
+                    directDownloadError instanceof Error
+                      ? directDownloadError.message
+                      : String(directDownloadError);
+                  this.logger.warn(
+                    `[Attendance] Direct download failed for signature ${attendee.signatureUrl} (${attendee.name}): ${errorMsg}. Trying signed URL...`,
+                  );
+                  // Fallback to signed URL
+                  try {
+                    const signedUrl =
+                      await this.storageService.createSignedDownloadUrl(
+                        attendee.signatureUrl,
+                        60, // expires in 60 seconds
+                      );
+                    imageBuffer = await this.fetchImageBuffer(signedUrl);
+                    if (imageBuffer) {
+                      this.logger.log(
+                        `[Attendance] Successfully loaded signature via signed URL for ${attendee.name}`,
+                      );
+                    }
+                  } catch (signedUrlError) {
+                    const errorMsg =
+                      signedUrlError instanceof Error
+                        ? signedUrlError.message
+                        : String(signedUrlError);
+                    this.logger.warn(
+                      `[Attendance] Failed to load signature for ${attendee.name} (path: ${attendee.signatureUrl}): ${errorMsg}`,
+                    );
+                  }
+                }
               }
 
               if (imageBuffer) {
@@ -1364,13 +1411,48 @@ export class CMVRDocxGeneratorService {
                   imageBuffer = Buffer.from(matches[1], 'base64');
                 }
               } else {
-                // It's a storage path, convert to signed URL
-                const signedUrl =
-                  await this.storageService.createSignedDownloadUrl(
-                    attendee.photoUrl,
-                    60, // expires in 60 seconds
+                // It's a storage path, try direct download first
+                try {
+                  this.logger.log(
+                    `[Attendance] Attempting direct download for photo: ${attendee.photoUrl} (${attendee.name})`,
                   );
-                imageBuffer = await this.fetchImageBuffer(signedUrl);
+                  imageBuffer = await this.storageService.downloadFile(
+                    attendee.photoUrl,
+                  );
+                  this.logger.log(
+                    `[Attendance] Successfully downloaded photo for ${attendee.name}`,
+                  );
+                } catch (directDownloadError) {
+                  const errorMsg =
+                    directDownloadError instanceof Error
+                      ? directDownloadError.message
+                      : String(directDownloadError);
+                  this.logger.warn(
+                    `[Attendance] Direct download failed for photo ${attendee.photoUrl} (${attendee.name}): ${errorMsg}. Trying signed URL...`,
+                  );
+                  // Fallback to signed URL
+                  try {
+                    const signedUrl =
+                      await this.storageService.createSignedDownloadUrl(
+                        attendee.photoUrl,
+                        60, // expires in 60 seconds
+                      );
+                    imageBuffer = await this.fetchImageBuffer(signedUrl);
+                    if (imageBuffer) {
+                      this.logger.log(
+                        `[Attendance] Successfully loaded photo via signed URL for ${attendee.name}`,
+                      );
+                    }
+                  } catch (signedUrlError) {
+                    const errorMsg =
+                      signedUrlError instanceof Error
+                        ? signedUrlError.message
+                        : String(signedUrlError);
+                    this.logger.warn(
+                      `[Attendance] Failed to load photo for ${attendee.name} (path: ${attendee.photoUrl}): ${errorMsg}`,
+                    );
+                  }
+                }
               }
 
               if (imageBuffer) {
@@ -1476,10 +1558,118 @@ export class CMVRDocxGeneratorService {
       }
     }
 
+    // Add Photo Documentation section with error handling
+    this.logger.log(
+      `[Photo Documentation] Checking attachments: count=${attachmentEntries.length}, entries=${JSON.stringify(attachmentEntries.map(a => ({ path: a.path, hasCaption: !!a.caption })))}`,
+    );
+    
     if (attachmentEntries.length > 0) {
-      const attachmentRows = await this.buildAttachmentRows(attachmentEntries);
+      try {
+        this.logger.log(
+          `[Photo Documentation] Building section with ${attachmentEntries.length} attachment(s)`,
+        );
+        const attachmentRows = await this.buildAttachmentRows(attachmentEntries);
 
-      if (attachmentRows.length > 0) {
+        this.logger.log(
+          `[Photo Documentation] Generated ${attachmentRows.length} row(s) from ${attachmentEntries.length} attachment(s)`,
+        );
+
+        // Always add the Photo Documentation section header if we have attachments
+        children.push(
+          new Paragraph({
+            children: [createText('PHOTO DOCUMENTATION', true)],
+            spacing: { before: 300, after: 200 },
+            pageBreakBefore: true,
+          }),
+        );
+
+        if (attachmentRows.length > 0) {
+          children.push(
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: createTableBorders(),
+              rows: attachmentRows,
+            }),
+          );
+          children.push(createParagraph('', false, AlignmentType.CENTER));
+          this.logger.log('[Photo Documentation] Section added successfully with table');
+        } else {
+          // If no rows were generated (all images failed), still add a placeholder
+          this.logger.warn(
+            '[Photo Documentation] No valid attachment rows generated, adding placeholder',
+          );
+          children.push(
+            new Paragraph({
+              children: [
+                createText(
+                  `Note: ${attachmentEntries.length} attachment(s) were provided but could not be loaded. Please check the attachment paths.`,
+                  false,
+                ),
+              ],
+              spacing: { after: 200 },
+            }),
+          );
+          // Add a simple table with placeholders
+          const placeholderRows: TableRow[] = [];
+          for (let i = 0; i < attachmentEntries.length; i += 2) {
+            const first = attachmentEntries[i];
+            const second = attachmentEntries[i + 1];
+            placeholderRows.push(
+              new TableRow({
+                height: { value: 3200, rule: 'atLeast' },
+                children: [
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        first ? `PHOTO ${i + 1}\n${first.path}` : '',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    verticalAlign: VerticalAlign.CENTER,
+                  }),
+                  new TableCell({
+                    children: [
+                      createParagraph(
+                        second ? `PHOTO ${i + 2}\n${second.path}` : '',
+                        false,
+                        AlignmentType.CENTER,
+                      ),
+                    ],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    verticalAlign: VerticalAlign.CENTER,
+                  }),
+                ],
+              }),
+            );
+            placeholderRows.push(
+              new TableRow({
+                height: { value: 400, rule: 'atLeast' },
+                children: [
+                  this.createAttachmentCaptionCell(first),
+                  this.createAttachmentCaptionCell(second),
+                ],
+              }),
+            );
+          }
+          if (placeholderRows.length > 0) {
+            children.push(
+              new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                borders: createTableBorders(),
+                rows: placeholderRows,
+              }),
+            );
+          }
+          children.push(createParagraph('', false, AlignmentType.CENTER));
+        }
+      } catch (error) {
+        this.logger.error(
+          '[Photo Documentation] Failed to build section:',
+          error instanceof Error ? error.message : String(error),
+        );
+        // Continue document generation even if Photo Documentation fails
         children.push(
           new Paragraph({
             children: [createText('PHOTO DOCUMENTATION', true)],
@@ -1488,38 +1678,72 @@ export class CMVRDocxGeneratorService {
           }),
         );
         children.push(
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: createTableBorders(),
-            rows: attachmentRows,
+          new Paragraph({
+            children: [
+              createText(
+                `Error loading attachments. ${attachmentEntries.length} attachment(s) were provided but could not be processed.`,
+                false,
+              ),
+            ],
+            spacing: { after: 200 },
           }),
         );
-        children.push(createParagraph('', false, AlignmentType.CENTER));
       }
+    } else {
+      this.logger.warn(
+        `[Photo Documentation] No attachments provided (attachmentEntries.length=${attachmentEntries.length}), skipping section`,
+      );
+      this.logger.log(
+        `[Photo Documentation] Original attachments parameter: count=${attachments.length}, entries=${JSON.stringify(attachments.map(a => ({ path: a.path, hasCaption: !!a.caption })))}`,
+      );
     }
+    
+    this.logger.log(
+      `[Photo Documentation] Section processing complete. Total children count: ${children.length}`,
+    );
 
-    // Add project location images if available
+    // Add project location images if available (with error handling)
     if (
       info.complianceToProjectLocationAndCoverageLimits?.uploadedImages &&
       Object.keys(
         info.complianceToProjectLocationAndCoverageLimits.uploadedImages,
       ).length > 0
     ) {
-      const locationImagesElements = await this.buildLocationImagesSection(
-        info.complianceToProjectLocationAndCoverageLimits.uploadedImages,
-      );
-      children.push(...locationImagesElements);
+      try {
+        this.logger.log('Building project location images section');
+        const locationImagesElements = await this.buildLocationImagesSection(
+          info.complianceToProjectLocationAndCoverageLimits.uploadedImages,
+        );
+        children.push(...locationImagesElements);
+        this.logger.log('Project location images section added successfully');
+      } catch (error) {
+        this.logger.error(
+          'Failed to build project location images section:',
+          error instanceof Error ? error.message : String(error),
+        );
+        // Continue document generation even if location images fail
+      }
     }
 
-    // Add noise quality monitoring charts if available
+    // Add noise quality monitoring charts if available (with error handling)
     if (
       info.noiseQualityImpactAssessment?.uploadedFiles &&
       info.noiseQualityImpactAssessment.uploadedFiles.length > 0
     ) {
-      const noiseQualityElements = await this.buildNoiseQualityFilesSection(
-        info.noiseQualityImpactAssessment.uploadedFiles,
-      );
-      children.push(...noiseQualityElements);
+      try {
+        this.logger.log('Building noise quality monitoring charts section');
+        const noiseQualityElements = await this.buildNoiseQualityFilesSection(
+          info.noiseQualityImpactAssessment.uploadedFiles,
+        );
+        children.push(...noiseQualityElements);
+        this.logger.log('Noise quality monitoring charts section added successfully');
+      } catch (error) {
+        this.logger.error(
+          'Failed to build noise quality monitoring charts section:',
+          error instanceof Error ? error.message : String(error),
+        );
+        // Continue document generation even if noise charts fail
+      }
     }
 
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
@@ -1555,10 +1779,40 @@ export class CMVRDocxGeneratorService {
   private normalizeAttachments(
     raw: Array<{ path: string; caption?: string }> = [],
   ): Array<{ path: string; caption?: string }> {
-    return raw.filter(
-      (item): item is { path: string; caption?: string } =>
-        !!item && typeof item.path === 'string' && item.path.trim().length > 0,
+    this.logger.log(
+      `Normalizing ${raw.length} attachment(s) for document generation`,
     );
+
+    const normalized = raw.filter(
+      (item): item is { path: string; caption?: string } => {
+        if (!item) {
+          this.logger.warn('Skipping null/undefined attachment item');
+          return false;
+        }
+        if (typeof item.path !== 'string') {
+          this.logger.warn(
+            `Skipping attachment with invalid path type: ${typeof item.path}`,
+          );
+          return false;
+        }
+        if (item.path.trim().length === 0) {
+          this.logger.warn('Skipping attachment with empty path');
+          return false;
+        }
+        return true;
+      },
+    );
+
+    this.logger.log(
+      `Normalized to ${normalized.length} valid attachment(s)`,
+    );
+    if (normalized.length < raw.length) {
+      this.logger.warn(
+        `Filtered out ${raw.length - normalized.length} invalid attachment(s)`,
+      );
+    }
+
+    return normalized;
   }
 
   private async buildAttachmentRows(
@@ -1566,33 +1820,71 @@ export class CMVRDocxGeneratorService {
   ): Promise<TableRow[]> {
     const rows: TableRow[] = [];
 
+    this.logger.log(
+      `Building attachment rows for ${attachments.length} attachment(s)`,
+    );
+
     for (let index = 0; index < attachments.length; index += 2) {
       const first = attachments[index];
       const second = attachments[index + 1];
 
-      const imageCells = await Promise.all([
-        this.createAttachmentImageCell(first, index + 1),
-        this.createAttachmentImageCell(second, index + 2),
-      ]);
+      try {
+        // Use Promise.allSettled to handle individual failures gracefully
+        const imageCellResults = await Promise.allSettled([
+          this.createAttachmentImageCell(first, index + 1),
+          this.createAttachmentImageCell(second, index + 2),
+        ]);
 
-      rows.push(
-        new TableRow({
-          height: { value: 3200, rule: 'atLeast' },
-          children: imageCells,
-        }),
-      );
+        const imageCells = imageCellResults.map((result, idx) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            this.logger.error(
+              `Failed to create image cell for attachment ${index + idx + 1}:`,
+              result.reason,
+            );
+            // Return placeholder cell on failure
+            const attachment = idx === 0 ? first : second;
+            return new TableCell({
+              children: [
+                createParagraph(
+                  `PHOTO ${index + idx + 1} (Error loading)`,
+                  true,
+                  AlignmentType.CENTER,
+                ),
+              ],
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              verticalAlign: VerticalAlign.CENTER,
+            });
+          }
+        });
 
-      rows.push(
-        new TableRow({
-          height: { value: 400, rule: 'atLeast' },
-          children: [
-            this.createAttachmentCaptionCell(first),
-            this.createAttachmentCaptionCell(second),
-          ],
-        }),
-      );
+        rows.push(
+          new TableRow({
+            height: { value: 3200, rule: 'atLeast' },
+            children: imageCells,
+          }),
+        );
+
+        rows.push(
+          new TableRow({
+            height: { value: 400, rule: 'atLeast' },
+            children: [
+              this.createAttachmentCaptionCell(first),
+              this.createAttachmentCaptionCell(second),
+            ],
+          }),
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to build attachment row for index ${index}:`,
+          error instanceof Error ? error.message : String(error),
+        );
+        // Continue with next row even if this one fails
+      }
     }
 
+    this.logger.log(`Built ${rows.length} attachment row(s)`);
     return rows;
   }
 
@@ -1611,11 +1903,64 @@ export class CMVRDocxGeneratorService {
     }
 
     try {
-      const signedUrl = await this.storageService.createSignedDownloadUrl(
-        attachment.path,
-        120,
-      );
-      const imageBuffer = await this.fetchImageBuffer(signedUrl);
+      // Try direct download first (using service role key - most reliable)
+      let imageBuffer: Buffer | null = null;
+      try {
+        this.logger.log(
+          `[Photo Documentation] Attempting direct download for: ${attachment.path}`,
+        );
+        imageBuffer = await this.storageService.downloadFile(attachment.path);
+        this.logger.log(
+          `[Photo Documentation] Successfully downloaded ${imageBuffer.length} bytes from: ${attachment.path}`,
+        );
+      } catch (directDownloadError) {
+        const errorMsg =
+          directDownloadError instanceof Error
+            ? directDownloadError.message
+            : String(directDownloadError);
+        this.logger.warn(
+          `[Photo Documentation] Direct download failed for ${attachment.path}: ${errorMsg}. Trying signed URL...`,
+        );
+        // Fallback to signed URL
+        try {
+          const signedUrl = await this.storageService.createSignedDownloadUrl(
+            attachment.path,
+            120,
+          );
+          imageBuffer = await this.fetchImageBuffer(signedUrl);
+          if (imageBuffer) {
+            this.logger.log(
+              `[Photo Documentation] Successfully loaded via signed URL: ${attachment.path}`,
+            );
+          }
+        } catch (signedUrlError) {
+          const errorMsg =
+            signedUrlError instanceof Error
+              ? signedUrlError.message
+              : String(signedUrlError);
+          this.logger.warn(
+            `[Photo Documentation] Signed URL failed for ${attachment.path}: ${errorMsg}. Trying public URL...`,
+          );
+          // Fallback to public URL
+          try {
+            const publicUrl = this.storageService.getPublicUrl(attachment.path);
+            imageBuffer = await this.fetchImageBuffer(publicUrl);
+            if (imageBuffer) {
+              this.logger.log(
+                `[Photo Documentation] Successfully loaded via public URL: ${attachment.path}`,
+              );
+            }
+          } catch (publicUrlError) {
+            const errorMsg =
+              publicUrlError instanceof Error
+                ? publicUrlError.message
+                : String(publicUrlError);
+            this.logger.warn(
+              `[Photo Documentation] All download methods failed for ${attachment.path}. Last error: ${errorMsg}`,
+            );
+          }
+        }
+      }
 
       if (imageBuffer) {
         return new TableCell({
@@ -1639,14 +1984,16 @@ export class CMVRDocxGeneratorService {
         });
       }
     } catch (error) {
-      console.warn(
+      this.logger.warn(
         `Failed to load attachment image for ${attachment.path}:`,
-        error,
+        error instanceof Error ? error.message : String(error),
       );
     }
 
+    // Fallback: show path or placeholder
+    const fallbackText = attachment.path || placeholderLabel;
     return new TableCell({
-      children: [createParagraph(placeholderLabel, true, AlignmentType.CENTER)],
+      children: [createParagraph(fallbackText, true, AlignmentType.CENTER)],
       width: { size: 50, type: WidthType.PERCENTAGE },
       verticalAlign: VerticalAlign.CENTER,
     });
@@ -1788,11 +2135,46 @@ export class CMVRDocxGeneratorService {
       if (!storagePath) continue;
 
       try {
-        const signedUrl = await this.storageService.createSignedDownloadUrl(
-          storagePath,
-          60,
-        );
-        const imageBuffer = await this.fetchImageBuffer(signedUrl);
+        // Try direct download first
+        let imageBuffer: Buffer | null = null;
+        try {
+          this.logger.log(
+            `[Project Location Images] Attempting direct download for: ${fieldKey} (${storagePath})`,
+          );
+          imageBuffer = await this.storageService.downloadFile(storagePath);
+          this.logger.log(
+            `[Project Location Images] Successfully downloaded ${imageBuffer.length} bytes for ${fieldKey}`,
+          );
+        } catch (directDownloadError) {
+          const errorMsg =
+            directDownloadError instanceof Error
+              ? directDownloadError.message
+              : String(directDownloadError);
+          this.logger.warn(
+            `[Project Location Images] Direct download failed for ${fieldKey} (${storagePath}): ${errorMsg}. Trying signed URL...`,
+          );
+          // Fallback to signed URL
+          try {
+            const signedUrl = await this.storageService.createSignedDownloadUrl(
+              storagePath,
+              60,
+            );
+            imageBuffer = await this.fetchImageBuffer(signedUrl);
+            if (imageBuffer) {
+              this.logger.log(
+                `[Project Location Images] Successfully loaded via signed URL for ${fieldKey}`,
+              );
+            }
+          } catch (signedUrlError) {
+            const errorMsg =
+              signedUrlError instanceof Error
+                ? signedUrlError.message
+                : String(signedUrlError);
+            this.logger.warn(
+              `[Project Location Images] Failed to load image for ${fieldKey} (path: ${storagePath}): ${errorMsg}`,
+            );
+          }
+        }
 
         if (imageBuffer) {
           // Add large image (single image, make it big)
@@ -1814,7 +2196,10 @@ export class CMVRDocxGeneratorService {
           );
         }
       } catch (error) {
-        console.error(`Failed to add location image for ${fieldKey}:`, error);
+        this.logger.error(
+          `Failed to add location image for ${fieldKey}:`,
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
 
@@ -1853,11 +2238,46 @@ export class CMVRDocxGeneratorService {
       if (!file.storagePath) continue;
 
       try {
-        const signedUrl = await this.storageService.createSignedDownloadUrl(
-          file.storagePath,
-          60,
-        );
-        const imageBuffer = await this.fetchImageBuffer(signedUrl);
+        // Try direct download first
+        let imageBuffer: Buffer | null = null;
+        try {
+          this.logger.log(
+            `[Noise Quality Charts] Attempting direct download for: ${file.name} (${file.storagePath})`,
+          );
+          imageBuffer = await this.storageService.downloadFile(file.storagePath);
+          this.logger.log(
+            `[Noise Quality Charts] Successfully downloaded ${imageBuffer.length} bytes for ${file.name}`,
+          );
+        } catch (directDownloadError) {
+          const errorMsg =
+            directDownloadError instanceof Error
+              ? directDownloadError.message
+              : String(directDownloadError);
+          this.logger.warn(
+            `[Noise Quality Charts] Direct download failed for ${file.name} (${file.storagePath}): ${errorMsg}. Trying signed URL...`,
+          );
+          // Fallback to signed URL
+          try {
+            const signedUrl = await this.storageService.createSignedDownloadUrl(
+              file.storagePath,
+              60,
+            );
+            imageBuffer = await this.fetchImageBuffer(signedUrl);
+            if (imageBuffer) {
+              this.logger.log(
+                `[Noise Quality Charts] Successfully loaded via signed URL for ${file.name}`,
+              );
+            }
+          } catch (signedUrlError) {
+            const errorMsg =
+              signedUrlError instanceof Error
+                ? signedUrlError.message
+                : String(signedUrlError);
+            this.logger.warn(
+              `[Noise Quality Charts] Failed to load file ${file.name} (path: ${file.storagePath}): ${errorMsg}`,
+            );
+          }
+        }
 
         if (imageBuffer) {
           // Add large chart image
@@ -1879,7 +2299,10 @@ export class CMVRDocxGeneratorService {
           );
         }
       } catch (error) {
-        console.error(`Failed to add noise quality file ${file.name}:`, error);
+        this.logger.error(
+          `Failed to add noise quality file ${file.name}:`,
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
 
