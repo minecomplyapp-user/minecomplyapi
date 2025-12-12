@@ -1,7 +1,7 @@
 # MineComply API - Status Tracker
 
 > **Living Document**: Update this file as features are added, bugs are fixed, or architecture changes occur.
-> Last Updated: December 5, 2025 - 12:15 PM PHT
+> Last Updated: January 2025
 
 ## Table of Contents
 
@@ -69,6 +69,13 @@
 - [x] Quarter/year filtering endpoints
 - [x] Grouped by quarter endpoint
 - [x] Complaint management N/A handling in documents
+- [x] Location description formatting (colon format, centered container)
+- [x] Executive Summary "Others" section N/A handling
+- [x] MMT Members formatting (name and position in same cell)
+- [x] Bullet point formatting for semicolon-separated specifications
+- [x] Column width adjustments in Compliance Monitoring Report table
+- [x] Noise Quality conditional rendering (hide N/A parameters)
+- [x] Independent Monitoring text in Chemical Safety Management
 
 #### ECC (Environmental Compliance Certificate)
 - [x] Create ECC reports
@@ -261,7 +268,14 @@
 
 ### High Priority
 
-1. **PDF Generation Memory Usage**
+1. **PDF Export Formatting Consistency**
+   - **Issue**: PDF export uses em dash format for location descriptions, inconsistent with DOCX
+   - **Impact**: Different formatting between DOCX and PDF exports
+   - **Workaround**: Use DOCX export for consistent formatting
+   - **Fix**: Update PDF export to match DOCX formatting (colon format, centered container)
+   - **Files**: `src/cmvr/cmvr-pdf-generator.service.ts`, `src/cmvr/cmvr-pdf-rendering.helpers.ts`
+
+2. **PDF Generation Memory Usage**
    - **Issue**: Large CMVR reports with many images can cause memory spikes
    - **Impact**: Potential timeout on Render free tier
    - **Workaround**: Limit image sizes, use image compression
@@ -433,6 +447,46 @@
 ---
 
 ## Recent Changes
+
+### January 2025 - Document Formatting & Export Fixes
+
+**CMVR DOCX Export Improvements:**
+- ✅ Fixed location description formatting (Quarry, Plant, Port) across all sections
+  - Changed from "Location – description" (all bold) to "Location: description" (label bold, description not bold)
+  - Applied to Water Quality Impact Assessment, Air Quality Impact Assessment, and Waste Management sections
+  - Container centered on page with left-aligned text within
+- ✅ Fixed Executive Summary "Others" section export
+  - When N/A is selected, DOCX now correctly displays "N/A" in the Complied? column
+  - Merged Y/N columns when N/A is selected
+- ✅ Fixed MMT Members Involved formatting in Process Documentation
+  - First member's name and position now appear in same cell (not separate cells)
+  - Fixed parsing to preserve "Name, Position" as single entry
+  - Applied to ECC Conditions/Commitments, EPEP/AEPEP Conditions, and Site Ocular Validation
+- ✅ Added bullet point formatting for specifications
+  - Power Supply, Mining Equipment, and Workforce descriptions with semicolons now format as bullet points
+  - Applied to "IV. Compliance Monitoring Report and Discussions" section
+- ✅ Adjusted column widths in Compliance Monitoring Report table
+  - Specification column: 40% → 32% (narrower)
+  - Remarks column: 20% → 28% (wider)
+  - Maintains overall table format integrity
+- ✅ Fixed Noise Quality Impact Assessment conditional rendering
+  - Parameters marked as N/A no longer appear in generated DOCX
+  - Entire table hidden if all parameters are N/A
+  - Added `isParameterNA` flag to DTO and transformers
+- ✅ Added "Independent Monitoring c/o TSHES Team" text in Chemical Safety Management
+  - Displays below "5. Compliance with Health and Safety Program Commitments" when checkbox is checked
+  - Displays below "6. Compliance with Social Development Plan Targets" when checkbox is checked
+  - Added `healthSafetyChecked` and `socialDevChecked` flags to DTO
+
+**Files Modified:**
+- `src/cmvr/cmvr-sections/compliance-monitoring.helper.ts` - Location formatting, bullet points, column widths, Noise Quality filtering
+- `src/cmvr/cmvr-sections/executive-summary-compliance.helper.ts` - Others section N/A handling
+- `src/cmvr/cmvr-sections/process-documentation.helper.ts` - MMT members parsing
+- `src/cmvr/cmvr-docx-generator.service.ts` - Independent Monitoring text, Noise Quality conditional rendering
+- `src/cmvr/dto/create-cmvr.dto.ts` - Added `isParameterNA`, `healthSafetyChecked`, `socialDevChecked` fields
+- `src/cmvr/cmvr-pdf-generator.service.ts` - Updated interfaces for new fields
+
+**Status:** ✅ All DOCX export formatting fixes completed and verified. PDF export formatting updates pending.
 
 ### December 5, 2025 - 12:15 PM PHT 🎉
 

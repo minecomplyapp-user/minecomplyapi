@@ -101,7 +101,7 @@ export function createComplianceToProjectLocationTable(
               alignment: AlignmentType.CENTER,
             }),
           ],
-          width: { size: 40, type: WidthType.PERCENTAGE },
+          width: { size: 32, type: WidthType.PERCENTAGE },
           verticalAlign: VerticalAlign.CENTER,
           margins: cellMargins,
         }),
@@ -129,7 +129,7 @@ export function createComplianceToProjectLocationTable(
               alignment: AlignmentType.CENTER,
             }),
           ],
-          width: { size: 20, type: WidthType.PERCENTAGE },
+          width: { size: 28, type: WidthType.PERCENTAGE },
           verticalAlign: VerticalAlign.CENTER,
           margins: cellMargins,
         }),
@@ -281,15 +281,42 @@ export function createComplianceToProjectLocationTable(
           }
           const nested = value as Record<string, unknown>;
           for (const [nestedKey, nestedValue] of Object.entries(nested)) {
-            paragraphs.push(
-              new Paragraph({
-                children: [
-                  createTextRun(`•  ${nestedKey}: ${String(nestedValue)}`),
-                ],
-                alignment: AlignmentType.LEFT,
-                indent: { left: 200 },
-              }),
-            );
+            const nestedValueStr = String(nestedValue);
+            // ✅ FIX: If nested value contains semicolons, split and format as bullet points
+            if (nestedValueStr.includes(';')) {
+              const parts = nestedValueStr
+                .split(';')
+                .map((p) => p.trim())
+                .filter((p) => p.length > 0);
+              if (parts.length > 0) {
+                paragraphs.push(
+                  new Paragraph({
+                    children: [createTextRun(`${nestedKey}:`, true)],
+                    alignment: AlignmentType.LEFT,
+                    indent: { left: 200 },
+                  }),
+                );
+                parts.forEach((part) => {
+                  paragraphs.push(
+                    new Paragraph({
+                      children: [createTextRun(`•  ${part}`)],
+                      alignment: AlignmentType.LEFT,
+                      indent: { left: 400 },
+                    }),
+                  );
+                });
+              }
+            } else {
+              paragraphs.push(
+                new Paragraph({
+                  children: [
+                    createTextRun(`•  ${nestedKey}: ${nestedValueStr}`),
+                  ],
+                  alignment: AlignmentType.LEFT,
+                  indent: { left: 200 },
+                }),
+              );
+            }
           }
         } else {
           // Simple key-value pair
@@ -308,13 +335,31 @@ export function createComplianceToProjectLocationTable(
                 alignment: AlignmentType.LEFT,
               }),
             );
-            paragraphs.push(
-              new Paragraph({
-                children: [createTextRun(String(value))],
-                alignment: AlignmentType.LEFT,
-                indent: { left: 200 },
-              }),
-            );
+            // ✅ FIX: If value contains semicolons, split and format as bullet points
+            const valueStr = String(value);
+            if (valueStr.includes(';')) {
+              const parts = valueStr
+                .split(';')
+                .map((p) => p.trim())
+                .filter((p) => p.length > 0);
+              parts.forEach((part) => {
+                paragraphs.push(
+                  new Paragraph({
+                    children: [createTextRun(`•  ${part}`)],
+                    alignment: AlignmentType.LEFT,
+                    indent: { left: 200 },
+                  }),
+                );
+              });
+            } else {
+              paragraphs.push(
+                new Paragraph({
+                  children: [createTextRun(valueStr)],
+                  alignment: AlignmentType.LEFT,
+                  indent: { left: 200 },
+                }),
+              );
+            }
           } else {
             paragraphs.push(
               new Paragraph({
@@ -734,10 +779,44 @@ export function createAirQualitySection(
       return locationOut;
     }
 
-    locationOut.push(createParagraph(locationName, true));
-
+    // ✅ FIX: Format location name and description in centered container
     if (locationData.locationInput) {
-      locationOut.push(createParagraph(locationData.locationInput));
+      locationOut.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${locationName}:`,
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+            new TextRun({
+              text: ` ${locationData.locationInput}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: { before: 200, after: 100 },
+        }),
+      );
+    } else {
+      // If no location input, just show location name
+      locationOut.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: locationName,
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 200, after: 100 },
+        }),
+      );
     }
 
     const rows: TableRow[] = [];
@@ -929,24 +1008,100 @@ export function createAirQualitySection(
 
   // NEW STRUCTURE: Use unified airQuality if present
   if ((air as any).airQuality) {
-    // Build location name from enabled checkboxes and descriptions
-    const labels: string[] = [];
+    // ✅ FIX: Format location descriptions separately with colon format in centered containers
     if ((air as any).quarryEnabled && typeof (air as any).quarry === 'string') {
-      labels.push(`Quarry – ${(air as any).quarry}`);
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Quarry:',
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+            new TextRun({
+              text: ` ${(air as any).quarry}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: { before: 200, after: 100 },
+        }),
+      );
     }
     if ((air as any).plantEnabled && typeof (air as any).plant === 'string') {
-      labels.push(`Plant – ${(air as any).plant}`);
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Plant:',
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+            new TextRun({
+              text: ` ${(air as any).plant}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: { before: 200, after: 100 },
+        }),
+      );
     }
     if (
       (air as any).quarryPlantEnabled &&
       typeof (air as any).quarryPlant === 'string'
     ) {
-      labels.push(`Quarry/Plant – ${(air as any).quarryPlant}`);
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Quarry/Plant:',
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+            new TextRun({
+              text: ` ${(air as any).quarryPlant}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: { before: 200, after: 100 },
+        }),
+      );
     }
     if ((air as any).portEnabled && typeof (air as any).port === 'string') {
-      labels.push(`Port – ${(air as any).port}`);
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: 'Port:',
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+            new TextRun({
+              text: ` ${(air as any).port}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: { before: 200, after: 100 },
+        }),
+      );
     }
-    const locationName = labels.join('; ') || 'Air Quality Monitoring';
+    // Build location name for table (if needed)
+    const locationName = 'Air Quality Monitoring';
     out.push(...buildLocationTable((air as any).airQuality, locationName));
   }
   // OLD STRUCTURE: Render each location separately (backward compatibility)
@@ -1031,31 +1186,39 @@ export function createWaterQualitySection(
       return locationOut;
     }
 
-    const locationLabel = locationData.locationDescription?.trim()
-      ? `${locationName} – ${locationData.locationDescription}`
+    // ✅ FIX: Format as "Location:" (bold) + description (not bold) in centered container
+    const locationDescription = locationData.locationDescription?.trim()
+      ? locationData.locationDescription
       : locationData.locationInput?.trim()
-        ? `${locationName} – ${locationData.locationInput}`
-        : locationName;
+        ? locationData.locationInput
+        : '';
 
-    // Add location label with left indentation (matching the image format)
-    locationOut.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: locationLabel,
-            font: 'Arial',
-            size: 22, // 11pt
-          }),
-        ],
-        indent: {
-          left: 720, // 0.5 inch = 720 twips indentation from left
-        },
-        spacing: {
-          before: 200, // Add space before
-          after: 100, // Add space after
-        },
-      }),
-    );
+    // Add location label with centered container (matching the original format)
+    if (locationDescription) {
+      locationOut.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${locationName}:`,
+              bold: true,
+              font: 'Arial',
+              size: 22, // 11pt
+            }),
+            new TextRun({
+              text: ` ${locationDescription}`,
+              bold: false,
+              font: 'Arial',
+              size: 22, // 11pt
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: {
+            before: 200, // Add space before
+            after: 100, // Add space after
+          },
+        }),
+      );
+    }
 
     const rows: TableRow[] = [];
 
@@ -1751,50 +1914,78 @@ export function createWaterQualitySection(
   if (wq.waterQuality) {
     // Separate each location label and make label bold
     if (wq.quarryEnabled && wq.quarry) {
-      const quarryLabel =
+      // ✅ FIX: Format as "Quarry:" (bold) + description (not bold) in centered container
+      const quarryDescription =
         typeof wq.quarry === 'string'
-          ? `Quarry – ${wq.quarry}`
-          : `Quarry – ${wq.quarry.locationDescription || ''}`;
+          ? wq.quarry
+          : wq.quarry.locationDescription || '';
       out.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: quarryLabel,
+              text: 'Quarry:',
               bold: true,
               font: 'Arial',
               size: 22,
             }),
+            new TextRun({
+              text: ` ${quarryDescription}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
           ],
+          alignment: AlignmentType.CENTER, // Centers the container
           spacing: { before: 200, after: 100 },
         }),
       );
     }
     if (wq.plantEnabled && wq.plant) {
-      const plantLabel =
+      // ✅ FIX: Format as "Plant:" (bold) + description (not bold) in centered container
+      const plantDescription =
         typeof wq.plant === 'string'
-          ? `Plant – ${wq.plant}`
-          : `Plant – ${wq.plant.locationDescription || ''}`;
+          ? wq.plant
+          : wq.plant.locationDescription || '';
       out.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: plantLabel,
+              text: 'Plant:',
               bold: true,
               font: 'Arial',
               size: 22,
             }),
+            new TextRun({
+              text: ` ${plantDescription}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
           ],
+          alignment: AlignmentType.CENTER, // Centers the container
           spacing: { before: 200, after: 100 },
         }),
       );
     }
     if (wq.quarryPlantEnabled && wq.quarryPlant) {
-      const qpLabel = `Quarry/Plant – ${wq.quarryPlant}`;
+      // ✅ FIX: Format as "Quarry/Plant:" (bold) + description (not bold) in centered container
       out.push(
         new Paragraph({
           children: [
-            new TextRun({ text: qpLabel, bold: true, font: 'Arial', size: 22 }),
+            new TextRun({
+              text: 'Quarry/Plant:',
+              bold: true,
+              font: 'Arial',
+              size: 22,
+            }),
+            new TextRun({
+              text: ` ${wq.quarryPlant}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
           ],
+          alignment: AlignmentType.CENTER, // Centers the container
           spacing: { before: 200, after: 100 },
         }),
       );
@@ -1815,34 +2006,47 @@ export function createWaterQualitySection(
   }
   if (wq.port) {
     if (typeof wq.port === 'string') {
-      // If port is a string, just add it as a label
-      const portLabel = `Port – ${wq.port}`;
+      // ✅ FIX: Format as "Port:" (bold) + description (not bold) in centered container
       out.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: portLabel,
+              text: 'Port:',
               bold: true,
               font: 'Arial',
               size: 22,
             }),
+            new TextRun({
+              text: ` ${wq.port}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
           ],
+          alignment: AlignmentType.CENTER, // Centers the container
           spacing: { before: 200, after: 100 },
         }),
       );
     } else {
-      // If port is an object with location data
-      const portLabel = `Port – ${wq.port.locationDescription || wq.port.locationInput || ''}`;
+      // ✅ FIX: Format as "Port:" (bold) + description (not bold) in centered container
+      const portDescription = wq.port.locationDescription || wq.port.locationInput || '';
       out.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: portLabel,
+              text: 'Port:',
               bold: true,
               font: 'Arial',
               size: 22,
             }),
+            new TextRun({
+              text: ` ${portDescription}`,
+              bold: false,
+              font: 'Arial',
+              size: 22,
+            }),
           ],
+          alignment: AlignmentType.CENTER, // Centers the container
           spacing: { before: 200, after: 100 },
         }),
       );
@@ -2057,8 +2261,24 @@ export function createNoiseQualityTable(
     }),
   );
 
-  // Data rows
-  nq.parameters?.forEach((p) => {
+  // ✅ FIX: Filter out parameters with isParameterNA === true
+  const validParameters = (nq.parameters || []).filter(
+    (p) => !p.isParameterNA,
+  );
+
+  // If no valid parameters, return empty table (or could return null/undefined)
+  if (validParameters.length === 0) {
+    // Return a minimal table with just headers to maintain structure
+    // Alternatively, could return null and handle in caller
+    return new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: createTableBorders(),
+      rows,
+    });
+  }
+
+  // Data rows - only for non-N/A parameters
+  validParameters.forEach((p) => {
     rows.push(
       new TableRow({
         height: { value: 400, rule: 'atLeast' },
@@ -2321,7 +2541,32 @@ export function createSolidAndHazardousWasteSection(
   const build = (label: string, data?: string | WasteRow[]) => {
     if (!data) return;
 
-    // Add location label with left indentation
+    if (typeof data === 'string') {
+      // ✅ FIX: Format as "Location:" (bold) + description (not bold) in centered container
+      out.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${label}:`, // Use label as-is (not uppercase)
+              bold: true,
+              font: 'Arial',
+              size: 22, // 11pt
+            }),
+            new TextRun({
+              text: ` ${data}`,
+              bold: false,
+              font: 'Arial',
+              size: 22, // 11pt
+            }),
+          ],
+          alignment: AlignmentType.CENTER, // Centers the container
+          spacing: { before: 200, after: 100 },
+        }),
+      );
+      return;
+    }
+
+    // Add location label (for table sections)
     out.push(
       new Paragraph({
         children: [
@@ -2336,11 +2581,6 @@ export function createSolidAndHazardousWasteSection(
         alignment: AlignmentType.CENTER,
       }),
     );
-
-    if (typeof data === 'string') {
-      out.push(createParagraph(data));
-      return;
-    }
 
     const rows: TableRow[] = [];
 

@@ -525,6 +525,7 @@ export interface CMVRGeneralInfo {
   noiseQualityImpactAssessment?: {
     parameters?: Array<{
       name?: string;
+      isParameterNA?: boolean;
       results?: {
         inSMR?: {
           current?: string;

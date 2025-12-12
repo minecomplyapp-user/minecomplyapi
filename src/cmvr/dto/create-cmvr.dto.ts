@@ -781,6 +781,11 @@ class NoiseQualityParameterDto {
   @IsString()
   name?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isParameterNA?: boolean;
+
   @ApiProperty({ type: NoiseQualityResultsDto, required: false })
   @IsOptional()
   @ValidateNested()

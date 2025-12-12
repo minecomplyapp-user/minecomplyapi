@@ -1159,8 +1159,14 @@ export class CMVRDocxGeneratorService {
         AlignmentType.CENTER,
       ),
     );
+    // ✅ FIX: Only create table if there are valid (non-N/A) parameters
     if (info.noiseQualityImpactAssessment) {
-      children.push(createNoiseQualityTable(info.noiseQualityImpactAssessment));
+      const validParams = (info.noiseQualityImpactAssessment.parameters || []).filter(
+        (p: any) => !p.isParameterNA,
+      );
+      if (validParams.length > 0) {
+        children.push(createNoiseQualityTable(info.noiseQualityImpactAssessment));
+      }
     }
 
     // 3. Solid and Hazardous Waste Management
@@ -1214,9 +1220,29 @@ export class CMVRDocxGeneratorService {
           ),
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 100, after: 200 },
+        spacing: { before: 100, after: 100 },
       }),
     );
+    // ✅ FIX: Add "Independent Monitoring c/o TSHES Team" if checkbox is checked
+    if (info.complianceWithGoodPracticeInChemicalSafetyManagement?.healthSafetyChecked) {
+      children.push(
+        new Paragraph({
+          children: [
+            createText('Independent Monitoring c/o TSHES Team', false),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 200 },
+        }),
+      );
+    } else {
+      // Add spacing if checkbox is not checked
+      children.push(
+        new Paragraph({
+          children: [createText('', false)],
+          spacing: { before: 0, after: 200 },
+        }),
+      );
+    }
     // 6.	Compliance with Social Development Plan Targets
     children.push(
       new Paragraph({
@@ -1224,9 +1250,29 @@ export class CMVRDocxGeneratorService {
           createText('6.	Compliance with Social Development Plan Targets', true),
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 100, after: 200 },
+        spacing: { before: 100, after: 100 },
       }),
     );
+    // ✅ FIX: Add "Independent Monitoring c/o TSHES Team" if checkbox is checked
+    if (info.complianceWithGoodPracticeInChemicalSafetyManagement?.socialDevChecked) {
+      children.push(
+        new Paragraph({
+          children: [
+            createText('Independent Monitoring c/o TSHES Team', false),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 200 },
+        }),
+      );
+    } else {
+      // Add spacing if checkbox is not checked
+      children.push(
+        new Paragraph({
+          children: [createText('', false)],
+          spacing: { before: 0, after: 200 },
+        }),
+      );
+    }
 
     //7.	Complaints Verification and Management
     children.push(
