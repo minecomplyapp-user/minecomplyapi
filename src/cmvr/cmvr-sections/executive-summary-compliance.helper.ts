@@ -377,6 +377,41 @@ export function createExecutiveSummaryTable(
 
   // Others - Single row, category and detail merged horizontally
   if (summary.others) {
+    // ✅ FIX: When N/A is selected, merge Y+N columns and show "N/A" text
+    const isNA = summary.others.na === true;
+    const compliedCells = isNA
+      ? [
+          // Merge Y and N columns and show "N/A" when N/A is selected
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [createTextRun('N/A')],
+                alignment: AlignmentType.CENTER,
+              }),
+            ],
+            columnSpan: 2, // Merge Y and N columns
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 20, type: WidthType.PERCENTAGE }, // Combined width of Y+N
+            margins: cellMargins,
+          }),
+        ]
+      : [
+          // When N/A is not selected, merge Y+N columns but leave empty (no checkmarks)
+          // This matches PDF behavior where merged cell is empty when showNA is false
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [createTextRun('')],
+                alignment: AlignmentType.CENTER,
+              }),
+            ],
+            columnSpan: 2, // Merge Y and N columns
+            verticalAlign: VerticalAlign.CENTER,
+            width: { size: 20, type: WidthType.PERCENTAGE }, // Combined width of Y+N
+            margins: cellMargins,
+          }),
+        ];
+
     rows.push(
       new TableRow({
         children: [
@@ -392,8 +427,7 @@ export function createExecutiveSummaryTable(
             width: { size: 40, type: WidthType.PERCENTAGE },
             margins: cellMargins,
           }),
-          createCenteredCell(checkmark(summary.others.na !== true)),
-          createCenteredCell(checkmark(summary.others.na === true)),
+          ...compliedCells,
           new TableCell({
             children: [
               new Paragraph({
