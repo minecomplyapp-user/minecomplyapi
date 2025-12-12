@@ -100,6 +100,14 @@ export interface CMVRGeneralInfo {
     storagePath?: string;
   };
 
+  // ✅ FIX: Compliance Monitoring Report Discussion
+  complianceMonitoringReportDiscussion?: {
+    summary?: string;
+    keyFindings?: string[];
+    recommendations?: string[];
+    nextSteps?: string;
+  };
+
   // Section II: Executive Summary of Compliance
   executiveSummaryOfCompliance?: {
     complianceWithEpepCommitments?: {
