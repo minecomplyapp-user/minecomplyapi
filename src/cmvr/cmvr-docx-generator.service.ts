@@ -966,6 +966,73 @@ export class CMVRDocxGeneratorService {
       }),
     );
 
+    // ✅ FIX: Add Compliance Monitoring Report Discussion section
+    if (info.complianceMonitoringReportDiscussion) {
+      const discussion = info.complianceMonitoringReportDiscussion;
+      
+      // Summary
+      if (discussion.summary) {
+        children.push(
+          new Paragraph({
+            children: [createText('Summary', true)],
+            spacing: { before: 200, after: 100 },
+          }),
+        );
+        children.push(
+          createParagraph(discussion.summary, false, AlignmentType.LEFT),
+        );
+      }
+
+      // Key Findings
+      if (discussion.keyFindings && Array.isArray(discussion.keyFindings) && discussion.keyFindings.length > 0) {
+        const validFindings = discussion.keyFindings.filter((f: string) => f && f.trim());
+        if (validFindings.length > 0) {
+          children.push(
+            new Paragraph({
+              children: [createText('Key Findings', true)],
+              spacing: { before: 200, after: 100 },
+            }),
+          );
+          validFindings.forEach((finding: string) => {
+            children.push(
+              createParagraph(`• ${finding}`, false, AlignmentType.LEFT),
+            );
+          });
+        }
+      }
+
+      // Recommendations
+      if (discussion.recommendations && Array.isArray(discussion.recommendations) && discussion.recommendations.length > 0) {
+        const validRecommendations = discussion.recommendations.filter((r: string) => r && r.trim());
+        if (validRecommendations.length > 0) {
+          children.push(
+            new Paragraph({
+              children: [createText('Recommendations', true)],
+              spacing: { before: 200, after: 100 },
+            }),
+          );
+          validRecommendations.forEach((recommendation: string) => {
+            children.push(
+              createParagraph(`• ${recommendation}`, false, AlignmentType.LEFT),
+            );
+          });
+        }
+      }
+
+      // Next Steps
+      if (discussion.nextSteps) {
+        children.push(
+          new Paragraph({
+            children: [createText('Next Steps', true)],
+            spacing: { before: 200, after: 100 },
+          }),
+        );
+        children.push(
+          createParagraph(discussion.nextSteps, false, AlignmentType.LEFT),
+        );
+      }
+    }
+
     children.push(
       new Paragraph({
         children: [
@@ -2790,11 +2857,14 @@ export class CMVRDocxGeneratorService {
     },
   ): Paragraph {
     const spacing = options?.spacing ?? { after: 100 };
-    // ✅ FIX: Preserve spaces and ensure text wraps naturally at word boundaries
-    // Remove any artificial line breaks within words, but preserve intentional newlines
+    // ✅ FIX: Preserve word boundaries and ensure text wraps naturally
+    // Normalize whitespace: collapse multiple spaces to single space, convert newlines to spaces
     const trimmed = (text ?? '').trim();
-    // Ensure spaces are preserved (don't collapse multiple spaces into one)
-    const normalized = trimmed.replace(/\s+/g, ' ').replace(/\n\s*/g, '\n');
+    // Replace multiple spaces/newlines with single space for proper word wrapping
+    const normalized = trimmed
+      .replace(/[ \t]+/g, ' ') // Collapse multiple spaces/tabs to single space
+      .replace(/\n\s*\n/g, '\n') // Collapse multiple newlines to single newline
+      .replace(/\n/g, ' '); // Convert newlines to spaces for proper word wrapping
     
     return new Paragraph({
       children:
@@ -2802,8 +2872,7 @@ export class CMVRDocxGeneratorService {
           ? [createText(normalized, options?.bold ?? false, options?.size ?? 22)]
           : [],
       spacing,
-      // ✅ FIX: Ensure paragraph allows word wrapping
-      // Word will automatically wrap at spaces, but we ensure no forced breaks
+      // ✅ FIX: Word will automatically wrap at spaces - no forced breaks needed
     });
   }
 
@@ -2864,10 +2933,12 @@ export class CMVRDocxGeneratorService {
     }
 
     if (tag === 'li' && parts.length > 0) {
-      return `\n• ${parts.join('').trim()}`;
+      return `\n• ${parts.join(' ').trim()}`;
     }
 
-    return parts.join('');
+    // ✅ FIX: Join parts with space to preserve word boundaries
+    // This prevents words from being concatenated when text wraps
+    return parts.join(' ');
   }
 
   private isTag(node: unknown, tagName: string): boolean {
