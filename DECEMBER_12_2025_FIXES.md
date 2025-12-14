@@ -214,6 +214,13 @@ if (permitHolderType === 'multiple') {
 
 ## 📅 Change Log
 
+- **December 12, 2025, 02:30 AM:** CMVR DOCX export now appends the uploaded ECC Conditions DOCX as a true appendix (preserves original DOCX content via merge), with safe fallback if merge/download fails.
+  - Updated `src/cmvr/cmvr-docx-generator.service.ts` to:
+    - prefetch `eccConditionsAttachment` DOCX
+    - merge `[CMVR docx] + [appendix header docx] + [ECC docx]` when possible
+    - fall back to the previous mammoth-based appendix rendering when merge cannot be done
+  - Added npm override so `docx-merger` uses JSZip 2.6.1 (required for docx-merger compatibility).
+  - Added a small Jest test: `src/cmvr/docx-merger.spec.ts`.
 - **December 12, 2025, 11:00 AM:** Initial documentation created
 - Added `permitHolderType` support to CMVR interface and DTO
 - Added comments in document generators for future format logic

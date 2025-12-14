@@ -1,7 +1,7 @@
 # MineComply API - Status Tracker
 
 > **Living Document**: Update this file as features are added, bugs are fixed, or architecture changes occur.
-> Last Updated: January 2025
+> Last Updated: December 12, 2025 (02:30 AM)
 
 ## Table of Contents
 
@@ -447,6 +447,10 @@
 ---
 
 ## Recent Changes
+
+### December 12, 2025 - 02:30 AM - CMVR DOCX Appendix Merge (ECC Conditions)
+- CMVR DOCX export now appends the uploaded ECC Conditions **DOCX** into the generated report as a true appendix (DOCX merge), rather than only referencing annexes.
+- Merge uses `docx-merger` with a JSZip 2.x override for compatibility; if merge/download fails, export falls back to the previous best-effort appendix insertion and still succeeds.
 
 ### January 2025 - Document Formatting & Export Fixes
 
