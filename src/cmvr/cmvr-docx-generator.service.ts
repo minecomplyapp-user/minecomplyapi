@@ -23,6 +23,10 @@ import { parse } from 'node-html-parser';
 import type { CMVRGeneralInfo } from './cmvr-pdf-generator.service';
 import { SupabaseStorageService } from '../storage/supabase-storage.service';
 
+// docx-merger has no bundled TS types; require() keeps TS compile happy.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const DocxMerger = require('docx-merger');
+
 import {
   createTableBorders,
   createText,
@@ -543,14 +547,34 @@ export class CMVRDocxGeneratorService {
     this.logger.log(
       `[generateFullReportDocx] Attachments detail: ${JSON.stringify(attachments.map(a => ({ path: a.path, caption: a.caption })))}`,
     );
-    
+
     const children: (Paragraph | Table)[] = [];
     const attachmentEntries = this.normalizeAttachments(attachments);
     this.logger.log(
       `[generateFullReportDocx] After normalization: ${attachmentEntries.length} valid attachment(s)`,
     );
+
     const eccAttachment = info.eccConditionsAttachment;
     const eccSupportsMerge = this.supportsDocxMerge(eccAttachment);
+
+    // Pre-fetch ECC buffer up-front so we can:
+    // 1) decide whether we can truly merge
+    // 2) keep B.1 messaging consistent with actual outcome
+    // 3) avoid re-downloading on fallback paths
+    let eccDocxBuffer: Buffer | null = null;
+    if (eccSupportsMerge && eccAttachment?.fileName) {
+      try {
+        const downloadCandidates = await this.buildDownloadCandidates(eccAttachment);
+        eccDocxBuffer = await this.fetchFirstAvailableBuffer(downloadCandidates);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[ECC Merge] Failed to pre-fetch ECC DOCX for merge (${eccAttachment.fileName}): ${errorMsg}`,
+        );
+      }
+    }
+
+    const willAttemptEccMerge = Boolean(eccSupportsMerge && eccDocxBuffer);
 
     // ✅ NEW: Permit holder type handling
     // For single permit holder: Standard format
@@ -1089,15 +1113,16 @@ export class CMVRDocxGeneratorService {
 
     // Add ECC attachment reference if available
     if (eccAttachment?.fileName) {
-      if (eccSupportsMerge) {
+      if (willAttemptEccMerge) {
         children.push(
           createParagraph(
-            `ECC Conditions document "${eccAttachment.fileName}" is included in the appendix of this report. If any pages appear blank, download the original file from the system.`,
+            `ECC Conditions document "${eccAttachment.fileName}" is included in the appendix of this report.`,
             false,
             AlignmentType.CENTER,
           ),
         );
       } else {
+        // If we cannot merge (non-DOCX / download failure), keep a stable, explicit reference.
         children.push(
           createParagraph(
             `Please see attached document: ${eccAttachment.fileName}`,
@@ -1862,10 +1887,13 @@ export class CMVRDocxGeneratorService {
     // Margins in twips: top 2cm=1134, left 2cm=1134, bottom 2.5cm=1418, right 1.8cm=1021
     // Page size remains 21.59 cm x 33.02 cm
 
-    // If ECC file is attached and it's a DOCX, add a reference note
-    await this.appendEccAppendix(children, eccAttachment);
+    // If we are not doing a true merge, fall back to the existing “appendix inlined” behavior.
+    // NOTE: We intentionally skip this when merge is enabled, to avoid duplicated appendix content.
+    if (!willAttemptEccMerge) {
+      await this.appendEccAppendix(children, eccAttachment, eccDocxBuffer);
+    }
 
-    // Generate the main CMVR report buffer (without ECC merge if merge failed or no ECC)
+    // Generate the main CMVR report buffer.
     const doc = new Document({
       sections: [
         {
@@ -1886,6 +1914,50 @@ export class CMVRDocxGeneratorService {
     });
 
     const mainDocBuffer = await Packer.toBuffer(doc);
+
+    // True DOCX merge path: append ECC document pages as-is via docx-merger.
+    if (willAttemptEccMerge && eccAttachment?.fileName && eccDocxBuffer) {
+      try {
+        const headerDoc = await this.buildEccAppendixHeaderDocx(eccAttachment.fileName);
+        const merged = await this.mergeDocxBuffers([
+          mainDocBuffer,
+          headerDoc,
+          eccDocxBuffer,
+        ]);
+        return merged;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `[ECC Merge] Failed to merge ECC DOCX into CMVR export: ${errorMsg}`,
+        );
+
+        // Safety fallback: inline appendix content (best-effort) and return a non-merged DOCX.
+        // This avoids breaking document export even if the merge library or the source DOCX fails.
+        await this.appendEccAppendix(children, eccAttachment, eccDocxBuffer);
+
+        const fallbackDoc = new Document({
+          sections: [
+            {
+              properties: {
+                page: {
+                  size: { width: 12240, height: 18720 },
+                  margin: {
+                    top: 1134,
+                    left: 1134,
+                    bottom: 1418,
+                    right: 1021,
+                  },
+                },
+              },
+              children,
+            },
+          ],
+        });
+
+        return await Packer.toBuffer(fallbackDoc);
+      }
+    }
+
     return mainDocBuffer;
   }
 
@@ -2223,6 +2295,80 @@ export class CMVRDocxGeneratorService {
   }
 
   /**
+   * Build a standalone DOCX buffer containing the appendix header.
+   * This is used for the true merge path (docx-merger inserts page breaks between documents).
+   */
+  private async buildEccAppendixHeaderDocx(fileName: string): Promise<Buffer> {
+    const headerChildren: Paragraph[] = [
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'APPENDIX: ECC CONDITIONS DOCUMENT',
+            bold: true,
+            size: 28,
+          }),
+        ],
+        spacing: { before: 200, after: 300 },
+        alignment: AlignmentType.CENTER,
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Document Name: "${fileName}"`,
+            bold: true,
+            size: 24,
+          }),
+        ],
+        spacing: { after: 200 },
+        alignment: AlignmentType.CENTER,
+      }),
+    ];
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {
+            page: {
+              size: { width: 12240, height: 18720 },
+              margin: {
+                top: 1134,
+                left: 1134,
+                bottom: 1418,
+                right: 1021,
+              },
+            },
+          },
+          children: headerChildren,
+        },
+      ],
+    });
+
+    return await Packer.toBuffer(doc);
+  }
+
+  /**
+   * Merge multiple DOCX buffers into a single DOCX using docx-merger.
+   * The first buffer is used as the base document.
+   */
+  private async mergeDocxBuffers(buffers: Buffer[]): Promise<Buffer> {
+    if (!buffers || buffers.length === 0) {
+      throw new Error('No docx buffers provided to merge');
+    }
+
+    // docx-merger expects binary strings (per its docs). Convert buffers to "binary" strings.
+    const binaryFiles = buffers.map((buf) => buf.toString('binary'));
+
+    return await new Promise<Buffer>((resolve, reject) => {
+      try {
+        const merger = new DocxMerger({ pageBreak: true }, binaryFiles);
+        merger.save('nodebuffer', (data: Buffer) => resolve(data));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
    * Build location images section for the document
    */
   private async buildLocationImagesSection(
@@ -2430,6 +2576,7 @@ export class CMVRDocxGeneratorService {
       mimeType?: string;
       storagePath?: string;
     } | null,
+    preloadedDocxBuffer?: Buffer | null,
   ): Promise<'none' | 'merged' | 'fallback' | 'unsupported'> {
     if (!attachment?.fileName) {
       return 'none';
@@ -2480,8 +2627,12 @@ export class CMVRDocxGeneratorService {
       return 'unsupported';
     }
 
-    const downloadCandidates = await this.buildDownloadCandidates(attachment);
-    const eccBuffer = await this.fetchFirstAvailableBuffer(downloadCandidates);
+    const eccBuffer =
+      preloadedDocxBuffer ??
+      (await (async () => {
+        const downloadCandidates = await this.buildDownloadCandidates(attachment);
+        return this.fetchFirstAvailableBuffer(downloadCandidates);
+      })());
     ensureHeader();
     if (!eccBuffer) {
       children.push(
