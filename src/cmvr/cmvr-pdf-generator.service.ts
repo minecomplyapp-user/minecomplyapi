@@ -23,6 +23,8 @@ import {
 
 // Shape for the normalized generalInfo JSON we agreed on
 export interface CMVRGeneralInfo {
+  // ✅ NEW: Permit holder type selection (single vs multiple)
+  permitHolderType?: 'single' | 'multiple';
   companyName?: string;
   location?:
     | string
@@ -96,6 +98,14 @@ export interface CMVRGeneralInfo {
     fileUrl?: string;
     mimeType?: string;
     storagePath?: string;
+  };
+
+  // ✅ FIX: Compliance Monitoring Report Discussion
+  complianceMonitoringReportDiscussion?: {
+    summary?: string;
+    keyFindings?: string[];
+    recommendations?: string[];
+    nextSteps?: string;
   };
 
   // Section II: Executive Summary of Compliance
@@ -515,6 +525,7 @@ export interface CMVRGeneralInfo {
   noiseQualityImpactAssessment?: {
     parameters?: Array<{
       name?: string;
+      isParameterNA?: boolean;
       results?: {
         inSMR?: {
           current?: string;
@@ -704,6 +715,11 @@ export class CMVRPdfGeneratorService {
     });
 
     try {
+      // ✅ NEW: Permit holder type handling
+      // For single permit holder: Standard format
+      // For multiple permit holders: May need per-permit-holder sections or grouped format
+      const permitHolderType = generalInfo.permitHolderType || 'single';
+
       addGeneralInfoKeyValues(doc, generalInfo);
 
       doc.moveDown(1);

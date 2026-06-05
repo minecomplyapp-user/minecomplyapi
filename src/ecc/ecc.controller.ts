@@ -20,12 +20,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ECCPdfGeneratorService } from './ecc-pdf-generator.service';
 
 import { ECCWordGeneratorService } from './ecc-word-generator.service';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('ecc')
 export class EccController {
   constructor(private readonly eccService: EccService) {}
 
   @Post('createEccReport')
+  @Public()
   @ApiOperation({
     summary: 'Create a new ECC Report',
   })
@@ -34,6 +36,7 @@ export class EccController {
   }
 
   @Get('getAllEccReports/:createdById')
+  @Public()
   @ApiOperation({
     summary: 'Retrieve all ECC Reports',
   })
@@ -45,6 +48,7 @@ export class EccController {
     summary: 'Retrieve a specific ECC Report by ID',
   })
   @Get('getEccReportById/:id')
+  @Public()
   findOne(@Param('id') id: string) {
     return this.eccService.getEccReportById(id);
   }
@@ -56,6 +60,7 @@ export class EccController {
     summary: 'Update an ECC Condition by ID',
   })
   @Patch('condition/:conditionId')
+  @Public()
   updateCondition(
     @Param('conditionId') conditionId: number,
     @Body() updateDto: UpdateConditionDto,
@@ -69,6 +74,7 @@ export class EccController {
     summary: 'Add a new ECC Condition to a specific ECC Report',
   })
   @Post('addCondition/:reportId')
+  @Public()
   addCondition(
     @Param('reportId') reportId: string,
     @Body() createDto: CreateEccConditionDto, // Reuse the DTO, but ensure 'section' is included
@@ -82,6 +88,7 @@ export class EccController {
     summary: 'Remove an ECC Condition by ID',
   })
   @Delete('condition/:conditionId')
+  @Public()
   removeCondition(@Param('conditionId') conditionId: number) {
     return this.eccService.removeCondition(conditionId);
   }
@@ -91,6 +98,7 @@ export class EccController {
     description: 'ECC Report not found',
   })
   @Get('generateEccPdf/:id')
+  @Public()
   @ApiOperation({
     summary: 'Generate ECC Report PDF by ID',
   })
@@ -124,6 +132,7 @@ export class EccController {
     description: 'ECC Report not found',
   })
   @Get('generateEccWord/:id')
+  @Public()
   @ApiOperation({
     summary: 'Generate ECC Report PDF by ID',
   })
@@ -140,6 +149,7 @@ export class EccController {
     res.end(buffer);
   }
   @Post('createEccAndGenerateDocs')
+  @Public()
   @ApiOperation({
     summary: 'Create a new ECC Report and generate docs',
   })
@@ -148,6 +158,7 @@ export class EccController {
   }
 
   @Post(':id/duplicate')
+  @Public()
   @ApiOperation({ summary: 'Duplicate an ECC report' })
   @ApiParam({ name: 'id', description: 'ECC Report ID to duplicate' })
   @ApiResponse({

@@ -7,6 +7,7 @@ import {
   ValidateNested,
   IsBoolean,
   IsObject,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -780,6 +781,11 @@ class NoiseQualityParameterDto {
   @IsString()
   name?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isParameterNA?: boolean;
+
   @ApiProperty({ type: NoiseQualityResultsDto, required: false })
   @IsOptional()
   @ValidateNested()
@@ -1203,6 +1209,17 @@ class CMVRAttachmentDto {
 }
 
 export class CreateCMVRDto {
+  // ✅ NEW: Permit holder type selection (single vs multiple)
+  @ApiProperty({
+    enum: ['single', 'multiple'],
+    required: false,
+    description: 'Type of permit holder report: single or multiple',
+    default: 'single',
+  })
+  @IsOptional()
+  @IsEnum(['single', 'multiple'])
+  permitHolderType?: 'single' | 'multiple';
+
   @ApiProperty()
   @IsString()
   companyName: string;

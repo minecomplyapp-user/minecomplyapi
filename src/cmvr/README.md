@@ -2,7 +2,9 @@
 
 ## Overview
 
-The CMVR (Compliance Monitoring Verification Report) module provides endpoints to manage CMVR reports and generate PDF documents from the stored data.
+The CMVR (Compliance Monitoring Verification Report) module provides endpoints to manage CMVR reports and generate PDF/DOCX documents from the stored data.
+
+DOCX exports support appending the uploaded ECC Conditions **DOCX** as an appendix in the generated CMVR DOCX (when `eccConditionsAttachment` is present and mergeable).
 
 ## Endpoints
 

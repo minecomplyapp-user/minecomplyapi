@@ -16,12 +16,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceRecordDto, UpdateAttendanceRecordDto } from './dto';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('attendance')
 @Controller('attendance')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
+  @Public()
   @Post()
   @ApiOperation({ summary: 'Create a new attendance record' })
   @ApiResponse({
@@ -32,6 +34,7 @@ export class AttendanceController {
     return this.attendanceService.create(createAttendanceRecordDto);
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all attendance records' })
   @ApiQuery({
@@ -47,6 +50,7 @@ export class AttendanceController {
     return this.attendanceService.findAll(reportId);
   }
 
+  @Public()
   @Get('report/:reportId')
   @ApiOperation({ summary: 'Get attendance records by report ID' })
   @ApiResponse({
@@ -57,6 +61,7 @@ export class AttendanceController {
     return this.attendanceService.findByReport(reportId);
   }
 
+  @Public()
   @Get('creator/:createdById')
   @ApiOperation({ summary: 'Get attendance records by creator ID' })
   @ApiResponse({
@@ -130,6 +135,7 @@ export class AttendanceController {
     res.end(docxBuffer);
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get an attendance record by ID' })
   @ApiResponse({

@@ -1,5 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import {
   CMVRPdfGeneratorService,
   CMVRGeneralInfo,
@@ -42,6 +48,11 @@ export class CmvrService {
     console.log('Received attachments:', JSON.stringify(attachments, null, 2));
     console.log('Attachments type:', typeof attachments);
     console.log('Is array:', Array.isArray(attachments));
+    console.log('Attachments count:', Array.isArray(attachments) ? attachments.length : 'N/A');
+    
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      console.log('Attachment paths:', attachments.map((a: any) => a?.path).filter(Boolean));
+    }
 
     // Flatten nested structure before saving
     const flattenedData = this.flattenComplianceMonitoringReport(cmvrData);
@@ -51,46 +62,168 @@ export class CmvrService {
       flattenedData.attendanceId = attendanceId;
     }
 
+    // ✅ NEW: Extract quarter and year from generalInfo OR top-level
+    const generalInfo = flattenedData.generalInfo;
+    let quarter: string | null = null;
+    let year: number | null = null;
+
+    // Check generalInfo first
+    if (generalInfo) {
+      // Extract quarter (may be "1st", "2nd", "3rd", "4th" or "Q1", "Q2", "Q3", "Q4")
+      if (generalInfo.quarter) {
+        const q = String(generalInfo.quarter).toLowerCase();
+        if (q.includes('1') || q === 'first') quarter = 'Q1';
+        else if (q.includes('2') || q === 'second') quarter = 'Q2';
+        else if (q.includes('3') || q === 'third') quarter = 'Q3';
+        else if (q.includes('4') || q === 'fourth') quarter = 'Q4';
+      }
+
+      // Extract year
+      if (generalInfo.year) {
+        year = parseInt(String(generalInfo.year), 10);
+        if (isNaN(year)) year = null;
+      }
+    }
+
+    // Also check top-level fields (for DTO structure)
+    if (!quarter && cmvrData.quarter) {
+      const q = String(cmvrData.quarter).toLowerCase();
+      if (q.includes('1') || q === 'first') quarter = 'Q1';
+      else if (q.includes('2') || q === 'second') quarter = 'Q2';
+      else if (q.includes('3') || q === 'third') quarter = 'Q3';
+      else if (q.includes('4') || q === 'fourth') quarter = 'Q4';
+    }
+
+    if (!year && cmvrData.year) {
+      year = parseInt(String(cmvrData.year), 10);
+      if (isNaN(year)) year = null;
+    }
+
+    console.log('✅ Extracted quarter:', quarter, '| year:', year);
+
     const dataToSave = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       cmvrData: flattenedData as unknown as any,
       createdById: createdById,
       fileName: fileName || null,
       attachments: attachments || [],
+      quarter: quarter, // ✅ NEW: Store quarter
+      year: year, // ✅ NEW: Store year
     };
 
     console.log('Data being saved to DB:', JSON.stringify(dataToSave, null, 2));
 
-    const result = await this.prisma.cMVRReport.create({
-      data: dataToSave as any,
-    });
+    try {
+      const result = await this.prisma.cMVRReport.create({
+        data: dataToSave as any,
+      });
 
-    console.log(
-      'Created record attachments:',
-      JSON.stringify((result as Record<string, unknown>).attachments, null, 2),
-    );
+      console.log(
+        'Created record attachments:',
+        JSON.stringify(
+          (result as Record<string, unknown>).attachments,
+          null,
+          2,
+        ),
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in create CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(`Validation error in create CMVR: ${error.message}`);
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in create CMVR: ${error}`);
+      throw error;
+    }
   }
 
   async findOne(id: string) {
-    const cmvrReport = await this.prisma.cMVRReport.findUnique({
-      where: { id },
-    });
+    try {
+      const cmvrReport = await this.prisma.cMVRReport.findUnique({
+        where: { id },
+      });
 
-    if (!cmvrReport) {
-      throw new NotFoundException(`CMVR Report with ID ${id} not found`);
+      if (!cmvrReport) {
+        throw new NotFoundException(`CMVR Report with ID ${id} not found`);
+      }
+
+      return cmvrReport;
+    } catch (error) {
+      // Re-throw NotFoundException as-is
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in findOne CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in findOne CMVR: ${error}`);
+      throw error;
     }
-
-    return cmvrReport;
   }
 
-  async findAll() {
+  async findAll(quarter?: string, year?: number) {
+    const where: any = {};
+    
+    // ✅ NEW: Filter by quarter if provided
+    if (quarter) {
+      where.quarter = quarter;
+    }
+    
+    // ✅ NEW: Filter by year if provided
+    if (year) {
+      where.year = year;
+    }
+
     return this.prisma.cMVRReport.findMany({
+      where,
       orderBy: {
         createdAt: 'desc',
       },
     });
+  }
+
+  /**
+   * ✅ NEW: Get reports grouped by quarter and year
+   */
+  async findByQuarterAndYear(year?: number) {
+    const where: any = {};
+    if (year) {
+      where.year = year;
+    }
+
+    const reports = await this.prisma.cMVRReport.findMany({
+      where,
+      orderBy: [
+        { year: 'desc' },
+        { quarter: 'asc' },
+        { createdAt: 'desc' },
+      ],
+    });
+
+    // Group by quarter and year
+    const grouped: Record<string, Record<string, any[]>> = {};
+    
+    reports.forEach((report) => {
+      const reportYear = report.year || 'Unknown';
+      const reportQuarter = report.quarter || 'Unassigned';
+      
+      if (!grouped[reportYear]) {
+        grouped[reportYear] = {};
+      }
+      
+      if (!grouped[reportYear][reportQuarter]) {
+        grouped[reportYear][reportQuarter] = [];
+      }
+      
+      grouped[reportYear][reportQuarter].push(report);
+    });
+
+    return grouped;
   }
 
   async findByUserId(userId: string) {
@@ -127,7 +260,17 @@ export class CmvrService {
       (record as Record<string, unknown>).attachments,
     );
 
-    const result = await this.prisma.cMVRReport.delete({ where: { id } });
+    let result;
+    try {
+      result = await this.prisma.cMVRReport.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in remove CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in remove CMVR: ${error}`);
+      throw error;
+    }
 
     if (attachmentPaths.length > 0) {
       const uniquePaths = Array.from(new Set(attachmentPaths));
@@ -216,9 +359,23 @@ export class CmvrService {
       attachments: attachments, // Reuse the same attachment references
     };
 
-    return this.prisma.cMVRReport.create({
-      data: dataToSave as any,
-    });
+    try {
+      return await this.prisma.cMVRReport.create({
+        data: dataToSave as any,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in duplicate CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(
+          `Validation error in duplicate CMVR: ${error.message}`,
+        );
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in duplicate CMVR: ${error}`);
+      throw error;
+    }
   }
 
   private extractAttachmentPaths(attachments: unknown): string[] {
@@ -274,16 +431,32 @@ export class CmvrService {
       JSON.stringify(dataToUpdate, null, 2),
     );
 
-    const result = await this.prisma.cMVRReport.update({
-      where: { id },
-      data: dataToUpdate as any,
-    });
+    try {
+      const result = await this.prisma.cMVRReport.update({
+        where: { id },
+        data: dataToUpdate as any,
+      });
 
-    console.log(
-      'Updated record attachments:',
-      JSON.stringify((result as Record<string, unknown>).attachments, null, 2),
-    );
+      console.log(
+        'Updated record attachments:',
+        JSON.stringify(
+          (result as Record<string, unknown>).attachments,
+          null,
+          2,
+        ),
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        this.logger.error(`Prisma error in update CMVR: ${error.message}`);
+        throw new BadRequestException(`Database error: ${error.message}`);
+      } else if (error instanceof Prisma.PrismaClientValidationError) {
+        this.logger.error(`Validation error in update CMVR: ${error.message}`);
+        throw new BadRequestException(`Invalid data: ${error.message}`);
+      }
+      this.logger.error(`Unexpected error in update CMVR: ${error}`);
+      throw error;
+    }
   }
 }

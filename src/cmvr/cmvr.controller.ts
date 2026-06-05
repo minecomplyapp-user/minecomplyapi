@@ -12,6 +12,7 @@ import {
   HttpCode,
   Patch,
   Query,
+  Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -1016,6 +1017,8 @@ export { cmvrReport };
 @ApiTags('CMVR')
 @Controller('cmvr')
 export class CmvrController {
+  private readonly logger = new Logger(CmvrController.name);
+
   constructor(
     private readonly cmvrService: CmvrService,
     private readonly pdfGenerator: CMVRPdfGeneratorService,
@@ -1024,6 +1027,7 @@ export class CmvrController {
   ) {}
 
   @Post()
+  @Public()
   @ApiOperation({ summary: 'Create a new CMVR report' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -1041,16 +1045,34 @@ export class CmvrController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all CMVR reports' })
+  @Public()
+  @ApiOperation({ summary: 'Get all CMVR reports, optionally filtered by quarter and year' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of all CMVR reports',
   })
-  async findAll() {
-    return this.cmvrService.findAll();
+  async findAll(
+    @Query('quarter') quarter?: string,
+    @Query('year') year?: string,
+  ) {
+    const yearNum = year ? parseInt(year, 10) : undefined;
+    return this.cmvrService.findAll(quarter, yearNum);
+  }
+
+  @Get('grouped-by-quarter')
+  @Public()
+  @ApiOperation({ summary: 'Get CMVR reports grouped by quarter and year' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'CMVR reports grouped by quarter and year',
+  })
+  async getGroupedByQuarter(@Query('year') year?: string) {
+    const yearNum = year ? parseInt(year, 10) : undefined;
+    return this.cmvrService.findByQuarterAndYear(yearNum);
   }
 
   @Get('user/:userId')
+  @Public()
   @ApiOperation({ summary: 'Get all CMVR reports created by a specific user' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({
@@ -1184,19 +1206,74 @@ export class CmvrController {
         }
       }
 
-      const recordAttachments = Array.isArray(
-        (record as Record<string, unknown>).attachments,
-      )
-        ? ((record as Record<string, unknown>).attachments as Array<{
+      // Extract attachments from record
+      let recordAttachments: Array<{ path: string; caption?: string }> = [];
+      const rawAttachments = (record as Record<string, unknown>).attachments;
+
+      this.logger.log(
+        `[DOCX Generation] Raw attachments type: ${typeof rawAttachments}, value: ${JSON.stringify(rawAttachments)}`,
+      );
+
+      if (rawAttachments) {
+        // Handle case where attachments might be stored as JSON string
+        if (typeof rawAttachments === 'string') {
+          try {
+            const parsed = JSON.parse(rawAttachments);
+            recordAttachments = Array.isArray(parsed) ? parsed : [];
+            this.logger.log(
+              `[DOCX Generation] Parsed JSON string to ${recordAttachments.length} attachments`,
+            );
+          } catch (e) {
+            this.logger.warn(
+              `Failed to parse attachments JSON string for CMVR ${id}:`,
+              e,
+            );
+            recordAttachments = [];
+          }
+        } else if (Array.isArray(rawAttachments)) {
+          recordAttachments = rawAttachments as Array<{
             path: string;
             caption?: string;
-          }>)
-        : [];
+          }>;
+          this.logger.log(
+            `[DOCX Generation] Attachments is already an array with ${recordAttachments.length} items`,
+          );
+        } else {
+          this.logger.warn(
+            `[DOCX Generation] Attachments is neither string nor array: ${typeof rawAttachments}`,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `[DOCX Generation] No attachments found in record for CMVR ${id}`,
+        );
+      }
 
+      this.logger.log(
+        `[DOCX Generation] Final attachments count: ${recordAttachments.length} for CMVR ${id}`,
+      );
+      if (recordAttachments.length > 0) {
+        this.logger.log(
+          `[DOCX Generation] Attachment paths: ${recordAttachments.map((a) => a.path).join(', ')}`,
+        );
+      } else {
+        this.logger.warn(
+          `[DOCX Generation] WARNING: No attachments to include in document for CMVR ${id}`,
+        );
+      }
+
+      this.logger.log(
+        `[DOCX Generation] Calling generateFullReportDocx with ${recordAttachments.length} attachment(s)`,
+      );
+      
       const docxBuffer = await this.docxGenerator.generateFullReportDocx(
         record.cmvrData as unknown as CMVRGeneralInfo,
         attendanceData,
         recordAttachments,
+      );
+      
+      this.logger.log(
+        `[DOCX Generation] Document generation completed successfully. Buffer size: ${docxBuffer.length} bytes`,
       );
 
       // Use the fileName from the record, fallback to cmvr-{id} if not available
@@ -1228,6 +1305,7 @@ export class CmvrController {
   }
 
   @Get(':id')
+  @Public()
   @ApiOperation({ summary: 'Get a CMVR report by ID' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID' })
   @ApiResponse({
@@ -1243,6 +1321,7 @@ export class CmvrController {
   }
 
   @Post(':id/duplicate')
+  @Public()
   @ApiOperation({ summary: 'Duplicate a CMVR report' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID to duplicate' })
   @ApiResponse({
@@ -1258,6 +1337,7 @@ export class CmvrController {
   }
 
   @Get(':id/pdf/general-info')
+  @Public()
   @ApiOperation({
     summary: 'Generate PDF for CMVR General Information section',
   })
@@ -1316,6 +1396,7 @@ export class CmvrController {
     await this.cmvrService.remove(id);
   }
 
+  @Public()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a CMVR report by ID (replace cmvrData)' })
   @ApiParam({ name: 'id', description: 'CMVR Report ID' })
