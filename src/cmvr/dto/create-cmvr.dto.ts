@@ -9,7 +9,7 @@ import {
   IsObject,
   IsEnum,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 class ECCDto {
   @ApiProperty()
@@ -721,6 +721,11 @@ class WaterQualityImpactAssessmentDto {
   @IsBoolean()
   quarryPlantEnabled?: boolean;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  portEnabled?: boolean;
+
   // New structure: unified water quality data
   @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
   @IsOptional()
@@ -737,6 +742,9 @@ class WaterQualityImpactAssessmentDto {
 
   @ApiProperty({ type: WaterQualityLocationDataDto, required: false })
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? { locationDescription: value } : value,
+  )
   @ValidateNested()
   @Type(() => WaterQualityLocationDataDto)
   port?: WaterQualityLocationDataDto;
